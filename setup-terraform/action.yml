@@ -1,0 +1,51 @@
+name: Install TF Dependencies
+description: Install Terraform dependencies
+inputs:
+  tf_cache_dir:
+    description: Terraform cache directory
+    required: false 
+    default: ~/.terraform.d/plugin-cache
+  tflint_cache_dir:
+    description: TFLint cache directory
+    required: false 
+    default: ~/.tflint.d/plugins
+runs:
+  using: composite
+  steps:
+
+  - name: Setup Terraform
+    uses: hashicorp/setup-terraform@v2
+
+  - name: Setup TFLint
+    uses: terraform-linters/setup-tflint@v3
+    with:
+      tflint_version: v0.44.1
+
+  - name: Show versions
+    shell: bash
+    run: |
+      terraform version
+      tflint --version
+      aws --version
+
+  - name: Cache TFlint Plugins
+    uses: actions/cache@v3
+    with:
+      path: ${{ inputs.tflint_cache_dir }
+      key: ubuntu-latest-tflint-${{ hashFiles('.tflint.hcl') }}
+
+  # - name: Configure Terraform Plugin Cache
+  #   shell: bash
+  #   env:
+  #     TF_PLUGIN_CACHE_DIR: ${{ inputs.tf_cache_dir }}
+  #   run: |
+  #     mkdir -p "${TF_PLUGIN_CACHE_DIR}"
+  #     echo "plugin_cache_dir = \"${TF_PLUGIN_CACHE_DIR}\"" > ~/.terraformrc
+  #     cat ~/.terraformrc
+  #     echo "TF_PLUGIN_CACHE_DIR=${TF_PLUGIN_CACHE_DIR}" >> $GITHUB_ENV
+
+  # - name: Cache TF Plugins
+  #   uses: actions/cache@v3
+  #   with:
+  #     path: ${{ inputs.tf_cache_dir }}
+  #     key: plugins-${{ matrix.module }}-${{ hashFiles(env.TF_LOCKFILE) }}

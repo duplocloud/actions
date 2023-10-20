@@ -1,0 +1,76 @@
+name: Validate Module
+description: Test a single Terraform module
+inputs:
+  wkdir: 
+    description: Working directory
+    required: true
+  lint:
+    description: Lint the module
+    required: false
+    default: "true"
+  validate:
+    description: Validate the module
+    required: false
+    default: "true"
+  fmt:
+    description: Format the module
+    required: false
+    default: "true"
+  plan:
+    description: Plan the module
+    required: false
+    default: "true"
+  test:
+    description: Test the module
+    required: false
+    default: "true"
+runs:
+  using: composite
+  steps:
+
+  - name: TF Init Module
+    shell: bash
+    working-directory: ${{ inputs.wkdir }}
+    run: terraform init
+
+  - name: Init TFLint
+    if: ${{ inputs.lint == 'true' }}
+    shell: bash
+    working-directory: ${{ inputs.wkdir }}
+    run: tflint --init -c ../../.tflint.hcl
+
+  - name: Run TFLint
+    if: ${{ inputs.lint == 'true' }}
+    shell: bash
+    working-directory: ${{ inputs.wkdir }}
+    run: tflint -c ../../.tflint.hcl
+
+  - name: TF Validate Module
+    if: ${{ inputs.validate == 'true' }}
+    shell: bash
+    working-directory: ${{ inputs.wkdir }}
+    run: terraform validate
+
+  - name: Validate Format
+    if: ${{ inputs.fmt == 'true' }}
+    shell: bash
+    working-directory: ${{ inputs.wkdir }}
+    run: terraform fmt -check=true -diff=true -recursive
+
+  - name: Plan Module
+    if: ${{ inputs.plan == 'true' }}
+    working-directory: ${{ inputs.wkdir }}
+    shell: bash
+    run: terraform plan -input=false
+    env:
+      duplo_token: ${{ env.DUPLO_TOKEN }}
+      duplo_host: ${{ env.DUPLO_HOST }}
+
+  - name: Test Module
+    if: ${{ inputs.test == 'true' }}
+    working-directory: ${{ inputs.wkdir }}
+    shell: bash
+    run: terraform test
+    env:
+      duplo_token: ${{ env.DUPLO_TOKEN }}
+      duplo_host: ${{ env.DUPLO_HOST }}
