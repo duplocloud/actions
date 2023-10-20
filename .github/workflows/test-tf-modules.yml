@@ -1,0 +1,74 @@
+name: Test Modules
+
+on:
+  workflow_call:
+    secrets:
+      DUPLO_TOKEN:
+        required: true
+
+jobs:
+  check_changes:
+    name: Check Changes
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+    - uses: actions/checkout@v3
+      name: Checkout source code
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v39
+    - name: Make a Matrx Output
+      id: matrix
+      run: |
+        MODULES=()
+        for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+          echo "$file was changed"
+          IFS='/' read -ra parts <<< "$file"
+          base_folder="${parts[0]}"
+          module_name="${parts[1]}"
+          if [ "$base_folder" == "modules" ]; then
+            if [[ ! " ${MODULES[@]} " =~ " ${module_name} " ]]; then
+              MODULES+=("$module_name")
+              echo "Adding $module_name for testing"
+            fi
+          fi
+        done
+        matrix_list=$(printf ",\"%s\"" "${MODULES[@]}")
+        matrix_list=${matrix_list:1}
+        export MATRIX='{"module": ['$matrix_list']}'
+        echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+        echo "Modules to test: ${MODULES[@]}" >> $GITHUB_STEP_SUMMARY
+  tfmodule:
+    name: Testing ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    needs: check_changes
+    strategy:
+      matrix: ${{ fromJSON(needs.check_changes.outputs.matrix) }}
+    env:
+      DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
+      DUPLO_HOST: ${{ vars.DUPLO_HOST }}
+      DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
+      TF_LOCKFILE: ./modules/${{ matrix.module }}/.terraform.lock.hcl
+    steps:
+
+    - name: Checkout source code
+      uses: actions/checkout@v3
+
+    - name: Duplo and AWS Setup
+      uses: duplocloud/actions/setup@main
+    
+    - name: Terraform Setup
+      uses: duplocloud/actions/setup-terraform@main
+
+    - name: TF Validate Example for Module
+      uses: duplocloud/actions/terraform-module@main
+      with:
+        wkdir: ./examples/${{ matrix.module }}
+        test: false
+
+    - name: TF Validate Module
+      uses: duplocloud/actions/terraform-module@main
+      with:
+        wkdir: ./modules/${{ matrix.module }}
+        plan: false
