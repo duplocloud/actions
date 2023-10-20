@@ -26,7 +26,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Duplo AWS Setup
-      uses: path/to/duplo-aws-setup-action@v1
+      uses: duplocloud/actions/setup-terraform@main
 
     # Add more steps to your workflow...
 ```

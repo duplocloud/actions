@@ -19,7 +19,7 @@ The following table describes the inputs for this action:
 
 ```yaml
 - name: Validate My Terraform Module
-  uses: username/repo-name@v1
+  uses: duplocloud/actions/setup-terraform@main
   with:
     wkdir: ./path/to/module
     lint: true

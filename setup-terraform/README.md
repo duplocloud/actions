@@ -32,7 +32,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Install TF Dependencies
-      uses: example/install-tf-dependencies-action@v1
+      uses: duplocloud/actions/setup-terraform@main
       with:
         tf_cache_dir: ~/.terraform.d/plugin-cache
         tflint_cache_dir: ~/.tflint.d/plugins
