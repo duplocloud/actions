@@ -41,7 +41,7 @@ runs:
   - name: Cache TFlint Plugins
     uses: actions/cache@v3
     with:
-      path: ${{ inputs.tflint_cache_dir }
+      path: ${{ inputs.tflint_cache_dir }}
       key: ubuntu-latest-tflint-${{ hashFiles('.tflint.hcl') }}
 
   # - name: Configure Terraform Plugin Cache
