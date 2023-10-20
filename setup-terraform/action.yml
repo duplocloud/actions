@@ -9,17 +9,27 @@ inputs:
     description: TFLint cache directory
     required: false 
     default: ~/.tflint.d/plugins
+  tflint_version:
+    description: TFLint version
+    required: false 
+    default: v0.44.1
+  terraform_version:
+    description: Terraform version
+    required: false 
+    default: 1.6.1
 runs:
   using: composite
   steps:
 
   - name: Setup Terraform
     uses: hashicorp/setup-terraform@v2
-
+    with:
+      terraform_version: ${{ inputs.terraform_version }}
+      
   - name: Setup TFLint
     uses: terraform-linters/setup-tflint@v3
     with:
-      tflint_version: v0.44.1
+      tflint_version: ${{ inputs.tflint_version }}
 
   - name: Show versions
     shell: bash

@@ -1,5 +1,5 @@
-name: AWS Login
-description: Login to AWS with duplo creds
+name: Duplo AWS Setup
+description: Install Duplo and AWS tools and login.
 runs:
   using: composite
   steps:
