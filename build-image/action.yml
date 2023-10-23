@@ -160,6 +160,20 @@ runs:
         $TAGS \
         $EXTRA_ARGS \
         $BASE_ARGS
+
+  - name: Image Summary
+    shell: bash
+    env:
+      REPO: ${{ steps.setup.outputs.repo }}
+      REGISTRY: ${{ steps.setup.outputs.registry }}
+      IMAGE: ${{ steps.setup.outputs.image }}
+      TAGS: ${{ steps.tags.outputs.tags }}
+    run: |
+      echo "## Image Summary" >> $GITHUB_STEP_SUMMARY
+      echo "- Repository: ${REPO}" >> $GITHUB_STEP_SUMMARY
+      echo "- Registry: ${REGISTRY}" >> $GITHUB_STEP_SUMMARY
+      echo "- Image: ${IMAGE}" >> $GITHUB_STEP_SUMMARY
+      echo "- Tags: ${TAGS[*]}" >> $GITHUB_STEP_SUMMARY
   
   # - name: Build and Push Multi-Arch Image
   #   uses: docker/build-push-action@v5
