@@ -176,10 +176,12 @@ runs:
       TAGS: ${{ steps.tags.outputs.tags }}
     run: |
       echo "## Image Summary" >> $GITHUB_STEP_SUMMARY
-      echo "- Repository: ${REPO}" >> $GITHUB_STEP_SUMMARY
-      echo "- Registry: ${REGISTRY}" >> $GITHUB_STEP_SUMMARY
-      echo "- Image: ${IMAGE}" >> $GITHUB_STEP_SUMMARY
-      echo "- Tags: ${TAGS}" >> $GITHUB_STEP_SUMMARY
+      echo "**Image**: ${IMAGE}" >> $GITHUB_STEP_SUMMARY
+      # Display a list of the tags
+      echo "**Tags**: " >> $GITHUB_STEP_SUMMARY
+      for tag in $TAGS; do
+        echo "- ${tag}" >> $GITHUB_STEP_SUMMARY
+      done
   
   # - name: Build and Push Multi-Arch Image
   #   uses: docker/build-push-action@v5
