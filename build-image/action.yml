@@ -61,6 +61,7 @@ runs:
       REGISTRY: ${{ inputs.registry || steps.login-ecr.outputs.registry }}
       PUSH: ${{ inputs.push }}
       DOCKERFILE: ${{ inputs.dockerfile }}
+      CONTEXT: ${{ inputs.context }}
     run: |
       ARGS=()
       
