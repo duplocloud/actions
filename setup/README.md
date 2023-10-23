@@ -25,8 +25,8 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v2
 
-    - name: Duplo AWS Setup
-      uses: duplocloud/actions/setup-terraform@main
+    - name: Duplo Setup
+      uses: duplocloud/actions/setup@main
 
     # Add more steps to your workflow...
 ```
