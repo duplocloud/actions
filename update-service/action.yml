@@ -1,0 +1,20 @@
+name: Update Service
+description: A command builder for Duploctl
+inputs:
+  service:
+    description: Service name
+    required: true
+  image:
+    description: Image name
+    required: true
+runs:
+  using: composite
+  steps:
+  - name: Update Service
+    id: duploctl
+    shell: bash
+    env:
+      SERVICE: ${{ inputs.service }}
+      IMAGE: ${{ inputs.image }}
+    run: >
+      duploctl service update_image $SERVICE $IMAGE

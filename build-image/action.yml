@@ -1,0 +1,176 @@
+name: Build and push Docker image
+description: Deploy to Kubernetes using Helm
+inputs:
+  repo:
+    description: Repository name, defaults to git repo name
+    required: false
+  registry:
+    description: Registry name
+    required: false
+  platforms:
+    description: Build multi-arch image
+    required: false
+  build-args:
+    description: Extra arguments to pass to Docker
+    required: false
+  context:
+    description: Build context
+    required: false
+    default: "."
+  dockerfile:
+    description: Dockerfile path
+    required: false
+    default: "Dockerfile"
+  push:
+    description: Push image to registry
+    required: false
+    default: "true"
+  cache: 
+    description: Cache image layers if buildx enabled. 
+    required: false
+    default: "true"
+outputs:
+  image:
+    description: Docker image
+    value: ${{ steps.setup.outputs.image }}
+  repo:
+    description: Repository Name
+    value: ${{ steps.setup.outputs.repo }}
+  branch:
+    description: Branch name
+    value: ${{ steps.setup.outputs.branch }}
+
+runs:
+  using: composite
+  steps:
+
+  # first login. Assume ECR for now. 
+  - name: Login to Amazon ECR
+    id: login-ecr
+    uses: aws-actions/amazon-ecr-login@v1
+
+  # setup the base image
+  - name: Setup
+    id: setup
+    shell: bash
+    env:
+      REPO: ${{ inputs.repo }}
+      REGISTRY: ${{ inputs.registry || steps.login-ecr.outputs.registry }}
+      PUSH: ${{ inputs.push }}
+      DOCKERFILE: ${{ inputs.dockerfile }}
+    run: |
+      ARGS=()
+      
+      # if push is true then add the arg
+      if [[ "$PUSH" == "true" ]]; then
+        ARGS+=(--push)
+      fi
+
+      # add dockerfile and context
+      ARGS+=(-f "${DOCKERFILE}")
+      ARGS+=("${CONTEXT}")
+
+      echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
+
+
+  - name: Setup Tags
+    id: tags
+    shell: bash
+    env:
+      REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      SHA: ${{ github.sha }}
+      HOTFIX: ${{ inputs.hotfix }}
+      IMAGE: ${{ steps.setup.outputs.image }}
+    run: |
+      TAGS=()
+
+      if [[ -z "$REPO" ]]; then
+        REPO="$(basename $GITHUB_REPOSITORY)"
+      fi
+
+      # set the image name
+      IMAGE="${REGISTRY}/${REPO}"
+
+      echo "repo=$REPO" >> $GITHUB_OUTPUT
+      echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
+      echo "image=$IMAGE" >> $GITHUB_OUTPUT
+
+      # common to use sha as a tag to direct ref commit
+      SHA="$(git rev-parse --short HEAD)"
+      TAGS+=(-t "${IMAGE}:${SHA}")
+      
+      # the sed part handles dependabot issues with slash names
+      REF="$(echo ${GITHUB_REF##*/} | sed -e 's/\//_/g')"
+      TAGS+=(-t "${IMAGE}:${REF}")
+
+      echo "sha=${SHA}" >> $GITHUB_OUTPUT
+      echo "ref=$REF" >> $GITHUB_OUTPUT
+      echo "repo=$REPO" >> $GITHUB_OUTPUT
+      echo "image=$IMAGE" >> $GITHUB_OUTPUT
+      echo "tags=${TAGS[*]}" >> $GITHUB_OUTPUT
+
+  - name: Buildx Args
+    shell: bash
+    id: buildx-args
+    env:
+      PLATFORMS: ${{ inputs.platforms }}
+      PUSH: ${{ inputs.push }}
+      MULTIARCH: "false"
+      CACHE: ${{ inputs.cache }}
+    run: |
+      ARGS=()
+
+      # if there are platforms
+      if [[ -n "$PLATFORMS" ]]; then
+        ARGS+=(--platform "${PLATFORMS}")
+        MULTIARCH="true"
+      fi
+
+      # if cache is true
+      if [[ "$CACHE" == "true" ]]; then
+        ARGS+=(--cache-to type=gha,mode=max)
+        ARGS+=(--cache-from type=gha)
+      fi
+
+      echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
+      echo "multiarch=${MULTIARCH}" >> $GITHUB_OUTPUT
+
+  - name: Expose GitHub Runtime
+    uses: crazy-max/ghaction-github-runtime@v3
+  
+  - name: Setup QEMU
+    id: setup-qemu
+    uses: docker/setup-qemu-action@v2
+
+  - name: Set up Docker Buildx
+    id: buildx
+    uses: docker/setup-buildx-action@v2
+
+  - name: Build and Push
+    id: build
+    shell: bash
+    env:
+      TAGS: ${{ steps.tags.outputs.tags }}
+      BUILDX_ARGS: ${{ steps.buildx-args.outputs.args }}
+      EXTRA_ARGS: ${{ inputs.build-args }}
+      BASE_ARGS: ${{ steps.setup.outputs.args }}
+    run: |
+      docker buildx build \
+        $BUILDX_ARGS \
+        $TAGS \
+        $EXTRA_ARGS \
+        $BASE_ARGS
+  
+  # - name: Build and Push Multi-Arch Image
+  #   uses: docker/build-push-action@v5
+  #   with:
+  #     context: .
+  #     push: true
+  #     builder: ${{ steps.buildx.outputs.name }}
+  #     platforms: ${{ inputs.platforms }}
+  #     tags: ${{ steps.setup.outputs.tags }}
+  #     cache-from: type=gha
+  #     cache-to: type=gha,mode=max
+  #     build-args: ${{ inputs.extra-args }}
+
+        
