@@ -1,0 +1,35 @@
+name: GHA Experiments
+on:
+  workflow_dispatch: 
+    inputs:
+      name:
+        description: 'Name of the person to greet'
+        required: false
+jobs:
+  info:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Print GitHub context
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: echo "$GITHUB_CONTEXT"
+
+    - name: N vs Z
+      env:
+        NAME: ${{ inputs.name }}
+      run: |
+        
+        if [ -z "$NAME" ]; then
+          echo "-z is true"
+        else
+          echo "The name is $NAME"
+        fi
+
+        if [ -n "$NAME" ]; then
+          echo "-n is true"
+        else
+          echo "The name is empty"
+        fi
+        
+        
