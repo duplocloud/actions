@@ -91,7 +91,7 @@ runs:
       EXTRA_TAGS: ${{ inputs.extra-tags }}
     run: |
       ARGS=()
-      TAGS=()
+      TAGS=($EXTRA_TAGS)
 
       if [[ -z "$REPO" ]]; then
         REPO="$(basename $GITHUB_REPOSITORY)"
