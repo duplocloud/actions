@@ -50,3 +50,4 @@ runs:
       aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
       aws-session-token: ${{ env.AWS_SESSION_TOKEN }}
       aws-region: ${{ env.AWS_REGION }}
+      # mask-aws-account-id: 'no'

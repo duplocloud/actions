@@ -86,6 +86,7 @@ runs:
       HOTFIX: ${{ inputs.hotfix }}
       IMAGE: ${{ steps.setup.outputs.image }}
     run: |
+      ARGS=()
       TAGS=()
 
       if [[ -z "$REPO" ]]; then
@@ -95,24 +96,24 @@ runs:
       # set the image name
       IMAGE="${REGISTRY}/${REPO}"
 
-      echo "repo=$REPO" >> $GITHUB_OUTPUT
-      echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
-      echo "image=$IMAGE" >> $GITHUB_OUTPUT
-
       # common to use sha as a tag to direct ref commit
       SHA="$(git rev-parse --short HEAD)"
-      TAGS+=(-t "${IMAGE}:${SHA}")
+      ARGS+=(-t "${IMAGE}:${SHA}")
+      TAGS+=("${SHA}")
       
       # the sed part handles dependabot issues with slash names
       REF="$(echo ${GITHUB_REF##*/} | sed -e 's/\//_/g')"
-      TAGS+=(-t "${IMAGE}:${REF}")
+      ARGS+=(-t "${IMAGE}:${REF}")
+      TAGS+=("${REF}")
 
-      echo "sha=${SHA}" >> $GITHUB_OUTPUT
-      echo "ref=$REF" >> $GITHUB_OUTPUT
-      echo "repo=$REPO" >> $GITHUB_OUTPUT
       echo "image=$IMAGE" >> $GITHUB_OUTPUT
-      echo "tags=${TAGS[*]}" >> $GITHUB_OUTPUT
+      echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
+      echo "repo=$REPO" >> $GITHUB_OUTPUT
+      echo "ref=$REF" >> $GITHUB_OUTPUT
+      echo "sha=${SHA}" >> $GITHUB_OUTPUT
       echo "uri=${IMAGE}:${SHA}" >> $GITHUB_OUTPUT
+      echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
+      echo "tags=${TAGS[*]}" >> $GITHUB_OUTPUT
 
   - name: Buildx Args
     shell: bash
@@ -155,30 +156,30 @@ runs:
     id: build
     shell: bash
     env:
-      TAGS: ${{ steps.tags.outputs.tags }}
+      TAG_ARGS: ${{ steps.tags.outputs.args }}
       BUILDX_ARGS: ${{ steps.buildx-args.outputs.args }}
       EXTRA_ARGS: ${{ inputs.build-args }}
       BASE_ARGS: ${{ steps.setup.outputs.args }}
     run: |
       docker buildx build \
         $BUILDX_ARGS \
-        $TAGS \
+        $TAG_ARGS \
         $EXTRA_ARGS \
         $BASE_ARGS
 
   - name: Image Summary
     shell: bash
     env:
-      REPO: ${{ steps.setup.outputs.repo }}
-      REGISTRY: ${{ steps.setup.outputs.registry }}
-      IMAGE: ${{ steps.setup.outputs.image }}
+      REPO: ${{ steps.tags.outputs.repo }}
+      REGISTRY: ${{ steps.tags.outputs.registry }}
+      IMAGE: ${{ steps.tags.outputs.image }}
       TAGS: ${{ steps.tags.outputs.tags }}
     run: |
       echo "## Image Summary" >> $GITHUB_STEP_SUMMARY
       echo "- Repository: ${REPO}" >> $GITHUB_STEP_SUMMARY
       echo "- Registry: ${REGISTRY}" >> $GITHUB_STEP_SUMMARY
       echo "- Image: ${IMAGE}" >> $GITHUB_STEP_SUMMARY
-      echo "- Tags: ${TAGS[*]}" >> $GITHUB_STEP_SUMMARY
+      echo "- Tags: ${TAGS}" >> $GITHUB_STEP_SUMMARY
   
   # - name: Build and Push Multi-Arch Image
   #   uses: docker/build-push-action@v5
