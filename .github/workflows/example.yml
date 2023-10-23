@@ -5,6 +5,14 @@ on:
       name:
         description: 'Name of the person to greet'
         required: false
+      list_of_things: 
+        description: 'List of things'
+        required: false
+        default: |
+          one
+          bubbles
+          candy float
+          knife \n fork
 jobs:
   info:
     runs-on: ubuntu-latest
@@ -14,6 +22,11 @@ jobs:
       env:
         GITHUB_CONTEXT: ${{ toJson(github) }}
       run: echo "$GITHUB_CONTEXT"
+    
+    - name: Print ENV
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: printenv
 
     - name: N vs Z
       env:
@@ -32,4 +45,13 @@ jobs:
           echo "The name is empty"
         fi
         
+    - name: Print list of things
+      env:
+        LIST_OF_THINGS: ${{ inputs.list_of_things }}
+      run: |
+        
+        # loop each item in the list
+        while read -r line; do
+          echo "Item: $line"
+        done <<< "$LIST_OF_THINGS"
         
