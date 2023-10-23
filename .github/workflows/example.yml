@@ -50,8 +50,8 @@ jobs:
         LIST_OF_THINGS: ${{ inputs.list_of_things }}
       run: |
         
-        # loop each item in the list
-        while read -r line; do
-          echo "Item: $line"
-        done <<< "$LIST_OF_THINGS"
+        # loop each item in the space delimited list
+        for item in $LIST_OF_THINGS; do
+          echo "item: $item"
+        done
         
