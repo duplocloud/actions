@@ -13,6 +13,9 @@ inputs:
   build-args:
     description: Extra arguments to pass to Docker
     required: false
+  extra-tags:
+    description: Extra space delimited tags to add to the image
+    required: false
   context:
     description: Build context
     required: false
@@ -85,6 +88,7 @@ runs:
       SHA: ${{ github.sha }}
       HOTFIX: ${{ inputs.hotfix }}
       IMAGE: ${{ steps.setup.outputs.image }}
+      EXTRA_TAGS: ${{ inputs.extra-tags }}
     run: |
       ARGS=()
       TAGS=()
@@ -98,13 +102,15 @@ runs:
 
       # common to use sha as a tag to direct ref commit
       SHA="$(git rev-parse --short HEAD)"
-      ARGS+=(-t "${IMAGE}:${SHA}")
       TAGS+=("${SHA}")
       
       # the sed part handles dependabot issues with slash names
       REF="$(echo ${GITHUB_REF##*/} | sed -e 's/\//_/g')"
-      ARGS+=(-t "${IMAGE}:${REF}")
       TAGS+=("${REF}")
+
+      for tag in "${TAGS[*]}"; do
+        ARGS+=(-t "${IMAGE}:${tag}")
+      done
 
       echo "image=$IMAGE" >> $GITHUB_OUTPUT
       echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
