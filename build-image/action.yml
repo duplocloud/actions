@@ -26,7 +26,6 @@ inputs:
   dockerfile:
     description: Dockerfile path
     required: false
-    default: "Dockerfile"
   push:
     description: Push image to registry
     required: false
@@ -35,6 +34,9 @@ inputs:
     description: Cache image layers if buildx enabled. 
     required: false
     default: "true"
+  extra-args:
+    description: Extra args to pass to buildx
+    required: false
 outputs:
   image:
     description: Docker image
@@ -92,13 +94,17 @@ runs:
         ARGS+=(--target "${TARGET}")
       fi
 
+      # add dockerfile param if given
+      if [[ -n "$DOCKERFILE" ]]; then
+        ARGS+=(-f "${DOCKERFILE}")
+      fi
+
       # if push is true then add the arg
       if [[ "$PUSH" == "true" ]]; then
         ARGS+=(--push)
       fi
-
-      # add dockerfile and context
-      ARGS+=(-f "${DOCKERFILE}")
+      
+      # finally add the context
       ARGS+=("${CONTEXT}")
 
       echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
@@ -175,11 +181,12 @@ runs:
     id: docker-command
     shell: bash
     env:
+      EXTRA_ARGS: ${{ inputs.extra-args }}
       TAG_ARGS: ${{ steps.tags.outputs.args }}
       BUILDX_ARGS: ${{ steps.buildx-args.outputs.args }}
       BASE_ARGS: ${{ steps.setup.outputs.args }}
     run: |
-      DOCKER_COMMAND="docker buildx build $BUILDX_ARGS $TAG_ARGS $BASE_ARGS"
+      DOCKER_COMMAND="docker buildx build $EXTRA_ARGS $BUILDX_ARGS $TAG_ARGS $BASE_ARGS"
       echo "DOCKER_COMMAND=$DOCKER_COMMAND" >> $GITHUB_OUTPUT
       cat <<EOF >> $GITHUB_STEP_SUMMARY
       ## Docker Command
