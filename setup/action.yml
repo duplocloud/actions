@@ -1,8 +1,8 @@
 name: Duplo AWS Setup
-description: Install and configure the Duplo and Cloud tool set.
+description: Install Duplo and AWS tools and login.
 inputs:
   mask-aws-account-id:
-    description: 'Mask the AWS Account ID in the logs. Default: yes'
+    description: Mask AWS Account ID in logs
     required: false
     default: 'yes'
 runs:
@@ -45,13 +45,15 @@ runs:
     shell: bash
     if: env.AWS_ENABLED == 'true'
     run: |
+      export STS AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_DEFAULT_REGION AWS_REGION AWS_ACCOUNT_ID
+
       STS="$(duploctl jit aws)"
       AWS_ACCESS_KEY_ID="$(echo "$STS" | jq -r '.AccessKeyId')"
       AWS_SECRET_ACCESS_KEY="$(echo "$STS" | jq -r '.SecretAccessKey')"
       AWS_SESSION_TOKEN="$(echo "$STS" | jq -r '.SessionToken')"
       AWS_DEFAULT_REGION="$(echo "$STS" | jq -r '.Region')"
       AWS_REGION="$AWS_DEFAULT_REGION"
-      AWS_ACCOUNT_ID="$(echo "$STS" | jq -r '.DefaultAwsAccount')"
+      AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query "Account" --output text)"
 
       echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
       echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
