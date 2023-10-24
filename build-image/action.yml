@@ -177,7 +177,6 @@ runs:
       docker buildx build \
         $BUILDX_ARGS \
         $TAG_ARGS \
-        $EXTRA_ARGS \
         $BASE_ARGS
 
   - name: Image Summary
