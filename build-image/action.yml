@@ -108,9 +108,10 @@ runs:
       REF="$(echo ${GITHUB_REF##*/} | sed -e 's/\//_/g')"
       TAGS+=("${REF}")
 
-      for tag in "${TAGS[*]}"; do
+      for tag in ${TAGS[*]}; do
         ARGS+=(-t "${IMAGE}:${tag}")
       done
+      
 
       echo "image=$IMAGE" >> $GITHUB_OUTPUT
       echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
