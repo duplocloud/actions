@@ -171,7 +171,6 @@ runs:
     env:
       TAG_ARGS: ${{ steps.tags.outputs.args }}
       BUILDX_ARGS: ${{ steps.buildx-args.outputs.args }}
-      EXTRA_ARGS: ${{ inputs.build-args }}
       BASE_ARGS: ${{ steps.setup.outputs.args }}
     run: |
       docker buildx build \
