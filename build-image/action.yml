@@ -11,7 +11,7 @@ inputs:
     description: Build multi-arch image
     required: false
   build-args:
-    description: Extra arguments to pass to Docker
+    description: List of build args like key=value
     required: false
   extra-tags:
     description: Extra space delimited tags to add to the image
@@ -65,9 +65,15 @@ runs:
       PUSH: ${{ inputs.push }}
       DOCKERFILE: ${{ inputs.dockerfile }}
       CONTEXT: ${{ inputs.context }}
+      BUILD_ARGS: ${{ inputs.build-args }}
     run: |
       ARGS=()
-      
+
+      # add any custom build args
+      for arg in ($BUILD_ARGS); do
+        ARGS+=(--build-arg "${arg}")
+      done
+
       # if push is true then add the arg
       if [[ "$PUSH" == "true" ]]; then
         ARGS+=(--push)
@@ -111,7 +117,6 @@ runs:
       for tag in ${TAGS[*]}; do
         ARGS+=(-t "${IMAGE}:${tag}")
       done
-      
 
       echo "image=$IMAGE" >> $GITHUB_OUTPUT
       echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
