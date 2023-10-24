@@ -16,6 +16,9 @@ inputs:
   extra-tags:
     description: Extra space delimited tags to add to the image
     required: false
+  target:
+    description: Target stage to build
+    required: false
   context:
     description: Build context
     required: false
@@ -65,6 +68,7 @@ runs:
       REGISTRY: ${{ inputs.registry || steps.login-ecr.outputs.registry }}
       PUSH: ${{ inputs.push }}
       DOCKERFILE: ${{ inputs.dockerfile }}
+      TARGET: ${{ inputs.target }}
       CONTEXT: ${{ inputs.context }}
       BUILD_ARGS: ${{ inputs.build-args }}
     run: |
@@ -82,6 +86,11 @@ runs:
       for arg in ${build_args[*]}; do
         ARGS+=(--build-arg "${arg}")
       done
+
+      # if target is set then add the arg
+      if [[ -n "$TARGET" ]]; then
+        ARGS+=(--target "${TARGET}")
+      fi
 
       # if push is true then add the arg
       if [[ "$PUSH" == "true" ]]; then
