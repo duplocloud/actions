@@ -5,7 +5,7 @@ inputs:
     description: Repository name, defaults to git repo name
     required: false
   registry:
-    description: Registry name
+    description: Registry name, defaults to ecr if on aws. 
     required: false
   platforms:
     description: Build multi-arch image
@@ -53,6 +53,7 @@ runs:
   # first login. Assume ECR for now. 
   - name: Login to Amazon ECR
     id: login-ecr
+    if: env.AWS_ENABLED == 'true'
     uses: aws-actions/amazon-ecr-login@v1
 
   # setup the base image
@@ -68,6 +69,13 @@ runs:
       BUILD_ARGS: ${{ inputs.build-args }}
     run: |
       ARGS=()
+
+      if [[ -z "$REPO" ]]; then
+        REPO="$(basename $GITHUB_REPOSITORY)"
+      fi
+
+      # set the image name
+      IMAGE="${REGISTRY}/${REPO}"
 
       # add any custom build args
       build_args=($BUILD_ARGS)
@@ -85,27 +93,19 @@ runs:
       ARGS+=("${CONTEXT}")
 
       echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
-
+      echo "image=$IMAGE" >> $GITHUB_OUTPUT
+      echo "repo=$REPO" >> $GITHUB_OUTPUT
+      echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
 
   - name: Setup Tags
     id: tags
     shell: bash
     env:
-      REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-      SHA: ${{ github.sha }}
-      HOTFIX: ${{ inputs.hotfix }}
       IMAGE: ${{ steps.setup.outputs.image }}
       EXTRA_TAGS: ${{ inputs.extra-tags }}
     run: |
       ARGS=()
       TAGS=($EXTRA_TAGS)
-
-      if [[ -z "$REPO" ]]; then
-        REPO="$(basename $GITHUB_REPOSITORY)"
-      fi
-
-      # set the image name
-      IMAGE="${REGISTRY}/${REPO}"
 
       # common to use sha as a tag to direct ref commit
       SHA="$(git rev-parse --short HEAD)"
@@ -119,9 +119,6 @@ runs:
         ARGS+=(-t "${IMAGE}:${tag}")
       done
 
-      echo "image=$IMAGE" >> $GITHUB_OUTPUT
-      echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
-      echo "repo=$REPO" >> $GITHUB_OUTPUT
       echo "ref=$REF" >> $GITHUB_OUTPUT
       echo "sha=${SHA}" >> $GITHUB_OUTPUT
       echo "uri=${IMAGE}:${SHA}" >> $GITHUB_OUTPUT
@@ -190,9 +187,9 @@ runs:
   - name: Image Summary
     shell: bash
     env:
-      REPO: ${{ steps.tags.outputs.repo }}
-      REGISTRY: ${{ steps.tags.outputs.registry }}
-      IMAGE: ${{ steps.tags.outputs.image }}
+      REPO: ${{ steps.setup.outputs.repo }}
+      REGISTRY: ${{ steps.setup.outputs.registry }}
+      IMAGE: ${{ steps.setup.outputs.image }}
       TAGS: ${{ steps.tags.outputs.tags }}
     run: |
       echo "## Image Summary" >> $GITHUB_STEP_SUMMARY
