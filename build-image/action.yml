@@ -188,12 +188,6 @@ runs:
     run: |
       DOCKER_COMMAND="docker buildx build $EXTRA_ARGS $BUILDX_ARGS $TAG_ARGS $BASE_ARGS"
       echo "DOCKER_COMMAND=$DOCKER_COMMAND" >> $GITHUB_OUTPUT
-      cat <<EOF >> $GITHUB_STEP_SUMMARY
-      ## Docker Command
-      \`\`\`bash
-      $DOCKER_COMMAND
-      \`\`\`
-      EOF
 
   - name: Build and Push
     id: build
@@ -207,11 +201,17 @@ runs:
       REGISTRY: ${{ steps.setup.outputs.registry }}
       IMAGE: ${{ steps.setup.outputs.image }}
       TAGS: ${{ steps.tags.outputs.tags }}
+      DOCKER_COMMAND: ${{ steps.docker-command.outputs.DOCKER_COMMAND }}
     run: |
-      echo "## Image Summary" >> $GITHUB_STEP_SUMMARY
-      echo "**Image**: ${IMAGE}" >> $GITHUB_STEP_SUMMARY
-      # Display a list of the tags
-      echo "**Tags**: " >> $GITHUB_STEP_SUMMARY
+      cat <<EOF >> $GITHUB_STEP_SUMMARY
+      ## Docker Command
+      \`\`\`bash
+      $DOCKER_COMMAND
+      \`\`\`
+      ## Image Summary
+      **Image**: ${IMAGE}
+      **Tags**: 
+      EOF
       for tag in $TAGS; do
         echo "- ${tag}" >> $GITHUB_STEP_SUMMARY
       done
