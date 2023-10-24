@@ -1,5 +1,10 @@
 name: Duplo AWS Setup
-description: Install Duplo and AWS tools and login.
+description: Install and configure the Duplo and Cloud tool set.
+inputs:
+  mask-aws-account-id:
+    description: 'Mask the AWS Account ID in the logs. Default: yes'
+    required: false
+    default: 'yes'
 runs:
   using: composite
   steps:
@@ -10,20 +15,36 @@ runs:
       python-version: '3.10'
 
   - name: Install duploctl
-    uses: BSFishy/pip-action@v1
-    with:
-      packages: |
-        duplocloud-client
+    id: install-duploctl
+    shell: bash
+    run: |
+      pip install duplocloud-client
+
+  - name: Portal Info
+    id: portal-info
+    shell: bash
+    run: |
+      export PORTAL_INFO AWS_ENABLED
+      PORTAL_INFO="$(duploctl system info)"
+
+      AWS_ENABLED="$(echo "$PORTAL_INFO" | jq -r '.IsAwsCloudEnabled')"
+      GCP_ENABLED="$(echo "$PORTAL_INFO" | jq -r '.IsGoogleCloudEnabled')"
+      AZURE_ENABLED="$(echo "$PORTAL_INFO" | jq -r '.IsAzureCloudEnabled')"
+
+      echo "AWS_ENABLED=$AWS_ENABLED" >> $GITHUB_ENV
+      echo "GCP_ENABLED=$GCP_ENABLED" >> $GITHUB_ENV
+      echo "AZURE_ENABLED=$AZURE_ENABLED" >> $GITHUB_ENV
 
   - name: Install AWS CLI
     id: install-aws-cli
+    if: env.AWS_ENABLED == 'true'
     uses: unfor19/install-aws-cli-action@v1
 
   - name: Duplo JIT for AWS
+    id: duplo-jit-aws
     shell: bash
+    if: env.AWS_ENABLED == 'true'
     run: |
-      export STS AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_DEFAULT_REGION AWS_REGION AWS_ACCOUNT_ID
-
       STS="$(duploctl jit aws)"
       AWS_ACCESS_KEY_ID="$(echo "$STS" | jq -r '.AccessKeyId')"
       AWS_SECRET_ACCESS_KEY="$(echo "$STS" | jq -r '.SecretAccessKey')"
@@ -32,22 +53,21 @@ runs:
       AWS_REGION="$AWS_DEFAULT_REGION"
       AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query "Account" --output text)"
 
-      cat <<EOF >> $GITHUB_ENV
-      AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-      AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-      AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN
-      AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
-      AWS_REGION=$AWS_REGION
-      AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID
-      EOF
+      echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
+      echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
+      echo "AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN" >> $GITHUB_OUTPUT
+      echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> $GITHUB_OUTPUT
+      echo "AWS_REGION=$AWS_REGION" >> $GITHUB_OUTPUT
+      echo "AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID" >> $GITHUB_OUTPUT
 
   - # alternative login. Useful when running act locally with ACT_AWS_SESSION
     name: Configure AWS IAM Credentials
     id: aws-iam
     uses: aws-actions/configure-aws-credentials@v2
+    if: env.AWS_ENABLED == 'true'
     with:
-      aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-      aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-      aws-session-token: ${{ env.AWS_SESSION_TOKEN }}
-      aws-region: ${{ env.AWS_REGION }}
-      # mask-aws-account-id: 'no'
+      aws-access-key-id: ${{ steps.duplo-jit-aws.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ steps.duplo-jit-aws.AWS_SECRET_ACCESS_KEY }}
+      aws-session-token: ${{ steps.duplo-jit-aws.AWS_SESSION_TOKEN }}
+      aws-region: ${{ steps.duplo-jit-aws.AWS_REGION }}
+      mask-aws-account-id: ${{ inputs.mask-aws-account-id }}
