@@ -51,7 +51,7 @@ runs:
       AWS_SESSION_TOKEN="$(echo "$STS" | jq -r '.SessionToken')"
       AWS_DEFAULT_REGION="$(echo "$STS" | jq -r '.Region')"
       AWS_REGION="$AWS_DEFAULT_REGION"
-      AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query "Account" --output text)"
+      AWS_ACCOUNT_ID="$(echo "$STS" | jq -r '.DefaultAwsAccount')"
 
       echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
       echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
