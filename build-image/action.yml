@@ -70,7 +70,8 @@ runs:
       ARGS=()
 
       # add any custom build args
-      for arg in ($BUILD_ARGS); do
+      build_args=($BUILD_ARGS)
+      for arg in ${build_args[*]}; do
         ARGS+=(--build-arg "${arg}")
       done
 
