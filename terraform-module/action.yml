@@ -73,13 +73,6 @@ runs:
         ${{ github.workspace }}/${{ inputs.module }}/.terraform
       key: ${{ inputs.module }}-${{ hashFiles(steps.setup.outputs.lockfile) }}
 
-  - name: Check On Cache
-    shell: bash
-    working-directory: ${{ inputs.module }}
-    run: |
-      echo "this dir"
-      ls -al ./
-
   - name: TF Init Module
     id: init
     shell: bash
