@@ -102,14 +102,10 @@ runs:
       INIT_OUTCOME: ${{ steps.init.outcome }}
     run: |
       cat <<EOF >> $GITHUB_STEP_SUMMARY
-      ## Module Summary
-      **Module**: $MODULE_NAME
+      # Module Validation Summary
+      ## $MODULE_NAME
       **Directory**: $MODULE_DIR
-      | Step | Outcome |
-      | ---- | ------- |
-      | Init | $INIT_OUTCOME |
-      | Format | $FMT_OUTCOME |
-      | Validate | $VALIDATE_OUTCOME |
-      | Lint | $LINT_OUTCOME |
-      | Test | $TEST_OUTCOME |
+      | Init | Format | Validate | Lint | Test |
+      | ---- | ------ | -------- | ---- | ---- |
+      | $INIT_OUTCOME | $FMT_OUTCOME | $VALIDATE_OUTCOME | $LINT_OUTCOME | $TEST_OUTCOME |
       EOF
