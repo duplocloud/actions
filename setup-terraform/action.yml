@@ -93,8 +93,10 @@ runs:
     id: plugin-cache
     uses: actions/cache@v3
     with:
-      path: ${{ env.TF_DATA_DIR }}
       key: tfdata-${{ hashFiles('**/.terraform.lock.hcl') }}
+      path: |
+        ${{ env.TF_DATA_DIR }}
+        ${{ inputs.tf_cache_dir }}
 
   # - name: Cache TF Plugins
   #   uses: actions/cache@v3
@@ -107,8 +109,6 @@ runs:
     shell: bash
     run: |
       terraform version
-
-      # if tf lint enabled
       if [ "$LINT_ENABLED" == "true" ]; then
         tflint --version
       fi
