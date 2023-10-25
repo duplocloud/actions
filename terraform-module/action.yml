@@ -86,3 +86,30 @@ runs:
     working-directory: ${{ inputs.module }}
     shell: bash
     run: terraform test
+
+  - name: Report
+    id: report
+    shell: bash
+    working-directory: ${{ inputs.module }}
+    if: always()
+    env:
+      MODULE_NAME: ${{ steps.setup.outputs.module }}
+      MODULE_DIR: ${{ inputs.module }}
+      FMT_OUTCOME: ${{ steps.fmt.outcome }}
+      VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
+      LINT_OUTCOME: ${{ steps.lint.outcome }}
+      TEST_OUTCOME: ${{ steps.test.outcome }}
+      INIT_OUTCOME: ${{ steps.init.outcome }}
+    run: |
+      cat <<EOF >> $GITHUB_STEP_SUMMARY
+      ## Module Summary
+      **Module**: $MODULE_NAME
+      **Directory**: $MODULE_DIR
+      | Step | Outcome |
+      | ---- | ------- |
+      | Init | $INIT_OUTCOME |
+      | Format | $FMT_OUTCOME |
+      | Validate | $VALIDATE_OUTCOME |
+      | Lint | $LINT_OUTCOME |
+      | Test | $TEST_OUTCOME |
+      EOF
