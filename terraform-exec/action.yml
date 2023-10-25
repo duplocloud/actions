@@ -62,14 +62,7 @@ runs:
     shell: bash
     working-directory: ${{ inputs.module }}
     continue-on-error: true
-    run: terraform workspace select ${{ inputs.workspace }} -or-create
-
-  - name: Create Workspace
-    id: create-workspace
-    if: steps.select-workspace.outcome == 'failure'
-    shell: bash
-    working-directory: ${{ inputs.module }}
-    run: terraform workspace new ${{ inputs.workspace }}
+    run: terraform workspace select -or-create=true ${{ inputs.workspace }}
 
   - name: Check if Plan Exists
     id: archived-plan
