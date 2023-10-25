@@ -69,13 +69,17 @@ runs:
     uses: actions/cache@v3
     if: steps.setup.outputs.module_cache == 'true'
     with:
-      path: ${{ inputs.module }}/.terraform
+      path: |
+        ${{ github.workspace }}/${{ inputs.module }}/.terraform
       key: ${{ inputs.module }}-${{ hashFiles(steps.setup.outputs.lockfile) }}
 
   - name: Check On Cache
     shell: bash
     run: |
+      echo "this dir"
       ls -al ./
+      echo "Home dir"
+      ls -al $HOME
 
   - name: TF Init Module
     id: init
