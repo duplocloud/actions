@@ -69,6 +69,7 @@ runs:
     uses: actions/download-artifact@v3
     with:
       name: ${{ env.PLAN_FILE }}
+      path: ${{ inputs.module }}/${{ env.PLAN_FILE }}
 
   - name: Find Archive
     shell: bash
