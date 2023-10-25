@@ -38,6 +38,7 @@ runs:
     env:
       WKDIR: ${{ inputs.module }}
       TEST_DIR: ${{ inputs.test_dir }}
+      MODULE_CACHE: "false"
     run: |
       MODULE=$(basename $WKDIR)
       ARGS=(
@@ -50,15 +51,26 @@ runs:
       if [ -n "$TEST_DIR" ]; then
         ARGS+=("-test-directory=$TEST_DIR")
       fi
+
+      # check if the terraform lock file is present
+      LOCK_FILE=".terraform.lock.hcl"
+      if [ -f "${LOCK_FILE}" ]; then
+        MODULE_CACHE="true"
+        echo "Terraform lock file detected, caching enabled"
+      fi
+      echo "module_cache=$MODULE_CACHE" >> $GITHUB_OUTPUT
+      echo "lockfile=$WKDIR/$LOCK_FILE" >> $GITHUB_OUTPUT
+
       echo "module=$MODULE" >> $GITHUB_OUTPUT
       echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
 
   - name: Cache Modules
     id: plugin-cache
     uses: actions/cache@v3
+    if: steps.setup.outputs.module_cache == 'true'
     with:
       path: ${{ inputs.module }}/.terraform
-      key: ${{ inputs.module }}-${{ hashFiles(.terraform.lock.hcl) }}
+      key: ${{ inputs.module }}-${{ hashFiles(steps.setup.outputs.lockfile) }}
 
   - name: TF Init Module
     id: init
