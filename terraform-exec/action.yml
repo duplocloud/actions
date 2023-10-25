@@ -95,12 +95,20 @@ runs:
       name: ${{ env.PLAN_FILE }}
       path: ${{ inputs.module }}/${{ env.PLAN_FILE }}
 
-  - name: Exec Module
-    id: exec
+  - name: Apply Module
+    id: apply
     shell: bash
     working-directory: ${{ inputs.module }}
-    if: inputs.command != 'plan'
+    if: inputs.command == 'apply'
     env:
       TF_ARGS: ${{ steps.setup.outputs.args }}
-      TF_COMMAND: ${{ inputs.command }}
-    run: terraform $TF_COMMAND $TF_ARGS $PLAN_FILE
+    run: terraform apply $TF_ARGS $PLAN_FILE
+  
+  - name: Destroy Module
+    id: destroy
+    shell: bash
+    working-directory: ${{ inputs.module }}
+    if: inputs.command == 'destroy'
+    env:
+      TF_ARGS: ${{ steps.setup.outputs.args }}
+    run: terraform destroy $TF_ARGS
