@@ -82,6 +82,7 @@ runs:
 
   - name: foo
     shell: bash
+    working-directory: ${{ inputs.module }}
     run: |
       ls -al ./
       tree
