@@ -70,6 +70,13 @@ runs:
     with:
       name: ${{ env.PLAN_FILE }}
 
+  - name: Find Archive
+    shell: bash
+    run: |
+      ls -al ./
+      echo "the module dir"
+      ls -al ${{ inputs.module }}
+
   - name: Plan Module
     id: plan
     shell: bash
@@ -79,12 +86,12 @@ runs:
       TF_ARGS: ${{ steps.setup.outputs.args }}
     run: terraform plan $TF_ARGS -out=$PLAN_FILE
 
-  - name: Show Plan
-    id: show
-    shell: bash
-    working-directory: ${{ inputs.module }}
-    if: steps.archived-plan.outcome == 'success'
-    run: terraform show $PLAN_FILE
+  # - name: Show Plan
+  #   id: show
+  #   shell: bash
+  #   working-directory: ${{ inputs.module }}
+  #   if: steps.archived-plan.outcome == 'success'
+  #   run: terraform show $PLAN_FILE
 
   - name: Archive Plan
     id: archive-plan
