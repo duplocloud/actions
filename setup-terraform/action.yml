@@ -79,10 +79,9 @@ runs:
       path: ${{ inputs.tflint_cache_dir }}
       key: ubuntu-latest-tflint-${{ hashFiles('.tflint.hcl') }}
 
-  - name: Cache Modules
+  - name: Cache TF Data
     id: plugin-cache
     uses: actions/cache@v3
-    working-directory: ${{ inputs.wkdir }}
     with:
       path: ${{ env.TF_DATA_DIR }}
       key: tfdata-${{ hashFiles(**/.terraform.lock.hcl) }}
