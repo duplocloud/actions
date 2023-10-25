@@ -111,4 +111,4 @@ runs:
     if: inputs.command == 'destroy'
     env:
       TF_ARGS: ${{ steps.setup.outputs.args }}
-    run: terraform destroy $TF_ARGS
+    run: terraform destroy -input=false
