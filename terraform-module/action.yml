@@ -52,7 +52,7 @@ runs:
     id: lint-init
     shell: bash
     if: >
-      inputs.test == 'true' &&
+      inputs.lint == 'true' &&
       env.LINT_ENABLED == 'true'
     working-directory: ${{ inputs.module }}
     run: tflint --init -c $TFLINT_FILE
@@ -60,7 +60,7 @@ runs:
   - name: Run TFLint
     id: lint
     if: >
-      inputs.test == 'true' &&
+      inputs.lint == 'true' &&
       env.LINT_ENABLED == 'true'
     shell: bash
     working-directory: ${{ inputs.module }}
