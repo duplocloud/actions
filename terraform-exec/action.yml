@@ -69,7 +69,7 @@ runs:
     uses: actions/download-artifact@v3
     with:
       name: ${{ env.PLAN_FILE }}
-      path: ${{ inputs.module }}/${{ env.PLAN_FILE }}
+      path: ${{ inputs.module }}
 
   - name: Plan Module
     id: plan
