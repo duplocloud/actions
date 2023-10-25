@@ -98,12 +98,6 @@ runs:
         ${{ env.TF_DATA_DIR }}
         ${{ inputs.tf_cache_dir }}
 
-  # - name: Cache TF Plugins
-  #   uses: actions/cache@v3
-  #   with:
-  #     path: ${{ inputs.tf_cache_dir }}
-  #     key: plugins-${{ matrix.module }}-${{ hashFiles(env.TF_LOCKFILE) }}
-
   - name: Report
     id: report
     shell: bash
