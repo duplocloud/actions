@@ -11,7 +11,7 @@ inputs:
   command:
     description: Terraform command
     required: true
-    default: apply
+    default: plan
   parallelism:
     description: Terraform parallelism
     required: false
