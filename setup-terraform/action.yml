@@ -41,11 +41,12 @@ runs:
       TFLINT_FILE: ${{ inputs.tflint_file }}
       TFRC: ~/.terraformrc
     run: |
+      TF_DATA_DIR=$(realpath $TF_DATA_DIR)
       echo "DUPLO_TF_BUCKET=${PREFIX}-${DEFAULT_AWS_ACCOUNT_ID}" >> $GITHUB_ENV
       echo "DUPLO_TF_DYNAMO=${PREFIX}-${DEFAULT_AWS_ACCOUNT_ID}-lock" >> $GITHUB_ENV
       echo "TF_IN_AUTOMATION=true" >> $GITHUB_ENV
       echo "TF_MODULES=$TF_MODULES" >> $GITHUB_ENV
-      echo "TF_DATA_DIR=$(realpath $TF_DATA_DIR)" >> $GITHUB_ENV
+      echo "TF_DATA_DIR=$TF_DATA_DIR" >> $GITHUB_ENV
 
       # # setup terraform rc for cache dir
       # mkdir -p "${TF_PLUGIN_CACHE_DIR}"
