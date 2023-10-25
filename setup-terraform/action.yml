@@ -56,7 +56,7 @@ runs:
       # check if .tflint.hcl file exists
       if [ -f "$TFLINT_FILE" ]; then
         echo "TFLint config file found"
-        echo "TFLINT_FILE="$(realpath $TFLINT_FILE)" >> $GITHUB_ENV
+        echo "TFLINT_FILE=$(realpath $TFLINT_FILE)" >> $GITHUB_ENV
       else
         LINT_ENABLED="false"
       fi
