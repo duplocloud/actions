@@ -54,7 +54,7 @@ runs:
       PLAN_FILE="${MODULE_NAME}-${TF_WORKSPACE}.tfplan"
       echo "PLAN_FILE=$PLAN_FILE" >> $GITHUB_ENV
 
-      echo "args=${ARGS[*]}" >> $GITHUB_ENV
+      echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
 
   - name: Select Workspace
     id: select-workspace
