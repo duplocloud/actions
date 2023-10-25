@@ -62,7 +62,7 @@ runs:
     shell: bash
     working-directory: ${{ inputs.module }}
     continue-on-error: true
-    run: terraform workspace select ${{ inputs.workspace }}
+    run: terraform workspace select ${{ inputs.workspace }} -or-create
 
   - name: Create Workspace
     id: create-workspace
@@ -109,4 +109,6 @@ runs:
     env:
       TF_ARGS: ${{ steps.setup.outputs.args }}
       TF_COMMAND: ${{ inputs.command }}
+      duplo_token: ${{ env.DUPLO_TOKEN }}
+      duplo_host: ${{ env.DUPLO_HOST }}
     run: terraform $TF_COMMAND $TF_ARGS $PLAN_FILE
