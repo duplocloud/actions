@@ -80,6 +80,11 @@ runs:
       TF_ARGS: ${{ steps.setup.outputs.args }}
     run: terraform plan $TF_ARGS -out=$PLAN_FILE
 
+  - name: foo
+    shell: bash
+    run: |
+      ls -al ${PLAN_FILE }
+
   - name: Show Plan
     id: show
     shell: bash
