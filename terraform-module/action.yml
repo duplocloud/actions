@@ -53,13 +53,12 @@ runs:
       echo "module=$MODULE" >> $GITHUB_OUTPUT
       echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
 
-  # - name: Cache Modules
-  #   id: plugin-cache
-  #   uses: actions/cache@v3
-  #   working-directory: ${{ inputs.module }}
-  #   with:
-  #     path: ${{ env.TF_DATA_DIR }}
-  #     key: ${{ steps.setup.outputs.module }}-${{ hashFiles(.terraform.lock.hcl) }}
+  - name: Cache Modules
+    id: plugin-cache
+    uses: actions/cache@v3
+    with:
+      path: ${{ inputs.module }}/.terraform
+      key: ${{ inputs.module }}-${{ hashFiles(.terraform.lock.hcl) }}
 
   - name: TF Init Module
     id: init
