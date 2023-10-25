@@ -95,7 +95,7 @@ runs:
     id: plugin-cache
     uses: actions/cache@v3
     with:
-      key: tfdata-${{ hashFiles('**/.terraform.lock.hcl') }}
+      key: tfcache-${{ hashFiles('**/.terraform.lock.hcl') }}
       path: ${{ inputs.tf_cache_dir }}
 
   - name: Report
