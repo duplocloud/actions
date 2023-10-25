@@ -1,16 +1,17 @@
 name: Execute Terraform
 description: Execute a Terraform command
 inputs:
-  wkdir: 
+  module: 
     description: Working directory
     required: true
+  workspace:
+    description: Terraform workspace
+    required: false
+    default: default
   command:
     description: Terraform command
     required: true
     default: apply
-  workspace:
-    description: Terraform workspace
-    required: false
   parallelism:
     description: Terraform parallelism
     required: false
@@ -31,12 +32,12 @@ runs:
   - name: Setup
     id: setup
     shell: bash
-    working-directory: ${{ inputs.wkdir }}
+    working-directory: ${{ inputs.module }}
     env:
       TF_WORKSPACE: ${{ inputs.workspace }}
       TF_COMMAND: ${{ inputs.command }}
       TF_PARALLELISM: ${{ inputs.parallelism }}
-      WKDIR: ${{ inputs.wkdir }}
+      MODULE: ${{ inputs.module }}
     run: |
       ARGS=(
         -auto-approve
@@ -45,8 +46,8 @@ runs:
         -backend-config=dynamodb_table=$DUPLO_TF_DYNAMO
       )
       PLAN_FILE="$TF_WORKSPACE.tfplan"
-      MODULE=$(basename $WKDIR)
-      echo "module=$MODULE" >> $GITHUB_OUTPUT
+      MODULE_NAME=$(basename $MODULE)
+      echo "module_name=$MODULE_NAME" >> $GITHUB_OUTPUT
 
       # if parallelism is set then add it to the args
       if [ -n "$TF_PARALLELISM" ]; then
@@ -59,7 +60,7 @@ runs:
   - name: Select Workspace
     id: select-workspace
     shell: bash
-    working-directory: ${{ inputs.wkdir }}
+    working-directory: ${{ inputs.module }}
     continue-on-error: true
     run: terraform workspace select ${{ inputs.workspace }}
 
@@ -67,7 +68,7 @@ runs:
     id: create-workspace
     if: steps.select-workspace.outcome == 'failure'
     shell: bash
-    working-directory: ${{ inputs.wkdir }}
+    working-directory: ${{ inputs.module }}
     run: terraform workspace new ${{ inputs.workspace }}
 
   - name: Check if Plan Exists
@@ -75,12 +76,12 @@ runs:
     continue-on-error: true
     uses: actions/download-artifact@v3
     with:
-      name: ${{ steps.setup.outputs.module }}-plan
+      name: ${{ steps.setup.outputs.module_name }}-plan
 
   - name: Plan Module
     id: plan
     shell: bash
-    working-directory: ${{ inputs.wkdir }}
+    working-directory: ${{ inputs.module }}
     if: steps.archived-plan.outcome == 'failure'
     env:
       TF_ARGS: ${{ steps.setup.outputs.args }}
@@ -91,19 +92,19 @@ runs:
     uses: actions/upload-artifact@v3
     if: steps.archived-plan.outcome == 'failure'
     with:
-      name: ${{ steps.setup.outputs.module }}-plan
+      name: ${{ steps.setup.outputs.module_name }}-plan
       path: $PLAN_FILE
 
   - name: Display Plan
     id: show
     shell: bash
-    working-directory: ${{ inputs.wkdir }}
+    working-directory: ${{ inputs.module }}
     run: terraform show $PLAN_FILE
 
   - name: Exec Module
     id: exec
     shell: bash
-    working-directory: ${{ inputs.wkdir }}
+    working-directory: ${{ inputs.module }}
     if: inputs.command != 'plan'
     env:
       TF_ARGS: ${{ steps.setup.outputs.args }}

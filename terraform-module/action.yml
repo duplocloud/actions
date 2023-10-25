@@ -1,7 +1,7 @@
 name: Validate Module
 description: Test a single Terraform module
 inputs:
-  wkdir: 
+  module: 
     description: Working directory
     required: true
   lint:
@@ -27,9 +27,9 @@ runs:
   - name: Setup
     id: setup
     shell: bash
-    working-directory: ${{ inputs.wkdir }}
+    working-directory: ${{ inputs.module }}
     env:
-      WKDIR: ${{ inputs.wkdir }}
+      WKDIR: ${{ inputs.module }}
     run: |
       MODULE=$(basename $WKDIR)
       echo "module=$MODULE" >> $GITHUB_OUTPUT
@@ -37,7 +37,7 @@ runs:
   # - name: Cache Modules
   #   id: plugin-cache
   #   uses: actions/cache@v3
-  #   working-directory: ${{ inputs.wkdir }}
+  #   working-directory: ${{ inputs.module }}
   #   with:
   #     path: ${{ env.TF_DATA_DIR }}
   #     key: ${{ steps.setup.outputs.module }}-${{ hashFiles(.terraform.lock.hcl) }}
@@ -45,7 +45,7 @@ runs:
   - name: TF Init Module
     id: init
     shell: bash
-    working-directory: ${{ inputs.wkdir }}
+    working-directory: ${{ inputs.module }}
     run: terraform init
 
   - name: Init TFLint
@@ -54,7 +54,7 @@ runs:
     if: >
       inputs.test == 'true' &&
       env.LINT_ENABLED == 'true'
-    working-directory: ${{ inputs.wkdir }}
+    working-directory: ${{ inputs.module }}
     run: tflint --init -c $TFLINT_FILE
 
   - name: Run TFLint
@@ -63,27 +63,27 @@ runs:
       inputs.test == 'true' &&
       env.LINT_ENABLED == 'true'
     shell: bash
-    working-directory: ${{ inputs.wkdir }}
+    working-directory: ${{ inputs.module }}
     run: tflint -c $TFLINT_FILE
 
   - name: TF Validate Module
     id: validate
     if: inputs.validate == 'true'
     shell: bash
-    working-directory: ${{ inputs.wkdir }}
+    working-directory: ${{ inputs.module }}
     run: terraform validate
 
   - name: Validate Format
     id: fmt
     if: inputs.fmt == 'true'
     shell: bash
-    working-directory: ${{ inputs.wkdir }}
+    working-directory: ${{ inputs.module }}
     run: terraform fmt -check=true -diff=true -recursive
 
   - name: Test Module
     id: test
     if: inputs.test == 'true'
-    working-directory: ${{ inputs.wkdir }}
+    working-directory: ${{ inputs.module }}
     shell: bash
     run: terraform test
     env:

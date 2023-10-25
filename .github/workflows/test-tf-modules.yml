@@ -64,11 +64,10 @@ jobs:
     - name: TF Validate Example for Module
       uses: duplocloud/actions/terraform-module@main
       with:
-        wkdir: ./examples/${{ matrix.module }}
+        module: ./examples/${{ matrix.module }}
         test: false
 
     - name: TF Validate Module
       uses: duplocloud/actions/terraform-module@main
       with:
-        wkdir: ./modules/${{ matrix.module }}
-        plan: false
+        module: ./modules/${{ matrix.module }}
