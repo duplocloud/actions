@@ -37,7 +37,7 @@ runs:
       TF_MODULES: ${{ inputs.module_dir }}
       TF_DATA_DIR: ${{ inputs.tf_data_dir }}
       TF_PLUGIN_CACHE_DIR: ${{ inputs.tf_cache_dir }}
-      LINT_ENABLED: 'false'
+      LINT_ENABLED: 'true'
       TFLINT_FILE: ${{ inputs.tflint_file }}
       TFRC: ~/.terraformrc
     run: |
