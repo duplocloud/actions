@@ -24,7 +24,6 @@ runs:
     id: portal-info
     shell: bash
     run: |
-      export PORTAL_INFO AWS_ENABLED
       PORTAL_INFO="$(duploctl system info)"
 
       AWS_ENABLED="$(echo "$PORTAL_INFO" | jq -r '.IsAwsCloudEnabled')"
@@ -37,6 +36,10 @@ runs:
 
       DUPLO_AWS_ACCOUNT_ID="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsAccount')"
       echo "DUPLO_AWS_ACCOUNT_ID=$DEFAULT_AWS_ACCOUNT_ID" >> $GITHUB_ENV
+
+      # re-export duplo creds as lowercase
+      echo "duplo_token=$DUPLO_TOKEN" >> $GITHUB_ENV
+      echo "duplo_host=$DUPLO_HOST" >> $GITHUB_ENV
 
   - name: Install AWS CLI
     id: install-aws-cli

@@ -86,6 +86,3 @@ runs:
     working-directory: ${{ inputs.module }}
     shell: bash
     run: terraform test
-    env:
-      duplo_token: ${{ env.DUPLO_TOKEN }}
-      duplo_host: ${{ env.DUPLO_HOST }}
