@@ -67,7 +67,6 @@ runs:
   - name: Check if Plan Exists
     id: archived-plan
     continue-on-error: true
-    working-directory: ${{ inputs.module }}
     uses: actions/download-artifact@v3
     with:
       name: ${{ steps.setup.outputs.module_name }}-plan
@@ -83,12 +82,11 @@ runs:
 
   - name: Archive Plan
     id: archive-plan
-    working-directory: ${{ inputs.module }}
     if: steps.archived-plan.outcome == 'failure'
     uses: actions/upload-artifact@v3
     with:
       name: ${{ steps.setup.outputs.module_name }}-plan
-      path: $PLAN_FILE
+      path: ${{ inputs.module }}/${{ env.PLAN_FILE }}
 
   - name: Display Plan
     id: show
