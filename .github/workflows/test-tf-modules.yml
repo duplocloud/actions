@@ -70,11 +70,11 @@ jobs:
     - name: TF Validate Example for Module
       uses: duplocloud/actions/terraform-module@main
       with:
-        module: ./examples/${{ matrix.module }}
+        module: examples/${{ matrix.module }}
         test: false
 
     - name: TF Plan Example for Module
       uses: duplocloud/actions/terraform-exec@main
       with:
-        module: ./examples/${{ matrix.module }}
+        module: examples/${{ matrix.module }}
         workspace: test
