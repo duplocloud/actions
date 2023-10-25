@@ -78,7 +78,7 @@ runs:
     working-directory: ${{ inputs.module }}
     run: |
       echo "this dir"
-      ls -al ./
+      ls -al ./.terraform
       echo "Home dir"
       ls -al $HOME
 
