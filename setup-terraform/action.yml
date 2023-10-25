@@ -47,19 +47,20 @@ runs:
       echo "TF_MODULES=$TF_MODULES" >> $GITHUB_ENV
       echo "TF_DATA_DIR=$(realpath $TF_DATA_DIR)" >> $GITHUB_ENV
 
-      # setup terraform rc for cache dir
-      mkdir -p "${TF_PLUGIN_CACHE_DIR}"
-      echo "plugin_cache_dir = \"${TF_PLUGIN_CACHE_DIR}\"" > $TFRC
-      echo "TF_PLUGIN_CACHE_DIR=${TF_PLUGIN_CACHE_DIR}" >> $GITHUB_ENV
+      # # setup terraform rc for cache dir
+      # mkdir -p "${TF_PLUGIN_CACHE_DIR}"
+      # echo "plugin_cache_dir = \"${TF_PLUGIN_CACHE_DIR}\"" > $TFRC
+      # echo "TF_PLUGIN_CACHE_DIR=${TF_PLUGIN_CACHE_DIR}" >> $GITHUB_ENV
 
       # check if .tflint.hcl file exists
-      if [ -f $TFLINT_FILE ]; then
+      if [ -f "$TFLINT_FILE" ]; then
         echo "TFLint config file found"
         echo "TFLINT_FILE="$(realpath $TFLINT_FILE)" >> $GITHUB_ENV
       else
         LINT_ENABLED="false"
       fi
       echo "LINT_ENABLED=$LINT_ENABLED" >> $GITHUB_ENV
+
 
   - name: Setup Terraform
     uses: hashicorp/setup-terraform@v2
