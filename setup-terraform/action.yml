@@ -12,7 +12,6 @@ inputs:
   terraform_version:
     description: Terraform version
     required: false 
-    default: 1.6.1
   tf_data_dir:
     description: Module directory
     required: false 
@@ -40,6 +39,7 @@ runs:
       LINT_ENABLED: 'true'
       TFLINT_FILE: ${{ inputs.tflint_file }}
       TFRC: ~/.terraformrc
+      TF_VERSION: ${{ inputs.terraform_version }}
     run: |
       TF_DATA_DIR=$(realpath $TF_DATA_DIR)
       echo "DUPLO_TF_BUCKET=${PREFIX}-${DEFAULT_AWS_ACCOUNT_ID}" >> $GITHUB_ENV
@@ -62,11 +62,19 @@ runs:
       fi
       echo "LINT_ENABLED=$LINT_ENABLED" >> $GITHUB_ENV
 
+      # If no version given, try to autodiscover from .terraform-version file
+      if [ -z "$TF_VERSION" ]; then
+        if [ -f ".terraform-version" ]; then
+          TF_VERSION=$(cat .terraform-version)
+          echo "Autodiscovered TF_VERSION=$TF_VERSION from .terraform-version file"
+        fi
+      fi
+      echo "TF_VERSION=$TF_VERSION" >> $GITHUB_ENV
 
   - name: Setup Terraform
     uses: hashicorp/setup-terraform@v2
     with:
-      terraform_version: ${{ inputs.terraform_version }}
+      terraform_version: ${{ env.TF_VERSION }}
       
   - name: Setup TFLint
     uses: terraform-linters/setup-tflint@v3
@@ -79,7 +87,7 @@ runs:
     if: env.LINT_ENABLED == 'true'
     with:
       path: ${{ inputs.tflint_cache_dir }}
-      key: ubuntu-latest-tflint-${{ hashFiles('.tflint.hcl') }}
+      key: tflint-${{ hashFiles('.tflint.hcl') }}
 
   - name: Cache TF Data
     id: plugin-cache
@@ -93,3 +101,12 @@ runs:
   #   with:
   #     path: ${{ inputs.tf_cache_dir }}
   #     key: plugins-${{ matrix.module }}-${{ hashFiles(env.TF_LOCKFILE) }}
+
+  - name: Report
+    id: report
+    shell: bash
+    run: |
+      cat <<EOF >> $GITHUB_STEP_SUMMARY
+      # Terraform Info
+      $(terraform version)
+      EOF
