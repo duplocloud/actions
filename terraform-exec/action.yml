@@ -45,7 +45,6 @@ runs:
         -backend-config=bucket=$DUPLO_TF_BUCKET
         -backend-config=dynamodb_table=$DUPLO_TF_DYNAMO
       )
-      PLAN_FILE="$TF_WORKSPACE.tfplan"
       MODULE_NAME=$(basename $MODULE)
       echo "module_name=$MODULE_NAME" >> $GITHUB_OUTPUT
 
@@ -54,7 +53,9 @@ runs:
         ARGS+=("-parallelism=$TF_PARALLELISM")
       fi
 
+      PLAN_FILE="${MODULE_NAME}-${TF_WORKSPACE}.tfplan"
       echo "PLAN_FILE=$PLAN_FILE" >> $GITHUB_ENV
+
       echo "args=${ARGS[*]}" >> $GITHUB_ENV
 
   - name: Select Workspace
@@ -69,7 +70,7 @@ runs:
     continue-on-error: true
     uses: actions/download-artifact@v3
     with:
-      name: ${{ steps.setup.outputs.module_name }}-plan
+      name: ${{ env.PLAN_FILE }}
 
   - name: Plan Module
     id: plan
@@ -85,14 +86,8 @@ runs:
     if: steps.archived-plan.outcome == 'failure'
     uses: actions/upload-artifact@v3
     with:
-      name: ${{ steps.setup.outputs.module_name }}-plan
+      name: ${{ env.PLAN_FILE }}
       path: ${{ inputs.module }}/${{ env.PLAN_FILE }}
-
-  - name: Display Plan
-    id: show
-    shell: bash
-    working-directory: ${{ inputs.module }}
-    run: terraform show $PLAN_FILE
 
   - name: Exec Module
     id: exec
