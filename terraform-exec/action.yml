@@ -84,6 +84,7 @@ runs:
     shell: bash
     run: |
       ls -al ${PLAN_FILE}
+      tree
 
   - name: Show Plan
     id: show
