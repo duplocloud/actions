@@ -1,0 +1,111 @@
+name: Execute Terraform
+description: Execute a Terraform command
+inputs:
+  wkdir: 
+    description: Working directory
+    required: true
+  command:
+    description: Terraform command
+    required: true
+    default: apply
+  workspace:
+    description: Terraform workspace
+    required: false
+  parallelism:
+    description: Terraform parallelism
+    required: false
+runs:
+  using: composite
+  steps:
+
+  - name: Verify Command
+    id: verify-command
+    shell: bash
+    if: >-
+      !contains(fromJSON('["apply", "destroy", "plan"]'), inputs.command)
+    run: |
+      echo "Invalid command: ${{ inputs.command }}"
+      echo "Valid commands: apply, destroy, plan"
+      exit 1
+
+  - name: Setup
+    id: setup
+    shell: bash
+    working-directory: ${{ inputs.wkdir }}
+    env:
+      TF_WORKSPACE: ${{ inputs.workspace }}
+      TF_COMMAND: ${{ inputs.command }}
+      TF_PARALLELISM: ${{ inputs.parallelism }}
+      WKDIR: ${{ inputs.wkdir }}
+    run: |
+      ARGS=(
+        -auto-approve
+        -input=false
+        -backend-config=bucket=$DUPLO_TF_BUCKET
+        -backend-config=dynamodb_table=$DUPLO_TF_DYNAMO
+      )
+      PLAN_FILE="$TF_WORKSPACE.tfplan"
+      MODULE=$(basename $WKDIR)
+      echo "module=$MODULE" >> $GITHUB_OUTPUT
+
+      # if parallelism is set then add it to the args
+      if [ -n "$TF_PARALLELISM" ]; then
+        ARGS+=("-parallelism=$TF_PARALLELISM")
+      fi
+
+      echo "PLAN_FILE=$PLAN_FILE" >> $GITHUB_ENV
+      echo "args=${ARGS[*]}" >> $GITHUB_ENV
+
+  - name: Select Workspace
+    id: select-workspace
+    shell: bash
+    working-directory: ${{ inputs.wkdir }}
+    continue-on-error: true
+    run: terraform workspace select ${{ inputs.workspace }}
+
+  - name: Create Workspace
+    id: create-workspace
+    if: steps.select-workspace.outcome == 'failure'
+    shell: bash
+    working-directory: ${{ inputs.wkdir }}
+    run: terraform workspace new ${{ inputs.workspace }}
+
+  - name: Check if Plan Exists
+    id: archived-plan
+    continue-on-error: true
+    uses: actions/download-artifact@v3
+    with:
+      name: ${{ steps.setup.outputs.module }}-plan
+
+  - name: Plan Module
+    id: plan
+    shell: bash
+    working-directory: ${{ inputs.wkdir }}
+    if: steps.archived-plan.outcome == 'failure'
+    env:
+      TF_ARGS: ${{ steps.setup.outputs.args }}
+    run: terraform plan $TF_ARGS -out=$PLAN_FILE
+
+  - name: Archive Plan
+    id: archive-plan
+    uses: actions/upload-artifact@v3
+    if: steps.archived-plan.outcome == 'failure'
+    with:
+      name: ${{ steps.setup.outputs.module }}-plan
+      path: $PLAN_FILE
+
+  - name: Display Plan
+    id: show
+    shell: bash
+    working-directory: ${{ inputs.wkdir }}
+    run: terraform show $PLAN_FILE
+
+  - name: Exec Module
+    id: exec
+    shell: bash
+    working-directory: ${{ inputs.wkdir }}
+    if: inputs.command != 'plan'
+    env:
+      TF_ARGS: ${{ steps.setup.outputs.args }}
+      TF_COMMAND: ${{ inputs.command }}
+    run: terraform $TF_COMMAND $TF_ARGS $PLAN_FILE

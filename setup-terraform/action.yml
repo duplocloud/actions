@@ -1,14 +1,10 @@
 name: Install TF Dependencies
 description: Install Terraform dependencies
 inputs:
-  tf_cache_dir:
-    description: Terraform cache directory
+  tflint_file:
+    description: TFLint config file
     required: false 
-    default: ~/.terraform.d/plugin-cache
-  tflint_cache_dir:
-    description: TFLint cache directory
-    required: false 
-    default: ~/.tflint.d/plugins
+    default: .tflint.hcl
   tflint_version:
     description: TFLint version
     required: false 
@@ -17,9 +13,53 @@ inputs:
     description: Terraform version
     required: false 
     default: 1.6.1
+  tf_data_dir:
+    description: Module directory
+    required: false 
+    default: .terraform
+  tf_cache_dir:
+    description: Terraform cache directory
+    required: false 
+    default: ~/.terraform.d/plugin-cache
+  tflint_cache_dir:
+    description: TFLint cache directory
+    required: false 
+    default: ~/.tflint.d/plugins
 runs:
   using: composite
   steps:
+
+  - name: Setup
+    id: setup
+    shell: bash
+    env:
+      PREFIX: duplo-tfstate
+      TF_MODULES: ${{ inputs.module_dir }}
+      TF_DATA_DIR: ${{ inputs.tf_data_dir }}
+      TF_PLUGIN_CACHE_DIR: ${{ inputs.tf_cache_dir }}
+      LINT_ENABLED: 'false'
+      TFLINT_FILE: ${{ inputs.tflint_file }}
+      TFRC: ~/.terraformrc
+    run: |
+      echo "DUPLO_TF_BUCKET=${PREFIX}-${DEFAULT_AWS_ACCOUNT_ID}" >> $GITHUB_ENV
+      echo "DUPLO_TF_DYNAMO=${PREFIX}-${DEFAULT_AWS_ACCOUNT_ID}-lock" >> $GITHUB_ENV
+      echo "TF_IN_AUTOMATION=true" >> $GITHUB_ENV
+      echo "TF_MODULES=$TF_MODULES" >> $GITHUB_ENV
+      echo "TF_DATA_DIR=$(realpath $TF_DATA_DIR)" >> $GITHUB_ENV
+
+      # setup terraform rc for cache dir
+      mkdir -p "${TF_PLUGIN_CACHE_DIR}"
+      echo "plugin_cache_dir = \"${TF_PLUGIN_CACHE_DIR}\"" > $TFRC
+      echo "TF_PLUGIN_CACHE_DIR=${TF_PLUGIN_CACHE_DIR}" >> $GITHUB_ENV
+
+      # check if .tflint.hcl file exists
+      if [ -f $TFLINT_FILE ]; then
+        echo "TFLint config file found"
+        echo "TFLINT_FILE="$(realpath $TFLINT_FILE)" >> $GITHUB_ENV
+      else
+        LINT_ENABLED="false"
+      fi
+      echo "LINT_ENABLED=$LINT_ENABLED" >> $GITHUB_ENV
 
   - name: Setup Terraform
     uses: hashicorp/setup-terraform@v2
@@ -28,31 +68,24 @@ runs:
       
   - name: Setup TFLint
     uses: terraform-linters/setup-tflint@v3
+    if: env.LINT_ENABLED == 'true'
     with:
       tflint_version: ${{ inputs.tflint_version }}
 
-  - name: Show versions
-    shell: bash
-    run: |
-      terraform version
-      tflint --version
-      aws --version
-
   - name: Cache TFlint Plugins
     uses: actions/cache@v3
+    if: env.LINT_ENABLED == 'true'
     with:
       path: ${{ inputs.tflint_cache_dir }}
       key: ubuntu-latest-tflint-${{ hashFiles('.tflint.hcl') }}
 
-  # - name: Configure Terraform Plugin Cache
-  #   shell: bash
-  #   env:
-  #     TF_PLUGIN_CACHE_DIR: ${{ inputs.tf_cache_dir }}
-  #   run: |
-  #     mkdir -p "${TF_PLUGIN_CACHE_DIR}"
-  #     echo "plugin_cache_dir = \"${TF_PLUGIN_CACHE_DIR}\"" > ~/.terraformrc
-  #     cat ~/.terraformrc
-  #     echo "TF_PLUGIN_CACHE_DIR=${TF_PLUGIN_CACHE_DIR}" >> $GITHUB_ENV
+  - name: Cache Modules
+    id: plugin-cache
+    uses: actions/cache@v3
+    working-directory: ${{ inputs.wkdir }}
+    with:
+      path: ${{ env.TF_DATA_DIR }}
+      key: tfdata-${{ hashFiles(**/.terraform.lock.hcl) }}
 
   # - name: Cache TF Plugins
   #   uses: actions/cache@v3

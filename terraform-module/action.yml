@@ -16,10 +16,6 @@ inputs:
     description: Format the module
     required: false
     default: "true"
-  plan:
-    description: Plan the module
-    required: false
-    default: "true"
   test:
     description: Test the module
     required: false
@@ -28,46 +24,65 @@ runs:
   using: composite
   steps:
 
+  - name: Setup
+    id: setup
+    shell: bash
+    working-directory: ${{ inputs.wkdir }}
+    env:
+      WKDIR: ${{ inputs.wkdir }}
+    run: |
+      MODULE=$(basename $WKDIR)
+      echo "module=$MODULE" >> $GITHUB_OUTPUT
+
+  # - name: Cache Modules
+  #   id: plugin-cache
+  #   uses: actions/cache@v3
+  #   working-directory: ${{ inputs.wkdir }}
+  #   with:
+  #     path: ${{ env.TF_DATA_DIR }}
+  #     key: ${{ steps.setup.outputs.module }}-${{ hashFiles(.terraform.lock.hcl) }}
+
   - name: TF Init Module
+    id: init
     shell: bash
     working-directory: ${{ inputs.wkdir }}
     run: terraform init
 
   - name: Init TFLint
-    if: ${{ inputs.lint == 'true' }}
+    id: lint-init
     shell: bash
+    if: >
+      inputs.test == 'true' &&
+      env.LINT_ENABLED == 'true'
     working-directory: ${{ inputs.wkdir }}
-    run: tflint --init -c ../../.tflint.hcl
+    run: tflint --init -c $TFLINT_FILE
 
   - name: Run TFLint
-    if: ${{ inputs.lint == 'true' }}
+    id: lint
+    if: >
+      inputs.test == 'true' &&
+      env.LINT_ENABLED == 'true'
     shell: bash
     working-directory: ${{ inputs.wkdir }}
-    run: tflint -c ../../.tflint.hcl
+    run: tflint -c $TFLINT_FILE
 
   - name: TF Validate Module
-    if: ${{ inputs.validate == 'true' }}
+    id: validate
+    if: inputs.validate == 'true'
     shell: bash
     working-directory: ${{ inputs.wkdir }}
     run: terraform validate
 
   - name: Validate Format
-    if: ${{ inputs.fmt == 'true' }}
+    id: fmt
+    if: inputs.fmt == 'true'
     shell: bash
     working-directory: ${{ inputs.wkdir }}
     run: terraform fmt -check=true -diff=true -recursive
 
-  - name: Plan Module
-    if: ${{ inputs.plan == 'true' }}
-    working-directory: ${{ inputs.wkdir }}
-    shell: bash
-    run: terraform plan -input=false
-    env:
-      duplo_token: ${{ env.DUPLO_TOKEN }}
-      duplo_host: ${{ env.DUPLO_HOST }}
-
   - name: Test Module
-    if: ${{ inputs.test == 'true' }}
+    id: test
+    if: inputs.test == 'true'
     working-directory: ${{ inputs.wkdir }}
     shell: bash
     run: terraform test

@@ -127,6 +127,7 @@ runs:
       TAGS+=("${SHA}")
       
       # the sed part handles dependabot issues with slash names
+      ## TODO: maybe use this GITHUB_REF_NAME
       REF="$(echo ${GITHUB_REF##*/} | sed -e 's/\//_/g')"
       TAGS+=("${REF}")
 
@@ -137,8 +138,8 @@ runs:
       echo "ref=$REF" >> $GITHUB_OUTPUT
       echo "sha=${SHA}" >> $GITHUB_OUTPUT
       echo "uri=${IMAGE}:${SHA}" >> $GITHUB_OUTPUT
-      echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
       echo "tags=${TAGS[*]}" >> $GITHUB_OUTPUT
+      echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
 
   - name: Buildx Args
     shell: bash

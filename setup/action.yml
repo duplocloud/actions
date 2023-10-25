@@ -35,6 +35,9 @@ runs:
       echo "GCP_ENABLED=$GCP_ENABLED" >> $GITHUB_ENV
       echo "AZURE_ENABLED=$AZURE_ENABLED" >> $GITHUB_ENV
 
+      DUPLO_AWS_ACCOUNT_ID="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsAccount')"
+      echo "DUPLO_AWS_ACCOUNT_ID=$DEFAULT_AWS_ACCOUNT_ID" >> $GITHUB_ENV
+
   - name: Install AWS CLI
     id: install-aws-cli
     if: env.AWS_ENABLED == 'true'
