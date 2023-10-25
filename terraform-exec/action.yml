@@ -83,7 +83,7 @@ runs:
   - name: foo
     shell: bash
     run: |
-      ls -al ${PLAN_FILE }
+      ls -al ${PLAN_FILE}
 
   - name: Show Plan
     id: show
