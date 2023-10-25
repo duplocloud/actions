@@ -30,3 +30,4 @@ The following table describes the inputs for this action:
 ```
 
 In the above example, the action is being used to validate a Terraform module located in the `./path/to/module` directory. All of the available options (lint, validate, fmt, plan, and test) are set to their default values of "true", which means all tasks will be performed.
+

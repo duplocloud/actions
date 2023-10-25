@@ -101,11 +101,20 @@ runs:
       TEST_OUTCOME: ${{ steps.test.outcome }}
       INIT_OUTCOME: ${{ steps.init.outcome }}
     run: |
+      function outcome() {
+        if [[ "$1" == "success" ]]; then
+          echo "✅"
+        elif [[ "$1" == "failure" ]]; then
+          echo "❌"
+        else # skipped
+          echo ""
+        fi
+      }
       cat <<EOF >> $GITHUB_STEP_SUMMARY
       # Module Validation Summary
       ## $MODULE_NAME
       **Directory**: $MODULE_DIR
       | Init | Format | Validate | Lint | Test |
       | ---- | ------ | -------- | ---- | ---- |
-      | $INIT_OUTCOME | $FMT_OUTCOME | $VALIDATE_OUTCOME | $LINT_OUTCOME | $TEST_OUTCOME |
+      | $(outcome $INIT_OUTCOME) | $(outcome $FMT_OUTCOME) | $(outcome $VALIDATE_OUTCOME) | $(outcome $LINT_OUTCOME) | $(outcome $TEST_OUTCOME) |
       EOF
