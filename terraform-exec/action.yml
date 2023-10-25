@@ -42,8 +42,6 @@ runs:
       ARGS=(
         -auto-approve
         -input=false
-        -backend-config=bucket=$DUPLO_TF_BUCKET
-        -backend-config=dynamodb_table=$DUPLO_TF_DYNAMO
       )
       MODULE_NAME=$(basename $MODULE)
       echo "module_name=$MODULE_NAME" >> $GITHUB_OUTPUT
@@ -63,7 +61,7 @@ runs:
     shell: bash
     working-directory: ${{ inputs.module }}
     continue-on-error: true
-    run: terraform workspace select -or-create=true ${{ inputs.workspace }}
+    run: terraform workspace select -or-create ${{ inputs.workspace }}
 
   - name: Check if Plan Exists
     id: archived-plan
@@ -81,12 +79,12 @@ runs:
       TF_ARGS: ${{ steps.setup.outputs.args }}
     run: terraform plan $TF_ARGS -out=$PLAN_FILE
 
-  - name: Show Plan
-    id: show
-    shell: bash
-    working-directory: ${{ inputs.module }}
-    if: steps.archived-plan.outcome == 'success'
-    run: terraform show $PLAN_FILE
+  # - name: Show Plan
+  #   id: show
+  #   shell: bash
+  #   working-directory: ${{ inputs.module }}
+  #   if: steps.archived-plan.outcome == 'success'
+  #   run: terraform show $PLAN_FILE
 
   - name: Archive Plan
     id: archive-plan

@@ -20,6 +20,13 @@ inputs:
     description: Test the module
     required: false
     default: "true"
+  test_dir:
+    description: Test directory, defaults to 'tests'
+    required: false
+  review:
+    description: Do review checks on module. If false only init runs.
+    required: false
+    default: "true"
 runs:
   using: composite
   steps:
@@ -30,9 +37,21 @@ runs:
     working-directory: ${{ inputs.module }}
     env:
       WKDIR: ${{ inputs.module }}
+      TEST_DIR: ${{ inputs.test_dir }}
     run: |
       MODULE=$(basename $WKDIR)
+      ARGS=(
+        -input=false
+        -backend-config=bucket=$DUPLO_TF_BUCKET
+        -backend-config=dynamodb_table=$DUPLO_TF_DYNAMO
+        -backend-config=region=$AWS_DEFAULT_REGION
+      )
+      # if the test dir has a value then add the param
+      if [ -n "$TEST_DIR" ]; then
+        ARGS+=("-test-directory=$TEST_DIR")
+      fi
       echo "module=$MODULE" >> $GITHUB_OUTPUT
+      echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
 
   # - name: Cache Modules
   #   id: plugin-cache
@@ -46,7 +65,7 @@ runs:
     id: init
     shell: bash
     working-directory: ${{ inputs.module }}
-    run: terraform init
+    run: terraform init ${{ steps.setup.outputs.args }}
 
   - name: Init TFLint
     id: lint-init

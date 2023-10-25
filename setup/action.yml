@@ -35,7 +35,9 @@ runs:
       echo "AZURE_ENABLED=$AZURE_ENABLED" >> $GITHUB_ENV
 
       DUPLO_AWS_ACCOUNT_ID="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsAccount')"
+      AWS_DEFAULT_REGION="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsRegion')"
       echo "DUPLO_AWS_ACCOUNT_ID=$DEFAULT_AWS_ACCOUNT_ID" >> $GITHUB_ENV
+      echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> $GITHUB_ENV
 
       # re-export duplo creds as lowercase
       echo "duplo_token=$DUPLO_TOKEN" >> $GITHUB_ENV
