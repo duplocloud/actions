@@ -106,7 +106,9 @@ runs:
     id: report
     shell: bash
     run: |
-      cat <<EOF >> $GITHUB_STEP_SUMMARY
-      # Terraform Info
-      $(terraform version)
-      EOF
+      terraform version
+
+      # if tf lint enabled
+      if [ "$LINT_ENABLED" == "true" ]; then
+        tflint --version
+      fi
