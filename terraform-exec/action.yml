@@ -40,7 +40,6 @@ runs:
       MODULE: ${{ inputs.module }}
     run: |
       ARGS=(
-        -auto-approve
         -input=false
       )
       MODULE_NAME=$(basename $MODULE)
