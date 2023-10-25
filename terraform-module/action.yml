@@ -72,6 +72,13 @@ runs:
       path: ${{ inputs.module }}/.terraform
       key: ${{ inputs.module }}-${{ hashFiles(steps.setup.outputs.lockfile) }}
 
+  - name: Check On Cache
+    shell: bash
+    run: |
+      ls -al ./
+      echo "Now the tf stuff"
+      ls -al ./.terraform
+
   - name: TF Init Module
     id: init
     shell: bash
