@@ -64,7 +64,7 @@ jobs:
     - name: TF Validate Module
       uses: duplocloud/actions/terraform-module@main
       with:
-        module: ./modules/${{ matrix.module }}
+        module: modules/${{ matrix.module }}
         test: false
 
     - name: TF Validate Example for Module
