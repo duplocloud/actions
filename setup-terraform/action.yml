@@ -51,9 +51,9 @@ runs:
       # echo "TF_DATA_DIR=$TF_DATA_DIR" >> $GITHUB_ENV
 
       # # setup terraform rc for cache dir
-      # mkdir -p "${TF_PLUGIN_CACHE_DIR}"
-      # echo "plugin_cache_dir = \"${TF_PLUGIN_CACHE_DIR}\"" > $TFRC
-      # echo "TF_PLUGIN_CACHE_DIR=${TF_PLUGIN_CACHE_DIR}" >> $GITHUB_ENV
+      mkdir -p "${TF_PLUGIN_CACHE_DIR}"
+      echo "plugin_cache_dir = \"${TF_PLUGIN_CACHE_DIR}\"" > $TFRC
+      echo "TF_PLUGIN_CACHE_DIR=${TF_PLUGIN_CACHE_DIR}" >> $GITHUB_ENV
 
       # check if .tflint.hcl file exists
       if [ -f "$TFLINT_FILE" ]; then
