@@ -19,7 +19,7 @@ inputs:
   tf_cache_dir:
     description: Terraform cache directory
     required: false 
-    default: ~/.terraform.d/plugin-cache
+    default: .terraform.d/plugin-cache
   tflint_cache_dir:
     description: TFLint cache directory
     required: false 
@@ -35,7 +35,7 @@ runs:
       PREFIX: duplo-tfstate
       TF_MODULES: ${{ inputs.module_dir }}
       TF_DATA_DIR: ${{ inputs.tf_data_dir }}
-      TF_PLUGIN_CACHE_DIR: ${{ inputs.tf_cache_dir }}
+      TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/${{ inputs.tf_cache_dir }}
       LINT_ENABLED: 'true'
       TFLINT_FILE: ${{ inputs.tflint_file }}
       TFRC: ~/.terraformrc
@@ -51,9 +51,8 @@ runs:
       # echo "TF_DATA_DIR=$TF_DATA_DIR" >> $GITHUB_ENV
 
       # # setup terraform rc for cache dir
-      mkdir -p "${TF_PLUGIN_CACHE_DIR}"
-      echo "plugin_cache_dir = \"${TF_PLUGIN_CACHE_DIR}\"" > $TFRC
-      echo "TF_PLUGIN_CACHE_DIR=${TF_PLUGIN_CACHE_DIR}" >> $GITHUB_ENV
+      echo 'plugin_cache_dir="$HOME/.terraform.d/plugin-cache"' >~/.terraformrc
+      mkdir --parents ~/.terraform.d/plugin-cache
 
       # check if .tflint.hcl file exists
       if [ -f "$TFLINT_FILE" ]; then
@@ -95,8 +94,11 @@ runs:
     id: plugin-cache
     uses: actions/cache@v3
     with:
+      path: |
+        ~/.terraform.d/plugin-cache
       key: tfcache-${{ hashFiles('**/.terraform.lock.hcl') }}
-      path: ${{ inputs.tf_cache_dir }}
+      restore-keys: |
+        tfcache-
 
   - name: Report
     id: report
