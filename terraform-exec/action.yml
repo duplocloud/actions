@@ -101,7 +101,7 @@ runs:
     if: inputs.command == 'apply'
     env:
       TF_ARGS: ${{ steps.setup.outputs.args }}
-    run: terraform apply $TF_ARGS $PLAN_FILE
+    run: terraform apply -input=false -auto-approve $PLAN_FILE
   
   - name: Destroy Module
     id: destroy
@@ -110,4 +110,4 @@ runs:
     if: inputs.command == 'destroy'
     env:
       TF_ARGS: ${{ steps.setup.outputs.args }}
-    run: terraform destroy -input=false
+    run: terraform destroy -input=false -auto-approve
