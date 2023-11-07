@@ -95,7 +95,7 @@ runs:
 
       # if AWS_ENABLED use ecr registry
       if [[ "$AWS_ENABLED" == "true" ]]; then
-        REGISTRY={{ steps.login-ecr.outputs.registry }}
+        REGISTRY="${{ steps.login-ecr.outputs.registry }}"
       fi
 
       # if neither registry or repo is set dockerhub naming style matching github
