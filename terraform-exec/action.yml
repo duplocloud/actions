@@ -59,13 +59,13 @@ runs:
     id: select-workspace
     shell: bash
     working-directory: ${{ inputs.module }}
-    continue-on-error: true
     run: terraform workspace select -or-create ${{ inputs.workspace }}
 
   - name: Check if Plan Exists
     id: archived-plan
     continue-on-error: true
     uses: actions/download-artifact@v3
+    if: inputs.command != 'destroy'
     with:
       name: ${{ env.PLAN_FILE }}
       path: ${{ inputs.module }}
@@ -74,7 +74,9 @@ runs:
     id: plan
     shell: bash
     working-directory: ${{ inputs.module }}
-    if: steps.archived-plan.outcome == 'failure'
+    if: >
+      steps.archived-plan.outcome == 'failure' &&
+      inputs.command != 'destroy'
     env:
       TF_ARGS: ${{ steps.setup.outputs.args }}
     run: terraform plan $TF_ARGS -out=$PLAN_FILE
@@ -83,12 +85,16 @@ runs:
     id: show
     shell: bash
     working-directory: ${{ inputs.module }}
-    if: steps.archived-plan.outcome == 'success'
+    if: >
+      steps.archived-plan.outcome == 'success' &&
+      inputs.command != 'destroy'
     run: terraform show $PLAN_FILE
 
   - name: Archive Plan
     id: archive-plan
-    if: steps.archived-plan.outcome == 'failure'
+    if: >
+      steps.archived-plan.outcome == 'failure' &&
+      inputs.command != 'destroy'
     uses: actions/upload-artifact@v3
     with:
       name: ${{ env.PLAN_FILE }}
