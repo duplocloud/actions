@@ -72,7 +72,7 @@ runs:
     id: login-dockerhub
     if: >
       env.AWS_ENABLED != 'true' &&
-      inputs.docker-user &&
+      inputs.docker-user
     uses: docker/login-action@v3
     with:
       username: ${{ inputs.docker-user }}
