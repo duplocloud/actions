@@ -5,6 +5,11 @@ on:
       name:
         description: 'Name of the person to greet'
         required: false
+      environment:
+        description: 'Environment to deploy to'
+        required: false
+        default: 'dev'
+        type: environment
       list_of_things: 
         description: 'List of things'
         required: false
@@ -54,4 +59,8 @@ jobs:
         for item in $LIST_OF_THINGS; do
           echo "item: $item"
         done
+
+    - name: The Current Env
+      run: |
+        echo '${{ toJSON(github) }}'
         
