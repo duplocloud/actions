@@ -62,7 +62,7 @@ jobs:
           echo "item: $item"
         done
 
-    - name: The Current Env
+    - name: The Job
       run: |
-        echo '${{ toJSON(github) }}'
+        echo '${{ toJSON(job) }}'
         
