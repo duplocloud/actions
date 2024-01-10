@@ -67,6 +67,8 @@ runs:
         ARGS+=("-var-file=$TF_VARS_FILE.json")
       fi
 
+      echo "The tf args: ${ARGS[*]}"
+
       PLAN_FILE="${TF_WORKSPACE}-${MODULE_NAME}.tfplan"
       echo "PLAN_FILE=$PLAN_FILE" >> $GITHUB_ENV
       echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
