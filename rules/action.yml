@@ -1,0 +1,62 @@
+name: User Allowed
+description: Checks if the user is allowed to deploy to the environment
+inputs:
+  current_environment:
+    description: The environment to deploy to
+    required: true
+  protected_environment:
+    description: The environment which the team is allowed to deploy to
+    required: true
+  team: 
+    description: The team to check membership of
+    required: true
+  github-token:
+    description: The github token
+    required: true
+runs:
+  using: composite
+  steps:
+  
+  - name: Get User Group
+    uses: octokit/request-action@v2.x
+    id: get_user_groups
+    env:
+      GITHUB_TOKEN: ${{ inputs.github-token }}
+    with:
+      route: GET /orgs/{owner}/memberships/{username}
+      owner: ${{ github.repository_owner }}
+      username: ${{ github.event.sender.login }}
+
+  - uses: tspascoal/get-user-teams-membership@v2
+    id: actorTeams
+    with:
+      username: ${{ github.actor }}
+      team: ${{ inputs.team }}
+      GITHUB_TOKEN: ${{ inputs.github-token }}
+
+  - name: Display User Group
+    shell: bash
+    env:
+      GH_ROLE: ${{ fromJson(steps.get_user_groups.outputs.data).role }}
+      GH_TEAMS: ${{ steps.actorTeams.outputs.teams }}
+      GHA_ENV: ${{ inputs.environment }}
+      ISMEMBER: ${{ steps.actorTeams.outputs.isTeamMember }}
+    run: |
+      cat <<EOF
+      ----------------------------------------
+      User: $GITHUB_ACTOR
+      Role: $GH_ROLE
+      Teams: $GH_TEAMS
+      Deployment Team: $ISMEMBER
+      Environment: $GHA_ENV
+      ----------------------------------------
+      EOF
+
+  - name: Check if user is a member of the deployment team
+    shell: bash
+    if: >
+      steps.actorTeams.outputs.isTeamMember == 'false' &&
+      inputs.environment == inputs.protected_environment
+    run: |
+      echo "User is not a member of the deployment team, and therefore cannot deploy to production."
+      exit 1

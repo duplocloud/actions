@@ -32,7 +32,6 @@ runs:
     id: setup
     shell: bash
     env:
-      PREFIX: duplo-tfstate
       TF_MODULES: ${{ inputs.module_dir }}
       TF_DATA_DIR: ${{ inputs.tf_data_dir }}
       TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/${{ inputs.tf_cache_dir }}
@@ -41,8 +40,6 @@ runs:
       TFRC: ~/.terraformrc
       TF_VERSION: ${{ inputs.terraform_version }}
     run: |
-      echo "DUPLO_TF_BUCKET=${PREFIX}-${DUPLO_AWS_ACCOUNT_ID}" >> $GITHUB_ENV
-      echo "DUPLO_TF_DYNAMO=${PREFIX}-${DUPLO_AWS_ACCOUNT_ID}-lock" >> $GITHUB_ENV
       echo "TF_IN_AUTOMATION=true" >> $GITHUB_ENV
       echo "TF_MODULES=$TF_MODULES" >> $GITHUB_ENV
 
@@ -50,7 +47,7 @@ runs:
       # TF_DATA_DIR=$(realpath $TF_DATA_DIR)
       # echo "TF_DATA_DIR=$TF_DATA_DIR" >> $GITHUB_ENV
 
-      # # setup terraform rc for cache dir
+      # setup terraform rc for cache dir
       echo 'plugin_cache_dir="$HOME/.terraform.d/plugin-cache"' > ~/.terraformrc
       mkdir -p ~/.terraform.d/plugin-cache
 

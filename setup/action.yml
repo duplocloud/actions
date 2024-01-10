@@ -1,10 +1,16 @@
 name: Duplo AWS Setup
 description: Install Duplo and AWS tools and login.
 inputs:
-  mask-aws-account-id:
+  mask-account-id:
     description: Mask AWS Account ID in logs
     required: false
     default: 'yes'
+  region: 
+    required: false
+    description: Overide the cloud region from the default. For gcp this is required.  
+  account-id: 
+    required: false
+    description: Overide the cloud account id from the default. Required when on gcp where this would be the project name. 
 runs:
   using: composite
   steps:
@@ -24,6 +30,9 @@ runs:
   - name: Portal Info
     id: portal-info
     shell: bash
+    env:
+      DUPLO_ACCOUNT_ID: ${{ inputs.account-id }}
+      DUPLO_DEFAULT_REGION: ${{ inputs.region }}
     run: |
       PORTAL_INFO="$(duploctl system info)"
 
@@ -35,10 +44,15 @@ runs:
       echo "GCP_ENABLED=$GCP_ENABLED" >> $GITHUB_ENV
       echo "AZURE_ENABLED=$AZURE_ENABLED" >> $GITHUB_ENV
 
-      DUPLO_AWS_ACCOUNT_ID="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsAccount')"
-      AWS_DEFAULT_REGION="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsRegion')"
-      echo "DUPLO_AWS_ACCOUNT_ID=$DUPLO_AWS_ACCOUNT_ID" >> $GITHUB_ENV
-      echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> $GITHUB_ENV
+      # if aws enabled
+      if [ "$AWS_ENABLED" == "true" ]; then
+        DUPLO_ACCOUNT_ID="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsAccount')"
+        DUPLO_DEFAULT_REGION="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsRegion')"
+        echo "AWS_DEFAULT_REGION=$DUPLO_DEFAULT_REGION" >> $GITHUB_ENV
+      fi
+
+      echo "DUPLO_ACCOUNT_ID=$DUPLO_ACCOUNT_ID" >> $GITHUB_ENV
+      echo "DUPLO_DEFAULT_REGION=$DUPLO_DEFAULT_REGION" >> $GITHUB_ENV
 
       # re-export duplo creds as lowercase
       echo "duplo_token=$DUPLO_TOKEN" >> $GITHUB_ENV
@@ -53,6 +67,8 @@ runs:
     id: duplo-jit-aws
     shell: bash
     if: env.AWS_ENABLED == 'true'
+    env:
+      AWS_REGION: ${{ inputs.region }}
     run: |
       export STS AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_DEFAULT_REGION AWS_REGION AWS_ACCOUNT_ID
 
@@ -61,7 +77,7 @@ runs:
       AWS_SECRET_ACCESS_KEY="$(echo "$STS" | jq -r '.SecretAccessKey')"
       AWS_SESSION_TOKEN="$(echo "$STS" | jq -r '.SessionToken')"
       AWS_DEFAULT_REGION="$(echo "$STS" | jq -r '.Region')"
-      AWS_REGION="$AWS_DEFAULT_REGION"
+      AWS_REGION="${AWS_REGION:=$AWS_DEFAULT_REGION}"
       AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query "Account" --output text)"
 
       echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
@@ -81,4 +97,4 @@ runs:
       aws-secret-access-key: ${{ steps.duplo-jit-aws.outputs.AWS_SECRET_ACCESS_KEY }}
       aws-session-token: ${{ steps.duplo-jit-aws.outputs.AWS_SESSION_TOKEN }}
       aws-region: ${{ steps.duplo-jit-aws.outputs.AWS_REGION }}
-      mask-aws-account-id: ${{ inputs.mask-aws-account-id }}
+      mask-aws-account-id: ${{ inputs.mask-account-id }}
