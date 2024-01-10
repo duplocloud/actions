@@ -56,10 +56,14 @@ runs:
 
       # append workspace variables files if they exist
       TF_VARS_FILE="$CONFIG_DIR/$TF_WORKSPACE/$MODULE_NAME.tfvars"
+      echo "Discovering vars at $TF_VARS_FILE"
       if [ -f "$TF_VARS_FILE" ]; then
+        echo "Found $TF_VARS_FILE"
         ARGS+=("-var-file=$TF_VARS_FILE")
       fi
+      echo "Discovering vars at $TF_VARS_FILE.json"
       if [ -f "$TF_VARS_FILE.json" ]; then
+        echo "Found $TF_VARS_FILE.json"
         ARGS+=("-var-file=$TF_VARS_FILE.json")
       fi
 
