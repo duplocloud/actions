@@ -41,7 +41,7 @@ runs:
       TF_COMMAND: ${{ inputs.command }}
       TF_PARALLELISM: ${{ inputs.parallelism }}
       MODULE: ${{ inputs.module }}
-      CONFIG_DIR: ${{ inputs.config }}
+      CONFIG_DIR: ${{ github.workspace }}/${{ inputs.config }}
     run: |
       ARGS=(
         -input=false
