@@ -29,6 +29,7 @@ runs:
     run: |
       pip install --upgrade pip
       pip install duplocloud-client
+      echo "Successfully installed duploctl $(duploctl --version)"
 
   - name: Portal Info
     id: portal-info
