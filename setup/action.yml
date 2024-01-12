@@ -34,8 +34,7 @@ runs:
   - name: Drastic Debugging
     shell: bash
     run: |
-      PORTAL_INFO="$(duploctl system info)"
-      echo "$PORTAL_INFO"
+      duploctl system info
 
   # - name: Portal Info
   #   id: portal-info
