@@ -11,6 +11,9 @@ inputs:
   account-id: 
     required: false
     description: Overide the cloud account id from the default. Required when on gcp where this would be the project name. 
+  gcp_credentials: 
+    required: false
+    description: GCP credentials json. Required when on gcp.
 runs:
   using: composite
   steps:
@@ -46,9 +49,15 @@ runs:
 
       # if aws enabled
       if [ "$AWS_ENABLED" == "true" ]; then
+        echo "Configuring AWS Backend"
         DUPLO_ACCOUNT_ID="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsAccount')"
         DUPLO_DEFAULT_REGION="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsRegion')"
         echo "AWS_DEFAULT_REGION=$DUPLO_DEFAULT_REGION" >> $GITHUB_ENV
+      fi
+
+      # if gcp enabled
+      if [ "$GCP_ENABLED" == "true" ]; then
+        echo "Configuring GCP Backend"
       fi
 
       echo "DUPLO_ACCOUNT_ID=$DUPLO_ACCOUNT_ID" >> $GITHUB_ENV
@@ -87,7 +96,7 @@ runs:
       echo "AWS_REGION=$AWS_REGION" >> $GITHUB_OUTPUT
       echo "AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID" >> $GITHUB_OUTPUT
 
-  - # alternative login. Useful when running act locally with ACT_AWS_SESSION
+  - # login to aws
     name: Configure AWS IAM Credentials
     id: aws-iam
     uses: aws-actions/configure-aws-credentials@v2
