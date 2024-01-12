@@ -48,6 +48,8 @@ runs:
       echo "GCP_ENABLED=$GCP_ENABLED" >> $GITHUB_ENV
       echo "AZURE_ENABLED=$AZURE_ENABLED" >> $GITHUB_ENV
 
+      echo "Portal info discovered"
+
       # if aws enabled
       if [ "$AWS_ENABLED" == "true" ]; then
         echo "Configuring AWS Backend"
