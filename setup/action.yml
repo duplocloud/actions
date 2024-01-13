@@ -35,6 +35,7 @@ runs:
     shell: bash
     run: |
       printenv
+      curl https://contextual.duplocloud.net/build-metadata.json
       duploctl system info
 
   # - name: Portal Info
