@@ -31,82 +31,87 @@ runs:
       pip install duplocloud-client
       echo "Successfully installed duploctl $(duploctl --version)"
 
-  - name: Portal Info
-    id: portal-info
+  - name: More Debugs
     shell: bash
-    env:
-      DUPLO_ACCOUNT_ID: ${{ inputs.account-id }}
-      DUPLO_DEFAULT_REGION: ${{ inputs.region }}
     run: |
-      PORTAL_INFO="$(duploctl system info)"
+      duploctl system info
 
-      AWS_ENABLED="$(echo "$PORTAL_INFO" | jq -r '.IsAwsCloudEnabled')"
-      GCP_ENABLED="$(echo "$PORTAL_INFO" | jq -r '.IsGoogleCloudEnabled')"
-      AZURE_ENABLED="$(echo "$PORTAL_INFO" | jq -r '.IsAzureCloudEnabled')"
+  # - name: Portal Info
+  #   id: portal-info
+  #   shell: bash
+  #   env:
+  #     DUPLO_ACCOUNT_ID: ${{ inputs.account-id }}
+  #     DUPLO_DEFAULT_REGION: ${{ inputs.region }}
+  #   run: |
+  #     PORTAL_INFO="$(duploctl system info)"
 
-      echo "AWS_ENABLED=$AWS_ENABLED" >> $GITHUB_ENV
-      echo "GCP_ENABLED=$GCP_ENABLED" >> $GITHUB_ENV
-      echo "AZURE_ENABLED=$AZURE_ENABLED" >> $GITHUB_ENV
+  #     AWS_ENABLED="$(echo "$PORTAL_INFO" | jq -r '.IsAwsCloudEnabled')"
+  #     GCP_ENABLED="$(echo "$PORTAL_INFO" | jq -r '.IsGoogleCloudEnabled')"
+  #     AZURE_ENABLED="$(echo "$PORTAL_INFO" | jq -r '.IsAzureCloudEnabled')"
 
-      echo "Portal info discovered"
+  #     echo "AWS_ENABLED=$AWS_ENABLED" >> $GITHUB_ENV
+  #     echo "GCP_ENABLED=$GCP_ENABLED" >> $GITHUB_ENV
+  #     echo "AZURE_ENABLED=$AZURE_ENABLED" >> $GITHUB_ENV
 
-      # if aws enabled
-      if [[ "$AWS_ENABLED" == "true" ]]; then
-        echo "Configuring AWS Backend"
-        DUPLO_ACCOUNT_ID="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsAccount')"
-        DUPLO_DEFAULT_REGION="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsRegion')"
-        echo "AWS_DEFAULT_REGION=$DUPLO_DEFAULT_REGION" >> $GITHUB_ENV
-      fi
+  #     echo "Portal info discovered"
 
-      # if gcp enabled
-      if [[ "$GCP_ENABLED" == "true" ]]; then
-        echo "Configuring GCP Backend"
-      fi
+  #     # if aws enabled
+  #     if [[ "$AWS_ENABLED" == "true" ]]; then
+  #       echo "Configuring AWS Backend"
+  #       DUPLO_ACCOUNT_ID="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsAccount')"
+  #       DUPLO_DEFAULT_REGION="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsRegion')"
+  #       echo "AWS_DEFAULT_REGION=$DUPLO_DEFAULT_REGION" >> $GITHUB_ENV
+  #     fi
 
-      echo "DUPLO_ACCOUNT_ID=$DUPLO_ACCOUNT_ID" >> $GITHUB_ENV
-      echo "DUPLO_DEFAULT_REGION=$DUPLO_DEFAULT_REGION" >> $GITHUB_ENV
+  #     # if gcp enabled
+  #     if [[ "$GCP_ENABLED" == "true" ]]; then
+  #       echo "Configuring GCP Backend"
+  #     fi
 
-      # re-export duplo creds as lowercase
-      echo "duplo_token=$DUPLO_TOKEN" >> $GITHUB_ENV
-      echo "duplo_host=$DUPLO_HOST" >> $GITHUB_ENV
+  #     echo "DUPLO_ACCOUNT_ID=$DUPLO_ACCOUNT_ID" >> $GITHUB_ENV
+  #     echo "DUPLO_DEFAULT_REGION=$DUPLO_DEFAULT_REGION" >> $GITHUB_ENV
 
-  - name: Install AWS CLI
-    id: install-aws-cli
-    if: env.AWS_ENABLED == 'true'
-    uses: unfor19/install-aws-cli-action@v1
+  #     # re-export duplo creds as lowercase
+  #     echo "duplo_token=$DUPLO_TOKEN" >> $GITHUB_ENV
+  #     echo "duplo_host=$DUPLO_HOST" >> $GITHUB_ENV
 
-  - name: Duplo JIT for AWS
-    id: duplo-jit-aws
-    shell: bash
-    if: env.AWS_ENABLED == 'true'
-    env:
-      AWS_REGION: ${{ inputs.region }}
-    run: |
-      export STS AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_DEFAULT_REGION AWS_REGION AWS_ACCOUNT_ID
+  # - name: Install AWS CLI
+  #   id: install-aws-cli
+  #   if: env.AWS_ENABLED == 'true'
+  #   uses: unfor19/install-aws-cli-action@v1
 
-      STS="$(duploctl jit aws)"
-      AWS_ACCESS_KEY_ID="$(echo "$STS" | jq -r '.AccessKeyId')"
-      AWS_SECRET_ACCESS_KEY="$(echo "$STS" | jq -r '.SecretAccessKey')"
-      AWS_SESSION_TOKEN="$(echo "$STS" | jq -r '.SessionToken')"
-      AWS_DEFAULT_REGION="$(echo "$STS" | jq -r '.Region')"
-      AWS_REGION="${AWS_REGION:=$AWS_DEFAULT_REGION}"
-      AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query "Account" --output text)"
+  # - name: Duplo JIT for AWS
+  #   id: duplo-jit-aws
+  #   shell: bash
+  #   if: env.AWS_ENABLED == 'true'
+  #   env:
+  #     AWS_REGION: ${{ inputs.region }}
+  #   run: |
+  #     export STS AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_DEFAULT_REGION AWS_REGION AWS_ACCOUNT_ID
 
-      echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
-      echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
-      echo "AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN" >> $GITHUB_OUTPUT
-      echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> $GITHUB_OUTPUT
-      echo "AWS_REGION=$AWS_REGION" >> $GITHUB_OUTPUT
-      echo "AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID" >> $GITHUB_OUTPUT
+  #     STS="$(duploctl jit aws)"
+  #     AWS_ACCESS_KEY_ID="$(echo "$STS" | jq -r '.AccessKeyId')"
+  #     AWS_SECRET_ACCESS_KEY="$(echo "$STS" | jq -r '.SecretAccessKey')"
+  #     AWS_SESSION_TOKEN="$(echo "$STS" | jq -r '.SessionToken')"
+  #     AWS_DEFAULT_REGION="$(echo "$STS" | jq -r '.Region')"
+  #     AWS_REGION="${AWS_REGION:=$AWS_DEFAULT_REGION}"
+  #     AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query "Account" --output text)"
 
-  - # login to aws
-    name: Configure AWS IAM Credentials
-    id: aws-iam
-    uses: aws-actions/configure-aws-credentials@v2
-    if: env.AWS_ENABLED == 'true'
-    with:
-      aws-access-key-id: ${{ steps.duplo-jit-aws.outputs.AWS_ACCESS_KEY_ID }}
-      aws-secret-access-key: ${{ steps.duplo-jit-aws.outputs.AWS_SECRET_ACCESS_KEY }}
-      aws-session-token: ${{ steps.duplo-jit-aws.outputs.AWS_SESSION_TOKEN }}
-      aws-region: ${{ steps.duplo-jit-aws.outputs.AWS_REGION }}
-      mask-aws-account-id: ${{ inputs.mask-account-id }}
+  #     echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
+  #     echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
+  #     echo "AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN" >> $GITHUB_OUTPUT
+  #     echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> $GITHUB_OUTPUT
+  #     echo "AWS_REGION=$AWS_REGION" >> $GITHUB_OUTPUT
+  #     echo "AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID" >> $GITHUB_OUTPUT
+
+  # - # login to aws
+  #   name: Configure AWS IAM Credentials
+  #   id: aws-iam
+  #   uses: aws-actions/configure-aws-credentials@v2
+  #   if: env.AWS_ENABLED == 'true'
+  #   with:
+  #     aws-access-key-id: ${{ steps.duplo-jit-aws.outputs.AWS_ACCESS_KEY_ID }}
+  #     aws-secret-access-key: ${{ steps.duplo-jit-aws.outputs.AWS_SECRET_ACCESS_KEY }}
+  #     aws-session-token: ${{ steps.duplo-jit-aws.outputs.AWS_SESSION_TOKEN }}
+  #     aws-region: ${{ steps.duplo-jit-aws.outputs.AWS_REGION }}
+  #     mask-aws-account-id: ${{ inputs.mask-account-id }}
