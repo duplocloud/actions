@@ -34,6 +34,7 @@ runs:
   - name: More Debugs
     shell: bash
     run: |
+      printenv
       duploctl system info
 
   # - name: Portal Info
