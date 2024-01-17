@@ -34,3 +34,10 @@ jobs:
 ## License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE).
+
+## References 
+
+ - Third Party Actions: 
+   - [aws-actions/configure-aws-credentials@v2](https://github.com/aws-actions/configure-aws-credentials)
+   - [unfor19/install-aws-cli-action@v1](https://github.com/unfor19/install-aws-cli-action)
+   - [actions/setup-python@v4](https://github.com/actions/setup-python)

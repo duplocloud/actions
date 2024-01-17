@@ -1,7 +1,7 @@
 name: Execute Terraform
 description: Execute a Terraform command
 inputs:
-  module: 
+  module:
     description: Working directory
     required: true
   workspace:
@@ -15,6 +15,10 @@ inputs:
   parallelism:
     description: Terraform parallelism
     required: false
+  config:
+    description: Terraform configs
+    required: false
+    default: ./config
 runs:
   using: composite
   steps:
@@ -22,13 +26,12 @@ runs:
   - name: Verify Command
     id: verify-command
     shell: bash
-    if: >-
-      !contains(fromJSON('["apply", "destroy", "plan"]'), inputs.command)
+    if: '!contains(fromJSON(''["apply", "destroy", "plan"]''), inputs.command)'
     run: |
       echo "Invalid command: ${{ inputs.command }}"
       echo "Valid commands: apply, destroy, plan"
       exit 1
-
+  
   - name: Setup
     id: setup
     shell: bash
@@ -38,6 +41,7 @@ runs:
       TF_COMMAND: ${{ inputs.command }}
       TF_PARALLELISM: ${{ inputs.parallelism }}
       MODULE: ${{ inputs.module }}
+      CONFIG_DIR: ${{ github.workspace }}/${{ inputs.config }}
     run: |
       ARGS=(
         -input=false
@@ -50,17 +54,31 @@ runs:
         ARGS+=("-parallelism=$TF_PARALLELISM")
       fi
 
-      PLAN_FILE="${MODULE_NAME}-${TF_WORKSPACE}.tfplan"
+      # append workspace variables files if they exist
+      TF_VARS_FILE="$CONFIG_DIR/$TF_WORKSPACE/$MODULE_NAME.tfvars"
+      echo "Discovering vars at $TF_VARS_FILE"
+      if [ -f "$TF_VARS_FILE" ]; then
+        echo "Found $TF_VARS_FILE"
+        ARGS+=("-var-file=$TF_VARS_FILE")
+      fi
+      echo "Discovering vars at $TF_VARS_FILE.json"
+      if [ -f "$TF_VARS_FILE.json" ]; then
+        echo "Found $TF_VARS_FILE.json"
+        ARGS+=("-var-file=$TF_VARS_FILE.json")
+      fi
+
+      echo "The tf args: ${ARGS[*]}"
+
+      PLAN_FILE="${TF_WORKSPACE}-${MODULE_NAME}.tfplan"
       echo "PLAN_FILE=$PLAN_FILE" >> $GITHUB_ENV
-
       echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
-
+  
   - name: Select Workspace
     id: select-workspace
     shell: bash
     working-directory: ${{ inputs.module }}
     run: terraform workspace select -or-create ${{ inputs.workspace }}
-
+  
   - name: Check if Plan Exists
     id: archived-plan
     continue-on-error: true
@@ -69,37 +87,34 @@ runs:
     with:
       name: ${{ env.PLAN_FILE }}
       path: ${{ inputs.module }}
-
+  
   - name: Plan Module
     id: plan
     shell: bash
     working-directory: ${{ inputs.module }}
-    if: >
-      steps.archived-plan.outcome == 'failure' &&
-      inputs.command != 'destroy'
+    if: |
+      steps.archived-plan.outcome == 'failure' && inputs.command != 'destroy'
     env:
       TF_ARGS: ${{ steps.setup.outputs.args }}
     run: terraform plan $TF_ARGS -out=$PLAN_FILE
-
+  
   - name: Show Plan
     id: show
     shell: bash
     working-directory: ${{ inputs.module }}
-    if: >
-      steps.archived-plan.outcome == 'success' &&
-      inputs.command != 'destroy'
+    if: |
+      steps.archived-plan.outcome == 'success' && inputs.command != 'destroy'
     run: terraform show $PLAN_FILE
-
+  
   - name: Archive Plan
     id: archive-plan
-    if: >
-      steps.archived-plan.outcome == 'failure' &&
-      inputs.command != 'destroy'
+    if: |
+      steps.archived-plan.outcome == 'failure' && inputs.command != 'destroy'
     uses: actions/upload-artifact@v3
     with:
       name: ${{ env.PLAN_FILE }}
       path: ${{ inputs.module }}/${{ env.PLAN_FILE }}
-
+  
   - name: Apply Module
     id: apply
     shell: bash

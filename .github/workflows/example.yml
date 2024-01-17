@@ -64,5 +64,5 @@ jobs:
 
     - name: The Job
       run: |
-        echo '${{ toJSON(job) }}'
+        echo '${{ toJSON(env) }}'
         
