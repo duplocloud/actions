@@ -19,7 +19,7 @@ runs:
   steps:
 
   - name: Setup Python
-    uses: actions/setup-python@v4
+    uses: actions/setup-python@v5
     with:
       python-version: '3.10'
 
@@ -108,7 +108,7 @@ runs:
   - # login to aws
     name: Configure AWS IAM Credentials
     id: aws-iam
-    uses: aws-actions/configure-aws-credentials@v2
+    uses: aws-actions/configure-aws-credentials@v3
     if: env.AWS_ENABLED == 'true'
     with:
       aws-access-key-id: ${{ steps.duplo-jit-aws.outputs.AWS_ACCESS_KEY_ID }}
