@@ -38,6 +38,6 @@ The scripts and documentation in this project are released under the [MIT Licens
 ## References 
 
  - Third Party Actions: 
-   - [aws-actions/configure-aws-credentials@v2](https://github.com/aws-actions/configure-aws-credentials)
+   - [aws-actions/configure-aws-credentials@v3](https://github.com/aws-actions/configure-aws-credentials)
    - [unfor19/install-aws-cli-action@v1](https://github.com/unfor19/install-aws-cli-action)
-   - [actions/setup-python@v4](https://github.com/actions/setup-python)
+   - [actions/setup-python@v5](https://github.com/actions/setup-python)
