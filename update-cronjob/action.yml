@@ -1,0 +1,20 @@
+name: Update CronJob
+description: A command builder for Duploctl
+inputs:
+  cronjob:
+    description: CronJob name
+    required: true
+  image:
+    description: Image name
+    required: true
+runs:
+  using: composite
+  steps:
+  - name: Update CronJob
+    id: duploctl
+    shell: bash
+    env:
+      CRONJOB: ${{ inputs.cronjob }}
+      IMAGE: ${{ inputs.image }}
+    run: >
+      duploctl cronjob update_image $CRONJOB $IMAGE
