@@ -93,13 +93,12 @@ runs:
     env:
       AWS_REGION: ${{ inputs.region }}
     run: >-
-      duploctl jit aws 
-        -q '{
-          AWS_ACCESS_KEY_ID: AccessKeyId, 
-          AWS_SECRET_ACCESS_KEY: SecretAccessKey, 
-          AWS_SESSION_TOKEN: SessionToken, 
-          AWS_REGION: Region
-        }' -o env >> $GITHUB_OUTPUT
+      duploctl jit aws -q '{
+      AWS_ACCESS_KEY_ID: AccessKeyId, 
+      AWS_SECRET_ACCESS_KEY: SecretAccessKey, 
+      AWS_SESSION_TOKEN: SessionToken, 
+      AWS_REGION: Region
+      }' -o env >> $GITHUB_OUTPUT
 
   - name: Configure AWS IAM Credentials
     id: aws-iam
