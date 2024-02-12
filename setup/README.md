@@ -41,3 +41,7 @@ The scripts and documentation in this project are released under the [MIT Licens
    - [aws-actions/configure-aws-credentials@v3](https://github.com/aws-actions/configure-aws-credentials)
    - [unfor19/install-aws-cli-action@v1](https://github.com/unfor19/install-aws-cli-action)
    - [actions/setup-python@v5](https://github.com/actions/setup-python)
+   - [google-github-actions/setup-gcloud](https://github.com/google-github-actions/setup-gcloud)
+   - [google-github-actions/auth](https://github.com/google-github-actions/auth)
+   - [azure/login](https://github.com/marketplace/actions/azure-login)
+   - [azure/CLI](https://github.com/marketplace/actions/azure-cli-action)
