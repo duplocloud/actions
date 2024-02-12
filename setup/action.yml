@@ -92,7 +92,7 @@ runs:
     if: env.AWS_ENABLED == 'true'
     env:
       AWS_REGION: ${{ inputs.region }}
-    run: >
+    run: >-
       duploctl jit aws 
         -q '{
           AWS_ACCESS_KEY_ID: AccessKeyId, 
