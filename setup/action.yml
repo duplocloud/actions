@@ -11,9 +11,9 @@ inputs:
   account-id: 
     required: false
     description: Overide the cloud account id from the default. Required when on gcp where this would be the project name. 
-  gcp_credentials: 
+  credentials: 
     required: false
-    description: GCP credentials json. Required when on gcp.
+    description: Cloud credentials for Azure or GCP.
 runs:
   using: composite
   steps:
@@ -76,8 +76,11 @@ runs:
       echo "duplo_token=$DUPLO_TOKEN" >> $GITHUB_ENV
       echo "duplo_host=$DUPLO_HOST" >> $GITHUB_ENV
 
+  ###
+  # AWS Configuration Flow
+  ###
   - name: Install AWS CLI
-    id: install-aws-cli
+    id: setup-aws-cli
     if: env.AWS_ENABLED == 'true'
     uses: unfor19/install-aws-cli-action@v1
 
@@ -105,8 +108,7 @@ runs:
       echo "AWS_REGION=$AWS_REGION" >> $GITHUB_OUTPUT
       echo "AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID" >> $GITHUB_OUTPUT
 
-  - # login to aws
-    name: Configure AWS IAM Credentials
+  - name: Configure AWS IAM Credentials
     id: aws-iam
     uses: aws-actions/configure-aws-credentials@v3
     if: env.AWS_ENABLED == 'true'
@@ -116,3 +118,35 @@ runs:
       aws-session-token: ${{ steps.duplo-jit-aws.outputs.AWS_SESSION_TOKEN }}
       aws-region: ${{ steps.duplo-jit-aws.outputs.AWS_REGION }}
       mask-aws-account-id: ${{ inputs.mask-account-id }}
+
+  ###
+  # GCP Configuration Flow
+  ###
+
+  - name: Authenticate to Google Cloud
+    id: login-gcp
+    uses: google-github-actions/auth@v2
+    if: env.GCP_ENABLED == 'true' && inputs.credentials
+    with:
+      credentials_json: ${{ inputs.credentials }}
+      export_environment_variables: true
+
+  ###
+  # Azure Configuration Flow
+  ###
+
+  - name: Azure Login
+    id: login-azure
+    uses: azure/login@v1
+    if: env.AZURE_ENABLED == 'true' && inputs.credentials
+    with:
+      creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+  - name: Azure CLI script
+    id: setup-azure-cli
+    uses: azure/CLI@v1
+    if: env.AZURE_ENABLED == 'true'
+    with:
+      azcliversion: 2.57.0
+      inlineScript: |
+        az account show
