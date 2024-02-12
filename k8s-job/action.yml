@@ -1,0 +1,71 @@
+name: Run Kubernetes Job 
+description: Runs a Kubernetes job and outputs the pod logs to the console.
+inputs:
+  file: 
+    description: 'The file with a k8s job to run'
+    default: job.yaml
+  timeout:
+    description: 'The timeout for the job'
+    default: 300s
+runs:
+  using: composite
+  steps:
+
+  - name: Apply and Watch
+    shell: bash
+    env:
+      JOB_FILE: ${{ inputs.file }}
+      JOB_TIMEOUT: ${{ inputs.timeout }}
+    run: |
+      export JOB JOB_NAME NAMESPACE PODS
+      JOB="$(cat "$JOB_FILE")"
+
+      JOB_NAME="$(echo "$JOB" | yq -r '.metadata.name')"
+      NAMESPACE="$(echo "$JOB" | yq -r '.metadata.namespace')"
+
+      function pod_logs() {
+        wait_for_resource "pods/${1}" && \
+        kubectl wait \
+          --for=condition=Ready \
+          -n "$NAMESPACE" \
+          --timeout="${JOB_TIMEOUT}" \
+          "pods/${1}" && \
+        kubectl logs "pods/$1" -n "$NAMESPACE" --follow
+      }
+
+      function wait_for_resource() {
+        while : ; do
+          res="$(kubectl get "$1" -n "$NAMESPACE" 2>&1)" && break
+          sleep 2
+        done
+      }
+
+      kubectl apply -f "$JOB_FILE"
+
+      wait_for_resource "jobs/${JOB_NAME}"
+
+      # shellcheck disable=SC2207
+      PODS=($(kubectl get pods \
+        -l job-name="${JOB_NAME}" \
+        -n "$NAMESPACE" \
+        --no-headers \
+        --output=custom-columns=:metadata.name))
+
+      length="${#PODS[@]}"
+
+      echo "Waiting for ${JOB_NAME} to complete and ${length} pods to be ready"
+      kubectl wait \
+        --for=condition=Complete \
+        --timeout="${JOB_TIMEOUT}" \
+        -n "$NAMESPACE" \
+        "jobs/${JOB_NAME}" &
+
+      for pod in "${PODS[@]}"; do
+        pod_logs "$pod" &
+      done
+
+      wait
+
+      kubectl delete -f "$JOB_FILE"
+
+      echo "Exectued ${length} pods for job ${JOB_NAME}"
