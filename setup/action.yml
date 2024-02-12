@@ -140,7 +140,7 @@ runs:
     uses: azure/login@v1
     if: env.AZURE_ENABLED == 'true' && inputs.credentials
     with:
-      creds: ${{ secrets.AZURE_CREDENTIALS }}
+      creds: ${{ inputs.credentials }}
 
   - name: Azure CLI script
     id: setup-azure-cli
