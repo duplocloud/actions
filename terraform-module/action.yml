@@ -45,13 +45,24 @@ runs:
       DUPLO_TF_BUCKET=${PREFIX}-${DUPLO_ACCOUNT_ID}
       ARGS=(
         -input=false
-        -backend-config=bucket=$DUPLO_TF_BUCKET
       )
 
       if [ "$AWS_ENABLED" == "true" ]; then
         ARGS+=(
           -backend-config=dynamodb_table=${DUPLO_TF_BUCKET}-lock
           -backend-config=region=$DUPLO_DEFAULT_REGION
+          -backend-config=bucket=$DUPLO_TF_BUCKET
+        )
+      elif [ "$AZURE_ENABLED" == "true" ]; then
+        DUPLO_TF_BUCKET=duplotfstate${DUPLO_ACCOUNT_ID}
+        ARGS+=(
+          -backend-config=storage_account_name=$DUPLO_TF_BUCKET
+        )
+        ACCOUNT_KEY=$(az storage account keys list --resource-group $RESOURCE_GROUP_NAME --account-name $DUPLO_TF_BUCKET --query '[0].value' -o tsv)
+        echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+      elif [ "$GCP_ENABLED" == "true" ]; then
+        ARGS+=(
+          -backend-config=bucket=$DUPLO_TF_BUCKET
         )
       fi
 
@@ -66,11 +77,15 @@ runs:
         MODULE_CACHE="true"
         echo "Terraform lock file detected, caching enabled"
       fi
+
+      # these are for the next steps
       echo "module_cache=$MODULE_CACHE" >> $GITHUB_OUTPUT
       echo "lockfile=$WKDIR/$LOCK_FILE" >> $GITHUB_OUTPUT
-
       echo "module=$MODULE" >> $GITHUB_OUTPUT
       echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
+
+      # some more useful env vars
+      echo "DUPLO_TF_BUCKET=$DUPLO_TF_BUCKET" >> $GITHUB_ENV
 
   - name: Cache Modules
     id: plugin-cache
