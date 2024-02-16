@@ -11,9 +11,9 @@ inputs:
   account-id: 
     required: false
     description: Overide the cloud account id from the default. Required when on gcp where this would be the project name. 
-  gcp_credentials: 
+  credentials: 
     required: false
-    description: GCP credentials json. Required when on gcp.
+    description: Cloud credentials for Azure or GCP.
 runs:
   using: composite
   steps:
@@ -29,13 +29,8 @@ runs:
     run: |
       pip install --upgrade pip
       pip install duplocloud-client
-      echo "Successfully installed duploctl $(duploctl --version)"
-
-  - name: More Debugs
-    shell: bash
-    run: |
-      printenv
-      duploctl system info
+      echo "Successfully installed duploctl"
+      duploctl version
 
   - name: Portal Info
     id: portal-info
@@ -56,17 +51,17 @@ runs:
 
       echo "Portal info discovered"
 
-      # if aws enabled
+      # configure the cloud environments
       if [[ "$AWS_ENABLED" == "true" ]]; then
         echo "Configuring AWS Backend"
         DUPLO_ACCOUNT_ID="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsAccount')"
         DUPLO_DEFAULT_REGION="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsRegion')"
         echo "AWS_DEFAULT_REGION=$DUPLO_DEFAULT_REGION" >> $GITHUB_ENV
-      fi
-
-      # if gcp enabled
-      if [[ "$GCP_ENABLED" == "true" ]]; then
+        echo "AWS_ACCOUNT_ID=$DUPLO_ACCOUNT_ID" >> $GITHUB_ENV
+      elif [[ "$GCP_ENABLED" == "true" ]]; then
         echo "Configuring GCP Backend"
+      elif [[ "$AZURE_ENABLED" == "true" ]]; then
+        echo "Configuring Azure Backend"
       fi
 
       echo "DUPLO_ACCOUNT_ID=$DUPLO_ACCOUNT_ID" >> $GITHUB_ENV
@@ -76,8 +71,12 @@ runs:
       echo "duplo_token=$DUPLO_TOKEN" >> $GITHUB_ENV
       echo "duplo_host=$DUPLO_HOST" >> $GITHUB_ENV
 
+  ###
+  # AWS Configuration Flow
+  ###
+
   - name: Install AWS CLI
-    id: install-aws-cli
+    id: setup-aws-cli
     if: env.AWS_ENABLED == 'true'
     uses: unfor19/install-aws-cli-action@v1
 
@@ -87,26 +86,15 @@ runs:
     if: env.AWS_ENABLED == 'true'
     env:
       AWS_REGION: ${{ inputs.region }}
-    run: |
-      export STS AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_DEFAULT_REGION AWS_REGION AWS_ACCOUNT_ID
+    run: >-
+      duploctl jit aws -q '{
+      AWS_ACCESS_KEY_ID: AccessKeyId, 
+      AWS_SECRET_ACCESS_KEY: SecretAccessKey, 
+      AWS_SESSION_TOKEN: SessionToken, 
+      AWS_REGION: Region
+      }' -o env >> $GITHUB_OUTPUT
 
-      STS="$(duploctl jit aws)"
-      AWS_ACCESS_KEY_ID="$(echo "$STS" | jq -r '.AccessKeyId')"
-      AWS_SECRET_ACCESS_KEY="$(echo "$STS" | jq -r '.SecretAccessKey')"
-      AWS_SESSION_TOKEN="$(echo "$STS" | jq -r '.SessionToken')"
-      AWS_DEFAULT_REGION="$(echo "$STS" | jq -r '.Region')"
-      AWS_REGION="${AWS_REGION:=$AWS_DEFAULT_REGION}"
-      AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query "Account" --output text)"
-
-      echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
-      echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
-      echo "AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN" >> $GITHUB_OUTPUT
-      echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION" >> $GITHUB_OUTPUT
-      echo "AWS_REGION=$AWS_REGION" >> $GITHUB_OUTPUT
-      echo "AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID" >> $GITHUB_OUTPUT
-
-  - # login to aws
-    name: Configure AWS IAM Credentials
+  - name: Configure AWS IAM Credentials
     id: aws-iam
     uses: aws-actions/configure-aws-credentials@v3
     if: env.AWS_ENABLED == 'true'
@@ -116,3 +104,42 @@ runs:
       aws-session-token: ${{ steps.duplo-jit-aws.outputs.AWS_SESSION_TOKEN }}
       aws-region: ${{ steps.duplo-jit-aws.outputs.AWS_REGION }}
       mask-aws-account-id: ${{ inputs.mask-account-id }}
+
+  ###
+  # GCP Configuration Flow
+  ###
+
+  - name: Authenticate to Google Cloud
+    id: login-gcp
+    uses: google-github-actions/auth@v2
+    if: env.GCP_ENABLED == 'true' && inputs.credentials
+    with:
+      credentials_json: ${{ inputs.credentials }}
+      export_environment_variables: true
+
+  - name: Set up Cloud SDK
+    id: setup-gcloud
+    uses: google-github-actions/setup-gcloud@v2
+    if: env.GCP_ENABLED == 'true'
+    with:
+      version: '>= 363.0.0'
+
+  ###
+  # Azure Configuration Flow
+  ###
+
+  - name: Azure Login
+    id: login-azure
+    uses: azure/login@v1
+    if: env.AZURE_ENABLED == 'true' && inputs.credentials
+    with:
+      creds: ${{ inputs.credentials }}
+
+  - name: Azure CLI script
+    id: setup-azure-cli
+    uses: azure/CLI@v1
+    if: env.AZURE_ENABLED == 'true'
+    with:
+      azcliversion: 2.57.0
+      inlineScript: |
+        az account show

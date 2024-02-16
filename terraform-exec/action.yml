@@ -18,7 +18,7 @@ inputs:
   config:
     description: Terraform configs
     required: false
-    default: ./config
+    default: config
 runs:
   using: composite
   steps:
