@@ -59,6 +59,44 @@ steps:
     credentials: ${{ secrets.CLOUD_CREDENTIALS }}
 ```
 
+## Authentication  
+
+Each underlying cloud has their own unique way of authenticating. 
+
+### AWS  
+
+Using the JIT functionality built into the portal, the action uses retreives an sts session from the duplo portal and uses these credentials to authenticate with the AWS CLI. Magical. 
+
+### Azure  
+
+The action uses the `azure/login` action to authenticate with Azure. To keep things consistent this action will use the `CLOUD_CREDENTIALS` secret to authenticate which expects the following format:  
+```json
+{
+  "clientId": "<client-id>",
+  "clientSecret": "<client-secret>",
+  "subscriptionId": "<subscription-id>",
+  "tenantId": "<tenant-id>"
+}
+```
+
+### GCP
+
+The action uses the `google-github-actions/setup-gcloud` action to authenticate with GCP. To keep things consistent this action will use the `CLOUD_CREDENTIALS` secret to authenticate which expects the following format:  
+```json
+{
+  "type": "service_account",
+  "project_id": "<project-id>",
+  "private_key_id": "<private-key-id>",
+  "private_key": "<private-key>",
+  "client_email": "<client-email>",
+  "client_id": "<client-id>",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://accounts.google.com/o/oauth2/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "<client-x509-cert-url>"
+}
+```
+
 ## License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE).
