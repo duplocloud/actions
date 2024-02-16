@@ -1,6 +1,4 @@
-Apologies for the misunderstanding. If the GitHub Action does not have any inputs, the table for inputs in the README can be omitted. Here's an updated version of the README without the inputs table:
-
-# Duplo AWS Setup Action
+ # Duplo AWS Setup Action
 
 This GitHub Action sets up Duplo and AWS tools and performs a login. It provides the following features:
 
