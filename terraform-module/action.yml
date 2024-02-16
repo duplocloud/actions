@@ -56,11 +56,16 @@ runs:
         )
       elif [ "$AZURE_ENABLED" == "true" ]; then
         echo "Azure enabled, setting up backend config for Blob Storage"
+        # if the RESOURCE_GROUP variable is not set, fail with error
+        if [ -z "$RESOURCE_GROUP" ]; then
+          echo "RESOURCE_GROUP is not set, please set the variable"
+          exit 1
+        fi
         DUPLO_TF_BUCKET=duplotfstate${DUPLO_ACCOUNT_ID}
         ARGS+=(
           -backend-config=storage_account_name=$DUPLO_TF_BUCKET
         )
-        ACCOUNT_KEY=$(az storage account keys list --resource-group $RESOURCE_GROUP_NAME --account-name $DUPLO_TF_BUCKET --query '[0].value' -o tsv)
+        ACCOUNT_KEY=$(az storage account keys list --resource-group $RESOURCE_GROUP --account-name $DUPLO_TF_BUCKET --query '[0].value' -o tsv)
         echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
       elif [ "$GCP_ENABLED" == "true" ]; then
         echo "GCP enabled, setting up backend config for GCS"

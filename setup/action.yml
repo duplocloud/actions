@@ -14,9 +14,6 @@ inputs:
   credentials: 
     required: false
     description: Cloud credentials for Azure or GCP.
-  resource-group: 
-    required: false
-    description: Resource group for Azure.
 runs:
   using: composite
   steps:
@@ -41,7 +38,6 @@ runs:
     env:
       DUPLO_ACCOUNT_ID: ${{ inputs.account-id }}
       DUPLO_DEFAULT_REGION: ${{ inputs.region }}
-      RESOURCE_GROUP_NAME: ${{ inputs.resource-group }}
     run: |
       PORTAL_INFO="$(duploctl system info)"
 
@@ -55,24 +51,17 @@ runs:
 
       echo "Portal info discovered"
 
-      # if aws enabled
+      # configure the cloud environments
       if [[ "$AWS_ENABLED" == "true" ]]; then
         echo "Configuring AWS Backend"
         DUPLO_ACCOUNT_ID="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsAccount')"
         DUPLO_DEFAULT_REGION="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsRegion')"
         echo "AWS_DEFAULT_REGION=$DUPLO_DEFAULT_REGION" >> $GITHUB_ENV
         echo "AWS_ACCOUNT_ID=$DUPLO_ACCOUNT_ID" >> $GITHUB_ENV
-      fi
-
-      # if gcp enabled
-      if [[ "$GCP_ENABLED" == "true" ]]; then
+      elif [[ "$GCP_ENABLED" == "true" ]]; then
         echo "Configuring GCP Backend"
-      fi
-
-      # if azure enabled
-      if [[ "$AZURE_ENABLED" == "true" ]]; then
+      elif [[ "$AZURE_ENABLED" == "true" ]]; then
         echo "Configuring Azure Backend"
-        echo "RESOURCE_GROUP_NAME=$RESOURCE_GROUP_NAME" >> $GITHUB_ENV
       fi
 
       echo "DUPLO_ACCOUNT_ID=$DUPLO_ACCOUNT_ID" >> $GITHUB_ENV

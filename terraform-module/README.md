@@ -31,3 +31,6 @@ The following table describes the inputs for this action:
 
 In the above example, the action is being used to validate a Terraform module located in the `./path/to/module` directory. All of the available options (lint, validate, fmt, plan, and test) are set to their default values of "true", which means all tasks will be performed.
 
+## Azure Notes  
+
+When using Azure, you will need to set this environment variable in your workflow file: `RESOURCE_GROUP`. This will allow the azure cli to retrieve the `ARM_ACCESS_KEY` value and set the variable in the environment. This is needed by Azure TF provider to authenticate to Azure to use the storage bucket backend. The variable may be set at any level as long as it is available to the action. 
