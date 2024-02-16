@@ -1,34 +1,62 @@
-Apologies for the misunderstanding. If the GitHub Action does not have any inputs, the table for inputs in the README can be omitted. Here's an updated version of the README without the inputs table:
+ # Duplo AWS Setup Action
 
-# Duplo AWS Setup Action
-
-This GitHub Action sets up Duplo and AWS tools and performs a login. It provides the following features:
+An Action to set up duplocloud cli and the underlying cloud. During this process, duplo discovers the underlying cloud which is either aws, gcp, or azure. Once the cloud is known, the corresponding cli is installed. Finally the action will authenticate with the cloud provider.
+It provides the following features:
 
 - Setting up Python.
 - Installing `duploctl`.
-- Installing AWS CLI.
-- Running Duplo JIT (Just-In-Time) for AWS.
-- Configuring AWS IAM Credentials.
+- when AWS
+  - Installing AWS CLI.
+  - Running Duplo JIT (Just-In-Time) for AWS.
+  - Configuring AWS IAM Credentials.
+- when GCP
+  - Installing GCP CLI.
+  - Configuring GCP SA Credentials.
+- when Azure
+  - Installing Azure CLI.
+  - Configuring Azure SCP Credentials.
+
+## Inputs
+
+The following input variables can be configured:
+
+| Name              | Description                                                                 | Required | Default Value |
+|-------------------|-----------------------------------------------------------------------------|----------|---------------|
+| `mask-account-id` | Mask AWS Account ID in logs                                                 | `false`  | `yes`         |
+| `region`          | Overide the cloud region from the default. For gcp this is required.        | `false`  |               |
+| `account-id`      | Overide the cloud account id from the default. Required when on gcp/azure where this would be the project name or directory name. | `false`  |               |
+| `credentials`     | Cloud credentials for Azure or GCP.                                         | `false`  |               |
+
+
 
 ## Usage
 
+**AWS Example:**  
 ```yaml
-name: My Workflow
-
-on: [push]
-
+name: Simple AWS Setup
+on: 
+- push
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    env:
+      DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
+      DUPLO_HOST: ${{ vars.DUPLO_HOST  }}
+      DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
-
     - name: Duplo Setup
       uses: duplocloud/actions/setup@main
+```
 
-    # Add more steps to your workflow...
+**GCP or Azure Example:**  
+The only difference is there is no JIT for GCP or Azure. This means the job needs to have some pre-configured credentials to use for authentication. The name of the account is required for GCP and Azure as well. 
+```yaml
+steps:
+- name: Duplo Setup
+  uses: duplocloud/actions/setup@main
+  with:
+    account-id: ${{ vars.CLOUD_ACCOUNT }}
+    credentials: ${{ secrets.CLOUD_CREDENTIALS }}
 ```
 
 ## License
