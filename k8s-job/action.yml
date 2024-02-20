@@ -76,7 +76,14 @@ runs:
       # Wait for all background processes to complete
       wait
 
+      job_status=$(kubectl get job "${JOB_NAME}" -n "${NAMESPACE}" -o=jsonpath='{.status.conditions[?(@.type=="Failed")].status}')
+
       # Delete the Kubernetes job (cleanup)
       kubectl delete -f "$JOB_FILE"
 
-      echo "Executed ${length} pods for job ${JOB_NAME}"
+      if [ "${job_status}" == "True" ]; then
+          echo "Error: Kubernetes job ${JOB_NAME} failed or timed out"
+          exit 1
+      else
+          echo "Executed ${length} pods for job ${JOB_NAME}"
+      fi
