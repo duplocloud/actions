@@ -81,6 +81,7 @@ runs:
       # Delete the Kubernetes job (cleanup)
       kubectl delete -f "$JOB_FILE"
 
+      # job_status update
       if [ "${job_status}" == "True" ]; then
           echo "Error: Kubernetes job ${JOB_NAME} failed or timed out"
           exit 1
