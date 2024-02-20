@@ -17,12 +17,15 @@ runs:
       JOB_FILE: ${{ inputs.file }}
       JOB_TIMEOUT: ${{ inputs.timeout }}
     run: |
+      # Exporting environment variables for use within the shell script
       export JOB JOB_NAME NAMESPACE PODS
       JOB="$(cat "$JOB_FILE")"
 
+      # Extracting relevant metadata from the Kubernetes job file
       JOB_NAME="$(echo "$JOB" | yq -r '.metadata.name')"
       NAMESPACE="$(echo "$JOB" | yq -r '.metadata.namespace')"
 
+      # Function to output pod logs
       function pod_logs() {
         wait_for_resource "pods/${1}" && \
         kubectl wait \
@@ -33,6 +36,7 @@ runs:
         kubectl logs "pods/$1" -n "$NAMESPACE" --follow
       }
 
+      # Function to wait for the existence of a Kubernetes resource
       function wait_for_resource() {
         while : ; do
           res="$(kubectl get "$1" -n "$NAMESPACE" 2>&1)" && break
@@ -40,10 +44,13 @@ runs:
         done
       }
 
+      # Apply the Kubernetes job
       kubectl apply -f "$JOB_FILE"
 
+      # Wait for the Kubernetes job resource to exist
       wait_for_resource "jobs/${JOB_NAME}"
 
+      # Get the list of pods created by the job
       # shellcheck disable=SC2207
       PODS=($(kubectl get pods \
         -l job-name="${JOB_NAME}" \
@@ -53,6 +60,7 @@ runs:
 
       length="${#PODS[@]}"
 
+      # Wait for the Kubernetes job to complete
       echo "Waiting for ${JOB_NAME} to complete and ${length} pods to be ready"
       kubectl wait \
         --for=condition=Complete \
@@ -60,12 +68,15 @@ runs:
         -n "$NAMESPACE" \
         "jobs/${JOB_NAME}" &
 
+      # Output logs for each pod in parallel
       for pod in "${PODS[@]}"; do
         pod_logs "$pod" &
       done
 
+      # Wait for all background processes to complete
       wait
 
+      # Delete the Kubernetes job (cleanup)
       kubectl delete -f "$JOB_FILE"
 
-      echo "Exectued ${length} pods for job ${JOB_NAME}"
+      echo "Executed ${length} pods for job ${JOB_NAME}"
