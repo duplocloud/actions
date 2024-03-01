@@ -47,6 +47,7 @@ runs:
         -input=false
       )
       MODULE_NAME=$(basename $MODULE)
+      PLAN_FILE="${TF_WORKSPACE}-${MODULE_NAME}.tfplan"
       echo "module_name=$MODULE_NAME" >> $GITHUB_OUTPUT
 
       # if parallelism is set then add it to the args
@@ -66,10 +67,14 @@ runs:
         echo "Found $TF_VARS_FILE.json"
         ARGS+=("-var-file=$TF_VARS_FILE.json")
       fi
+      
+      # if the plan is to destroy then add -destroy to the args
+      if [ "$TF_COMMAND" == "destroy" ]; then
+        ARGS+=("-destroy")
+        PLAN_FILE="${TF_COMMAND}-${PLAN_FILE}"
+      fi
 
       echo "The tf args: ${ARGS[*]}"
-
-      PLAN_FILE="${TF_WORKSPACE}-${MODULE_NAME}.tfplan"
       echo "PLAN_FILE=$PLAN_FILE" >> $GITHUB_ENV
       echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
   
@@ -83,7 +88,6 @@ runs:
     id: archived-plan
     continue-on-error: true
     uses: actions/download-artifact@v3
-    if: inputs.command != 'destroy'
     with:
       name: ${{ env.PLAN_FILE }}
       path: ${{ inputs.module }}
@@ -92,8 +96,7 @@ runs:
     id: plan
     shell: bash
     working-directory: ${{ inputs.module }}
-    if: |
-      steps.archived-plan.outcome == 'failure' && inputs.command != 'destroy'
+    if: steps.archived-plan.outcome == 'failure'
     env:
       TF_ARGS: ${{ steps.setup.outputs.args }}
     run: terraform plan $TF_ARGS -out=$PLAN_FILE
@@ -103,32 +106,21 @@ runs:
     shell: bash
     working-directory: ${{ inputs.module }}
     if: |
-      steps.archived-plan.outcome == 'success' && inputs.command != 'destroy'
+      steps.archived-plan.outcome == 'success'
     run: terraform show $PLAN_FILE
   
   - name: Archive Plan
     id: archive-plan
     if: |
-      steps.archived-plan.outcome == 'failure' && inputs.command != 'destroy'
+      steps.archived-plan.outcome == 'failure'
     uses: actions/upload-artifact@v3
     with:
       name: ${{ env.PLAN_FILE }}
       path: ${{ inputs.module }}/${{ env.PLAN_FILE }}
   
-  - name: Apply Module
+  - name: Apply Module Plan
     id: apply
     shell: bash
     working-directory: ${{ inputs.module }}
-    if: inputs.command == 'apply'
-    env:
-      TF_ARGS: ${{ steps.setup.outputs.args }}
+    if: inputs.command == 'apply' || inputs.command == 'destroy'
     run: terraform apply -input=false -auto-approve $PLAN_FILE
-  
-  - name: Destroy Module
-    id: destroy
-    shell: bash
-    working-directory: ${{ inputs.module }}
-    if: inputs.command == 'destroy'
-    env:
-      TF_ARGS: ${{ steps.setup.outputs.args }}
-    run: terraform destroy -input=false -auto-approve
