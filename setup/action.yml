@@ -28,7 +28,7 @@ runs:
     shell: bash
     run: |
       pip install --upgrade pip
-      pip install duplocloud-client
+      pip install duplocloud-client==0.1.16
       echo "Successfully installed duploctl"
       duploctl version
 
