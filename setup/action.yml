@@ -43,8 +43,6 @@ runs:
         pip install duplocloud-client==$VERSION
       fi
       
-      
-
   - name: Duplo Version
     id: duplo-version
     shell: bash
