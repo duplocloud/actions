@@ -26,6 +26,7 @@ The following input variables can be configured:
 | `region`          | Overide the cloud region from the default. For gcp this is required.        | `false`  |               |
 | `account-id`      | Overide the cloud account id from the default. Required when on gcp/azure where this would be the project name or directory name. | `false`  |               |
 | `credentials`     | Cloud credentials for Azure or GCP.                                         | `false`  |               |
+| `version`        | Duplo version to install.                                                    | `false`  | `latest`      |
 
 
 

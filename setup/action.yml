@@ -14,6 +14,10 @@ inputs:
   credentials: 
     required: false
     description: Cloud credentials for Azure or GCP.
+  version: 
+    required: false
+    description: The version of the duploctl to install.
+    default: latest
 runs:
   using: composite
   steps:
@@ -23,12 +27,28 @@ runs:
     with:
       python-version: '3.10'
 
+  - name: Pip Upgrade
+    shell: bash
+    run: pip install --upgrade pip
+
   - name: Install duploctl
     id: install-duploctl
     shell: bash
+    env:
+      VERSION: ${{ inputs.version }}
     run: |
-      pip install --upgrade pip
-      pip install duplocloud-client==0.1.16
+      if [[ "$VERSION" == "latest" ]]; then
+        pip install duplocloud-client
+      else
+        pip install duplocloud-client==$VERSION
+      fi
+      
+      
+
+  - name: Duplo Version
+    id: duplo-version
+    shell: bash
+    run: |
       echo "Successfully installed duploctl"
       duploctl version
 
