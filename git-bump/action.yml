@@ -19,7 +19,6 @@ runs:
       ACTION: ${{ inputs.action }}
     run: |
       echo "Bumping version"
-      git describe --abbrev=0 --tags
 
       # get highest tag number, and add 1.0.0 if doesn't exist
       CURRENT_VERSION=`git describe --abbrev=0 --tags 2>/dev/null`
@@ -59,8 +58,10 @@ runs:
       NEW_TAG="v$VNUM1.$VNUM2.$VNUM3"
       echo "($ACTION) updating $CURRENT_VERSION to $NEW_TAG"
 
+      git rev-parse HEAD
       # get current hash and see if it already has a tag
       GIT_COMMIT=`git rev-parse HEAD`
+      git describe --contains $GIT_COMMIT
       NEEDS_TAG=`git describe --contains $GIT_COMMIT 2>/dev/null`
 
       # only tag if no tag already
