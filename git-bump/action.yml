@@ -63,14 +63,14 @@ runs:
 
       git tag $NEW_TAG
 
-  # - name: Push tag
-  #   if: ${{ inputs.push == 'true' }}
-  #   shell: bash
-  #   run: |
-  #     echo "Pushing tag"
-  #     git push --tags
-  - name: Push
-    uses: ad-m/github-push-action@master
-    with:
-      github_token: ${{ inputs.github_token }}
-      branch: ${{ github.ref }}
+  - name: Push tag
+    if: ${{ inputs.push == 'true' }}
+    shell: bash
+    run: |
+      echo "Pushing tag"
+      git push --tags
+  # - name: Push
+  #   uses: ad-m/github-push-action@master
+  #   with:
+  #     github_token: ${{ inputs.github_token }}
+  #     branch: ${{ github.ref }}
