@@ -19,6 +19,7 @@ runs:
       ACTION: ${{ inputs.action }}
     run: |
       echo "Bumping version"
+      git describe --abbrev=0 --tags
 
       # get highest tag number, and add 1.0.0 if doesn't exist
       CURRENT_VERSION=`git describe --abbrev=0 --tags 2>/dev/null`
