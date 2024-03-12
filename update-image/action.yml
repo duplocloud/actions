@@ -1,0 +1,34 @@
+name: Update Service
+description: Updates an image for a number of container types. 
+inputs:
+  type:
+    description: Service type
+    required: false 
+    default: service
+  name:
+    description: Service name
+    required: true
+  image:
+    description: Image URI
+    required: true
+runs:
+  using: composite
+  steps:
+
+  - name: Verify Type
+    id: verify-type
+    shell: bash
+    if: '!contains(fromJSON(''["service", "ecs", "lambda", "cronjob"]''), inputs.type)'
+    run: |
+      echo "Invalid Type: ${{ inputs.type }}"
+      echo "Valid commands: service, ecs, lambda, cronjob"
+      exit 1
+
+  - name: Update Image
+    id: duploctl
+    shell: bash
+    env:
+      RESOURCE: ${{ inputs.type }}
+      NAME: ${{ inputs.service }}
+      IMAGE: ${{ inputs.image }}
+    run: duploctl $RESOURCE update_image $NAME $IMAGE
