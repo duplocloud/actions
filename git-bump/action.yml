@@ -4,11 +4,14 @@ inputs:
   action:
     description: 'The action to perform: patch, minor, major'
     required: true
-    default: 'patch'
+    default: patch
   push:
-    description: 'Push the new tag to the remote'
+    description: Push the new tag to the remote
     required: false
     default: 'false'
+  github_token:
+    description: GitHub token
+    required: true
 runs:
   using: composite
   steps:
@@ -60,9 +63,14 @@ runs:
 
       git tag $NEW_TAG
 
-  - name: Push tag
-    if: ${{ inputs.push == 'true' }}
-    shell: bash
-    run: |
-      echo "Pushing tag"
-      git push --tags
+  # - name: Push tag
+  #   if: ${{ inputs.push == 'true' }}
+  #   shell: bash
+  #   run: |
+  #     echo "Pushing tag"
+  #     git push --tags
+  - name: Push
+    uses: ad-m/github-push-action@master
+    with:
+      github_token: ${{ inputs.github_token }}
+      branch: ${{ github.ref }}
