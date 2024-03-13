@@ -80,7 +80,7 @@ runs:
       then
         git tag $NEW_TAG
       else 
-        NEW_TAG=""
+        NEW_TAG=${GITHUB_REF#refs/*/}
       fi
 
       echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
