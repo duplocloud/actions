@@ -75,11 +75,11 @@ runs:
       NEW_TAG="v$VNUM1.$VNUM2.$VNUM3"
       echo "($ACTION) updating $CURRENT_VERSION to $NEW_TAG"
 
-      # if push is true, push new tag
+      # only make a tag if push is true
       if [[ $PUSH == 'true' ]]
       then
         git tag $NEW_TAG
-      else
+      else 
         NEW_TAG=""
       fi
 
