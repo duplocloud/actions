@@ -1,0 +1,93 @@
+name: Duplo AWS Setup
+description: Install Duplo and AWS tools and login.
+inputs:
+  action:
+    description: 'The action to perform: patch, minor, major'
+    required: true
+    default: patch
+  push:
+    description: Push the new tag to the remote
+    required: false
+    default: 'false'
+  github_token:
+    description: GitHub token
+    required: true
+outputs:
+  tag:
+    description: The new tag
+    value: ${{ steps.bump.outputs.tag }}
+runs:
+  using: composite
+  steps:
+
+  - name: Checkout
+    id: checkout
+    uses: actions/checkout@v4
+    with:
+      fetch-depth: 0
+      fetch-tags: true
+      token: ${{ inputs.github_token }}
+
+  - name: Bump Version
+    id: bump
+    shell: bash
+    env:
+      ACTION: ${{ inputs.action }}
+      PUSH: ${{ inputs.push }}
+    run: |
+      echo "Bumping version"
+
+      # get highest tag number, and add 1.0.0 if doesn't exist
+      CURRENT_VERSION=`git describe --abbrev=0 --tags 2>/dev/null`
+
+      if [[ $CURRENT_VERSION == '' ]]
+      then
+        CURRENT_VERSION='0.0.1'
+      fi
+      echo "Current Version: $CURRENT_VERSION"
+
+      # replace . with space so can split into an array
+      CURRENT_VERSION_PARTS=(${CURRENT_VERSION//./ })
+
+      #get number parts
+      VNUM1=${CURRENT_VERSION_PARTS[0]//[!0-9]/}
+      VNUM2=${CURRENT_VERSION_PARTS[1]}
+      VNUM3=${CURRENT_VERSION_PARTS[2]}
+
+      if [[ $ACTION == 'major' ]]
+      then
+        VNUM1=$((VNUM1+1))
+        VNUM2=0
+        VNUM3=0
+      elif [[ $ACTION == 'minor' ]]
+      then
+        VNUM2=$((VNUM2+1))
+        VNUM3=0
+      elif [[ $ACTION == 'patch' ]]
+      then
+        VNUM3=$((VNUM3+1))
+      else
+        echo "No version type (https://semver.org/) or incorrect type specified, try: -v [major, minor, patch]"
+        exit 1
+      fi
+
+      # create new tag
+      NEW_TAG="v$VNUM1.$VNUM2.$VNUM3"
+      echo "($ACTION) updating $CURRENT_VERSION to $NEW_TAG"
+
+      # only make a tag if push is true
+      if [[ $PUSH == 'true' ]]
+      then
+        git tag $NEW_TAG
+      else 
+        NEW_TAG=${GITHUB_REF#refs/*/}
+      fi
+
+      echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
+
+  - name: Push tag
+    if: ${{ inputs.push == 'true' }}
+    shell: bash
+    run: |
+      echo "Pushing tag"
+      git push --tags
