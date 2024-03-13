@@ -12,11 +12,16 @@ inputs:
   github_token:
     description: GitHub token
     required: true
+outputs:
+  tag:
+    description: The new tag
+    value: ${{ steps.bump.outputs.tag }}
 runs:
   using: composite
   steps:
 
   - name: Checkout
+    id: checkout
     uses: actions/checkout@v4
     with:
       fetch-depth: 0
@@ -24,9 +29,11 @@ runs:
       token: ${{ inputs.github_token }}
 
   - name: Bump Version
+    id: bump
     shell: bash
     env:
       ACTION: ${{ inputs.action }}
+      PUSH: ${{ inputs.push }}
     run: |
       echo "Bumping version"
 
@@ -68,7 +75,15 @@ runs:
       NEW_TAG="v$VNUM1.$VNUM2.$VNUM3"
       echo "($ACTION) updating $CURRENT_VERSION to $NEW_TAG"
 
-      git tag $NEW_TAG
+      # if push is true, push new tag
+      if [[ $PUSH == 'true' ]]
+      then
+        git tag $NEW_TAG
+      else
+        NEW_TAG=""
+      fi
+
+      echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
 
   - name: Push tag
     if: ${{ inputs.push == 'true' }}
@@ -76,8 +91,3 @@ runs:
     run: |
       echo "Pushing tag"
       git push --tags
-  # - name: Push
-  #   uses: ad-m/github-push-action@master
-  #   with:
-  #     github_token: ${{ inputs.github_token }}
-  #     branch: ${{ github.ref }}
