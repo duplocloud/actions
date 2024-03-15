@@ -4,7 +4,7 @@ updates:
     directory: "/build-image"
     schedule:
       interval: "monthly"
-      time: "12:00"
+      time: "10:00"
       timezone: "America/Denver"
     commit-message:
       prefix: "actions"
@@ -16,7 +16,7 @@ updates:
     directory: "/git-bump"
     schedule:
       interval: "monthly"
-      time: "12:00"
+      time: "10:00"
       timezone: "America/Denver"
     commit-message:
       prefix: "actions"
@@ -28,7 +28,7 @@ updates:
     directory: "/k8s-job"
     schedule:
       interval: "monthly"
-      time: "12:00"
+      time: "10:00"
       timezone: "America/Denver"
     commit-message:
       prefix: "actions"
@@ -40,7 +40,7 @@ updates:
     directory: "/rules"
     schedule:
       interval: "monthly"
-      time: "12:00"
+      time: "10:00"
       timezone: "America/Denver"
     commit-message:
       prefix: "actions"
@@ -52,7 +52,7 @@ updates:
     directory: "/setup"
     schedule:
       interval: "monthly"
-      time: "12:00"
+      time: "10:00"
       timezone: "America/Denver"
     commit-message:
       prefix: "actions"
@@ -64,7 +64,7 @@ updates:
     directory: "/setup-terraform"
     schedule:
       interval: "monthly"
-      time: "12:00"
+      time: "10:00"
       timezone: "America/Denver"
     commit-message:
       prefix: "actions"
@@ -76,7 +76,7 @@ updates:
     directory: "/terraform-exec"
     schedule:
       interval: "monthly"
-      time: "12:00"
+      time: "10:00"
       timezone: "America/Denver"
     commit-message:
       prefix: "actions"
@@ -88,7 +88,7 @@ updates:
     directory: "/terraform-module"
     schedule:
       interval: "monthly"
-      time: "12:00"
+      time: "10:00"
       timezone: "America/Denver"
     commit-message:
       prefix: "actions"
@@ -100,7 +100,7 @@ updates:
     directory: "/update-cronjob"
     schedule:
       interval: "monthly"
-      time: "12:00"
+      time: "10:00"
       timezone: "America/Denver"
     commit-message:
       prefix: "actions"
@@ -112,7 +112,7 @@ updates:
     directory: "/update-image"
     schedule:
       interval: "monthly"
-      time: "12:00"
+      time: "10:00"
       timezone: "America/Denver"
     commit-message:
       prefix: "actions"
@@ -124,7 +124,7 @@ updates:
     directory: "/update-service"
     schedule:
       interval: "monthly"
-      time: "12:00"
+      time: "10:00"
       timezone: "America/Denver"
     commit-message:
       prefix: "actions"
