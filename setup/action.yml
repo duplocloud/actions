@@ -114,7 +114,7 @@ runs:
 
   - name: Configure AWS IAM Credentials
     id: aws-iam
-    uses: aws-actions/configure-aws-credentials@v3
+    uses: aws-actions/configure-aws-credentials@v4
     if: env.AWS_ENABLED == 'true'
     with:
       aws-access-key-id: ${{ steps.duplo-jit-aws.outputs.AWS_ACCESS_KEY_ID }}
