@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/build-image"
     schedule:
-      interval: "daily"
+      interval: "monthly"
       time: "12:00"
       timezone: "America/Denver"
     commit-message:
@@ -15,7 +15,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/git-bump"
     schedule:
-      interval: "daily"
+      interval: "monthly"
       time: "12:00"
       timezone: "America/Denver"
     commit-message:
@@ -27,7 +27,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/k8s-job"
     schedule:
-      interval: "daily"
+      interval: "monthly"
       time: "12:00"
       timezone: "America/Denver"
     commit-message:
@@ -39,7 +39,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/rules"
     schedule:
-      interval: "daily"
+      interval: "monthly"
       time: "12:00"
       timezone: "America/Denver"
     commit-message:
@@ -51,7 +51,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/setup"
     schedule:
-      interval: "daily"
+      interval: "monthly"
       time: "12:00"
       timezone: "America/Denver"
     commit-message:
@@ -63,7 +63,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/setup-terraform"
     schedule:
-      interval: "daily"
+      interval: "monthly"
       time: "12:00"
       timezone: "America/Denver"
     commit-message:
@@ -75,7 +75,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/terraform-exec"
     schedule:
-      interval: "daily"
+      interval: "monthly"
       time: "12:00"
       timezone: "America/Denver"
     commit-message:
@@ -87,7 +87,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/terraform-module"
     schedule:
-      interval: "daily"
+      interval: "monthly"
       time: "12:00"
       timezone: "America/Denver"
     commit-message:
@@ -99,7 +99,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/update-cronjob"
     schedule:
-      interval: "daily"
+      interval: "monthly"
       time: "12:00"
       timezone: "America/Denver"
     commit-message:
@@ -111,7 +111,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/update-image"
     schedule:
-      interval: "daily"
+      interval: "monthly"
       time: "12:00"
       timezone: "America/Denver"
     commit-message:
@@ -123,7 +123,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/update-service"
     schedule:
-      interval: "daily"
+      interval: "monthly"
       time: "12:00"
       timezone: "America/Denver"
     commit-message:
