@@ -148,7 +148,7 @@ runs:
 
   - name: Azure Login
     id: login-azure
-    uses: azure/login@v1
+    uses: azure/login@v2
     if: env.AZURE_ENABLED == 'true' && inputs.credentials
     with:
       creds: ${{ inputs.credentials }}
