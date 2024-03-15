@@ -27,7 +27,7 @@ runs:
       owner: ${{ github.repository_owner }}
       username: ${{ github.event.sender.login }}
 
-  - uses: tspascoal/get-user-teams-membership@v2
+  - uses: tspascoal/get-user-teams-membership@v3
     id: actorTeams
     with:
       username: ${{ github.actor }}
