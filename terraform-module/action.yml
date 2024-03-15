@@ -97,7 +97,7 @@ runs:
 
   - name: Cache Modules
     id: plugin-cache
-    uses: actions/cache@v3
+    uses: actions/cache@v4
     if: steps.setup.outputs.module_cache == 'true'
     with:
       path: |
