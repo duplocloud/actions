@@ -65,7 +65,7 @@ runs:
   - name: Login to Amazon ECR
     id: login-ecr
     if: env.AWS_ENABLED == 'true'
-    uses: aws-actions/amazon-ecr-login@v1
+    uses: aws-actions/amazon-ecr-login@v2
 
   # if not ecr then login to dockerhub
   - name: Login to DockerHub
