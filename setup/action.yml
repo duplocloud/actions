@@ -155,7 +155,7 @@ runs:
 
   - name: Azure CLI script
     id: setup-azure-cli
-    uses: azure/CLI@v1
+    uses: azure/CLI@v2
     if: env.AZURE_ENABLED == 'true'
     with:
       azcliversion: 2.57.0
