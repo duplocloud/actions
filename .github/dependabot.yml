@@ -1,6 +1,18 @@
 version: 2
 updates:
   - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      time: "10:00"
+      timezone: "America/Denver"
+    commit-message:
+      prefix: "actions"
+    labels:
+      - "dependencies"
+    open-pull-requests-limit: 100
+
+  - package-ecosystem: "github-actions"
     directory: "/build-image"
     schedule:
       interval: "monthly"
