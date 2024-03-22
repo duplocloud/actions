@@ -18,6 +18,10 @@ inputs:
     required: false
     description: The version of the duploctl to install.
     default: latest
+  admin:
+    required: true
+    description: Admin user name.
+    default: "false"
 runs:
   using: composite
   steps:
@@ -56,6 +60,7 @@ runs:
     env:
       DUPLO_ACCOUNT_ID: ${{ inputs.account-id }}
       DUPLO_DEFAULT_REGION: ${{ inputs.region }}
+      ISADMIN: ${{ inputs.admin }}
     run: |
       PORTAL_INFO="$(duploctl system info)"
 
@@ -82,6 +87,13 @@ runs:
         echo "Configuring Azure Backend"
       fi
 
+      # if is admin 
+      if [[ "$ISADMIN" == "true" ]]; then
+        echo "ADMIN_FLAG=--admin" >> $GITHUB_OUTPUT
+      else
+        echo "ADMIN_FLAG=" >> $GITHUB_OUTPUT
+      fi
+
       echo "DUPLO_ACCOUNT_ID=$DUPLO_ACCOUNT_ID" >> $GITHUB_ENV
       echo "DUPLO_DEFAULT_REGION=$DUPLO_DEFAULT_REGION" >> $GITHUB_ENV
 
@@ -104,13 +116,14 @@ runs:
     if: env.AWS_ENABLED == 'true'
     env:
       AWS_REGION: ${{ inputs.region }}
+      ADMIN_FLAG: ${{ steps.portal-info.outputs.ADMIN_FLAG }}
     run: >-
       duploctl jit aws -q '{
       AWS_ACCESS_KEY_ID: AccessKeyId, 
       AWS_SECRET_ACCESS_KEY: SecretAccessKey, 
       AWS_SESSION_TOKEN: SessionToken, 
       AWS_REGION: Region
-      }' -o env >> $GITHUB_OUTPUT
+      }' -o env $ADMIN_FLAG >> $GITHUB_OUTPUT
 
   - name: Configure AWS IAM Credentials
     id: aws-iam
