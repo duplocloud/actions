@@ -29,6 +29,6 @@ runs:
     shell: bash
     env:
       RESOURCE: ${{ inputs.type }}
-      NAME: ${{ inputs.service }}
+      NAME: ${{ inputs.name }}
       IMAGE: ${{ inputs.image }}
     run: duploctl $RESOURCE update_image $NAME $IMAGE
