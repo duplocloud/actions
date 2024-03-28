@@ -19,7 +19,7 @@ inputs:
     description: The version of the duploctl to install.
     default: latest
   admin:
-    required: true
+    required: false
     description: Admin user name.
     default: "false"
 runs:
