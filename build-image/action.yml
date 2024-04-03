@@ -13,7 +13,7 @@ inputs:
   build-args:
     description: List of build args like key=value
     required: false
-  extra-tags:
+  tags:
     description: Extra space delimited tags to add to the image
     required: false
   target:
@@ -142,7 +142,7 @@ runs:
     shell: bash
     env:
       IMAGE: ${{ steps.setup.outputs.image }}
-      EXTRA_TAGS: ${{ inputs.extra-tags }}
+      EXTRA_TAGS: ${{ inputs.tags }}
     run: |
       ARGS=()
       TAGS=($EXTRA_TAGS)
