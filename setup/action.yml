@@ -133,7 +133,7 @@ runs:
       aws-access-key-id: ${{ steps.duplo-jit-aws.outputs.AWS_ACCESS_KEY_ID }}
       aws-secret-access-key: ${{ steps.duplo-jit-aws.outputs.AWS_SECRET_ACCESS_KEY }}
       aws-session-token: ${{ steps.duplo-jit-aws.outputs.AWS_SESSION_TOKEN }}
-      aws-region: ${{ steps.duplo-jit-aws.outputs.AWS_REGION }}
+      aws-region: ${{ env.AWS_REGION || steps.duplo-jit-aws.outputs.AWS_REGION }}
       mask-aws-account-id: ${{ inputs.mask-account-id }}
 
   ###
