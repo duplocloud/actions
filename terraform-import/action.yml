@@ -69,5 +69,5 @@ runs:
         key="${resource%%=*}" # everything before the first '='
         value="${resource#*=}" # everything after the first '='
         echo "Importing $key with ID $value"
-        terraform import "$key" "$value" $TF_ARGS
+        terraform import $TF_ARGS "$key" "$value"
       done
