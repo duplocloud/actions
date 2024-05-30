@@ -68,5 +68,6 @@ runs:
       for resource in $RESOURCES; do
         key="${resource%%=*}" # everything before the first '='
         value="${resource#*=}" # everything after the first '='
+        echo "Importing $key with ID $value"
         terraform import "$key" "$value" $TF_ARGS
       done
