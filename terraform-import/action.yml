@@ -1,0 +1,72 @@
+name: Import Terraform
+description: Import a Terraform Module
+inputs:
+  module:
+    description: Working directory
+    required: true
+  workspace:
+    description: Terraform workspace
+    required: false
+    default: default
+  config:
+    description: Terraform configs
+    required: false
+    default: config
+  resources:
+    description: A list of resource IDs to import. 
+    required: true
+    default: plan
+runs:
+  using: composite
+  steps:  
+
+  - name: Setup
+    id: setup
+    shell: bash
+    working-directory: ${{ inputs.module }}
+    env:
+      TF_WORKSPACE: ${{ inputs.workspace }}
+      MODULE: ${{ inputs.module }}
+      CONFIG_DIR: ${{ github.workspace }}/${{ inputs.config }}
+    run: |
+      ARGS=(
+        -input=false
+      )
+      MODULE_NAME=$(basename $MODULE)
+      echo "module_name=$MODULE_NAME" >> $GITHUB_OUTPUT
+
+      # append workspace variables files if they exist
+      TF_VARS_FILE="$CONFIG_DIR/$TF_WORKSPACE/$MODULE_NAME.tfvars"
+      echo "Discovering vars at $TF_VARS_FILE"
+      if [ -f "$TF_VARS_FILE" ]; then
+        echo "Found $TF_VARS_FILE"
+        ARGS+=("-var-file=$TF_VARS_FILE")
+      fi
+      echo "Discovering vars at $TF_VARS_FILE.json"
+      if [ -f "$TF_VARS_FILE.json" ]; then
+        echo "Found $TF_VARS_FILE.json"
+        ARGS+=("-var-file=$TF_VARS_FILE.json")
+      fi
+      
+      echo "The tf args: ${ARGS[*]}"
+      echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
+  
+  - name: Select Workspace
+    id: select-workspace
+    shell: bash
+    working-directory: ${{ inputs.module }}
+    run: terraform workspace select -or-create ${{ inputs.workspace }}
+  
+  - name: Import Resources
+    id: import
+    shell: bash
+    working-directory: ${{ inputs.module }}
+    env:
+      RESOURCES: ${{ inputs.resources }}
+      TF_ARGS: ${{ steps.setup.outputs.args }}
+    run: |
+      for resource in $RESOURCES; do
+        key="${resource%%=*}" # everything before the first '='
+        value="${resource#*=}" # everything after the first '='
+        terraform import "$key" "$value" $TF_ARGS
+      done
