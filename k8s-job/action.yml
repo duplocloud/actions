@@ -7,6 +7,10 @@ inputs:
   timeout:
     description: 'The timeout for the job'
     default: 300s
+  no_cleanup:
+    description: 'If enabled the job will not be deleted on completion. Useful for debugging.'
+    required: false
+    default: 'false'
 runs:
   using: composite
   steps:
@@ -79,7 +83,10 @@ runs:
       job_status=$(kubectl get job "${JOB_NAME}" -n "${NAMESPACE}" -o=jsonpath='{.status.conditions[?(@.type=="Failed")].status}')
 
       # Delete the Kubernetes job (cleanup)
-      kubectl delete -f "$JOB_FILE"
+      if [ "${no_cleanup}" == "false" ]; then
+          echo "Cleaning up job ${JOB_NAME}"
+          kubectl delete -f "$JOB_FILE"
+      fi
 
       # job_status update
       if [ "${job_status}" == "True" ]; then
