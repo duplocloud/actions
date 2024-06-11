@@ -57,6 +57,8 @@ jobs:
 
     - name: Duplo and AWS Setup
       uses: duplocloud/actions/setup@main
+      with:
+        admin: true
     
     - name: Terraform Setup
       uses: duplocloud/actions/setup-terraform@main
