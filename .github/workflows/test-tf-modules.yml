@@ -39,6 +39,7 @@ jobs:
         export MATRIX='{"module": ['$matrix_list']}'
         echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
         echo "Modules to test: ${MODULES[@]}" >> $GITHUB_STEP_SUMMARY
+
   tfmodule:
     name: Testing Module
     runs-on: ubuntu-latest
@@ -80,3 +81,11 @@ jobs:
       with:
         module: examples/${{ matrix.module }}
         workspace: test
+
+  tf_success:
+    name: TF Tested
+    runs-on: ubuntu-latest
+    needs: tfmodule
+    steps:
+    - name: Success
+      run: echo "Success"
