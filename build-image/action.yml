@@ -235,6 +235,7 @@ runs:
 
   - name: Image Summary
     shell: bash
+    if: always()
     env:
       REPO: ${{ steps.setup.outputs.repo }}
       REGISTRY: ${{ steps.setup.outputs.registry }}
