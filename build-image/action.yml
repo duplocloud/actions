@@ -8,10 +8,10 @@ inputs:
     description: Registry name, defaults to ecr if on aws. 
     required: false
   platforms:
-    description: Build multi-arch image
+    description: Build multi-arch image with BuildX
     required: false
   build-args:
-    description: List of build args like key=value
+    description: List of build args like key=value.
     required: false
   tags:
     description: Extra space delimited tags to add to the image
@@ -43,6 +43,10 @@ inputs:
   docker-password:
     description: Docker password
     required: false
+  enable-buildx:
+    description: Enable buildx
+    required: false
+    default: "true"
 outputs:
   image:
     description: Docker image
@@ -169,6 +173,7 @@ runs:
   - name: Buildx Args
     shell: bash
     id: buildx-args
+    if: inputs.enable-buildx == 'true'
     env:
       PLATFORMS: ${{ inputs.platforms }}
       PUSH: ${{ inputs.push }}
@@ -193,26 +198,34 @@ runs:
       echo "multiarch=${MULTIARCH}" >> $GITHUB_OUTPUT
 
   - name: Expose GitHub Runtime
+    if: inputs.enable-buildx == 'true'
     uses: crazy-max/ghaction-github-runtime@v3
   
   - name: Setup QEMU
     id: setup-qemu
+    if: inputs.enable-buildx == 'true'
     uses: docker/setup-qemu-action@v3
 
   - name: Set up Docker Buildx
     id: buildx
+    if: inputs.enable-buildx == 'true'
     uses: docker/setup-buildx-action@v3
 
   - name: Build Docker Command
     id: docker-command
     shell: bash
     env:
+      BASE_ARGS: ${{ steps.setup.outputs.args }}
       EXTRA_ARGS: ${{ inputs.extra-args }}
       TAG_ARGS: ${{ steps.tags.outputs.args }}
-      BUILDX_ARGS: ${{ steps.buildx-args.outputs.args }}
-      BASE_ARGS: ${{ steps.setup.outputs.args }}
+      BUILDX_ENABLED: ${{ inputs.enable-buildx }}
+      BUILDX_ARGS: ${{ steps.buildx-args.outputs.args || "" }}
     run: |
-      DOCKER_COMMAND="docker buildx build $EXTRA_ARGS $BUILDX_ARGS $TAG_ARGS $BASE_ARGS"
+      if [[ "$BUILDX_ENABLED" == "true" ]]; then
+        DOCKER_COMMAND="docker buildx build $EXTRA_ARGS $BUILDX_ARGS $TAG_ARGS $BASE_ARGS"
+      else
+        DOCKER_COMMAND="docker build $EXTRA_ARGS $TAG_ARGS $BASE_ARGS"
+      fi
       echo "DOCKER_COMMAND=$DOCKER_COMMAND" >> $GITHUB_OUTPUT
 
   - name: Build and Push
