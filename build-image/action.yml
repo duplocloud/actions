@@ -219,7 +219,7 @@ runs:
       EXTRA_ARGS: ${{ inputs.extra-args }}
       TAG_ARGS: ${{ steps.tags.outputs.args }}
       BUILDX_ENABLED: ${{ inputs.enable-buildx }}
-      BUILDX_ARGS: ${{ steps.buildx-args.outputs.args || "" }}
+      BUILDX_ARGS: ${{ steps.buildx-args.outputs.args || '' }}
     run: |
       if [[ "$BUILDX_ENABLED" == "true" ]]; then
         DOCKER_COMMAND="docker buildx build $EXTRA_ARGS $BUILDX_ARGS $TAG_ARGS $BASE_ARGS"
