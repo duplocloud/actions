@@ -34,6 +34,10 @@ inputs:
     description: Cache image layers if buildx enabled. 
     required: false
     default: "true"
+  cache-scope: 
+    description: The scope key to identify the cache. Useful when this is used more than once in a workflow. 
+    required: false
+    default: buildkit
   extra-args:
     description: Extra args to pass to buildx
     required: false
@@ -179,6 +183,7 @@ runs:
       PUSH: ${{ inputs.push }}
       MULTIARCH: "false"
       CACHE: ${{ inputs.cache }}
+      CACHE_SCOPE: ${{ inputs.cache-scope }}
     run: |
       ARGS=()
 
@@ -190,8 +195,9 @@ runs:
 
       # if cache is true
       if [[ "$CACHE" == "true" ]]; then
-        ARGS+=(--cache-to type=gha,mode=max)
-        ARGS+=(--cache-from type=gha)
+        CACHE_CONFIG="type=gha,scope=${CACHE_SCOPE}"
+        ARGS+=(--cache-to ${CACHE_CONFIG},mode=max)
+        ARGS+=(--cache-from ${CACHE_CONFIG})
       fi
 
       echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
