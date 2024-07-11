@@ -253,7 +253,11 @@ runs:
       **Tags**: 
       EOF
       for tag in $TAGS; do
-        echo "- ${tag}" >> $GITHUB_STEP_SUMMARY
+        cat <<EOF >> $GITHUB_STEP_SUMMARY
+      \`\`\`bash
+      ${IMAGE}:${tag}
+      \`\`\`
+      EOF
       done
   
   # - name: Build and Push Multi-Arch Image
