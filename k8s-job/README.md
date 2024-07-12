@@ -39,6 +39,11 @@ jobs:
                   - -c
                   args:
                   - |
+                    # Jobs that exit immediately may fail the wait conditions above or be missing logs.
+                    # Most jobs take at least a few seconds to complete, so this isn't an issue. If your
+                    # job exits too quickly, inject some seconds of sleep. Upcoming Kubernetes features
+                    # may simplify this.
+                    sleep 10
                     echo "Hello World, I'm in Kubernetes!"
           EOF
 
