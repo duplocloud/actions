@@ -33,7 +33,18 @@ runs:
           -n "$NAMESPACE" \
           --timeout="${JOB_TIMEOUT}" \
           "pods/${1}" && \
-        kubectl logs "pods/$1" -n "$NAMESPACE" --follow
+        # If the pod is placed on a node that just started (e.g. because the job triggered a scale up) and we try to
+        # get logs too quickly, sometimes we get TLS errors from the node. Waiting for the node to be in the "Ready" state
+        # doesn't reliably resolve this, and also can't be done with tenant-scoped permissions.
+        retries=5
+        while ! kubectl logs "pods/$1" -n "$NAMESPACE" --follow; do
+            retries=$((retries-1))
+            if [ "$retries" == "0" ]; then
+                break
+            fi
+            echo "Retrying..."
+            sleep 5
+        done
       }
 
       # Function to wait for the existence of a Kubernetes resource
