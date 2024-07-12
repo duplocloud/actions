@@ -45,7 +45,7 @@ jobs:
       DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
     steps:
     - name: Duplo Setup
-      uses: duplocloud/actions/setup@main
+      uses: duplocloud/actions@main
 ```
 
 **GCP or Azure Example:**  
@@ -53,7 +53,7 @@ The only difference is there is no JIT for GCP or Azure. This means the job need
 ```yaml
 steps:
 - name: Duplo Setup
-  uses: duplocloud/actions/setup@main
+  uses: duplocloud/actions@main
   with:
     account-id: ${{ vars.CLOUD_ACCOUNT }}
     credentials: ${{ secrets.CLOUD_CREDENTIALS }}
