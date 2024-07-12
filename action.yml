@@ -2,7 +2,7 @@ name: Duplocloud
 description: Install Duplocloud tools and login.
 author: duplocloud
 branding:
-  icon: cpu
+  icon: cloud
   color: orange
 inputs:
   mask-account-id:
