@@ -101,25 +101,25 @@ The action uses the `google-github-actions/setup-gcloud` action to authenticate 
 
 This repo is a mono repo for a number of useful actions. The main action is the `setup` action. Once all the tools are installed by running the setup action, the other actions can be used.
 
-### [duplocloud/actions/update-image](https://github.com/duplocloud/actions/update-image)  
+### [duplocloud/actions/update-image](./update-image)  
 This action is used to update the image of a service in Duplo. It is a simple action that takes the service name and the image name as inputs.
 
-### [duplocloud/actions/build-image](https://github.com/duplocloud/actions/build-image)  
+### [duplocloud/actions/build-image](./build-image)  
 A wrapper for the `docker build` or `buildx` command. This action is used to build a docker image and push it to a registry.
 
-### [duplocloud/actions/setup-terraform](https://github.com/duplocloud/actions/setup-terraform)  
+### [duplocloud/actions/setup-terraform](./setup-terraform)  
 This action is used to install the necessary dependencies for working with Terraform. It supports caching of Terraform and TFLint plugins to improve performance.
 
-### [duplocloud/actions/terraform-module](https://github.com/duplocloud/actions/terraform-module)  
+### [duplocloud/actions/terraform-module](./terraform-module)  
 Sets up a Terraform module for use in a GitHub Action. 
 
-### [duplocloud/actions/terraform-exec](https://github.com/duplocloud/actions/terraform-exec)  
+### [duplocloud/actions/terraform-exec](./terraform-exec)  
 Runs plan/apply/destroy on a Terraform module.
 
-### [duplocloud/actions/terraform-import](https://github.com/duplocloud/actions/terraform-import)  
+### [duplocloud/actions/terraform-import](./terraform-import)  
 Import a list resources into a Terraform state file.
 
-### [duplocloud/actions/k8s-job](https://github.com/duplocloud/actions/k8s-job)  
+### [duplocloud/actions/k8s-job](./k8s-job)  
 Import a list resources into a Terraform state file.
 
 ## License
