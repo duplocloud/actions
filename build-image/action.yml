@@ -331,6 +331,7 @@ runs:
     if: steps.setup.outputs.build_from_file == 'true'
     env:
       REGISTRY: ${{ steps.image-env.outputs.registry }}
+      IMAGE: ${{ steps.image-env.outputs.image || '' }}
       REPO: ${{ steps.image-env.outputs.repo }}
       GIT_SHA: ${{ steps.image-env.outputs.short_sha }}
       GIT_REF: ${{ steps.image-env.outputs.ref }}
@@ -341,6 +342,7 @@ runs:
     shell: bash
     env:
       REGISTRY: ${{ steps.image-env.outputs.registry }}
+      IMAGE: ${{ steps.image-env.outputs.image || '' }}
       REPO: ${{ steps.image-env.outputs.repo }}
       GIT_SHA: ${{ steps.image-env.outputs.short_sha }}
       GIT_REF: ${{ steps.image-env.outputs.ref }}
@@ -350,10 +352,10 @@ runs:
     shell: bash
     if: always()
     env:
-      REPO: ${{ steps.tags.outputs.repo || '' }}
-      REGISTRY: ${{ steps.tags.outputs.registry || '' }}
-      IMAGE: ${{ steps.tags.outputs.image || '' }}
-      TAGS: ${{ steps.tags.outputs.tags || '' }}
+      REPO: ${{ steps.image-env.outputs.repo || '' }}
+      REGISTRY: ${{ steps.image-env.outputs.registry || '' }}
+      IMAGE: ${{ steps.image-env.outputs.image || '' }}
+      TAGS: ${{ steps.cli-args.outputs.tags || '' }}
       DOCKER_COMMAND: ${{ steps.docker.outputs.command }}
     run: |
       cat <<EOF >> $GITHUB_STEP_SUMMARY
