@@ -195,8 +195,8 @@ runs:
       MULTIARCH: "false"
       EXTRA_TAGS: ${{ inputs.tags }}
       IMAGE: ${{ steps.image-env.outputs.image }}
-      GIT_SHA: ${{ steps.image-env.outputs.short_sha }}
-      GIT_REF: ${{ steps.image-env.outputs.ref }}
+      GIT_SHA: ${{ steps.image-env.outputs.git_sha }}
+      GIT_REF: ${{ steps.image-env.outputs.git_ref }}
     run: |
       ARGS=($EXTRA_ARGS)
 
@@ -335,8 +335,8 @@ runs:
       REGISTRY: ${{ steps.image-env.outputs.registry }}
       IMAGE: ${{ steps.image-env.outputs.image || '' }}
       REPO: ${{ steps.image-env.outputs.repo }}
-      GIT_SHA: ${{ steps.image-env.outputs.short_sha }}
-      GIT_REF: ${{ steps.image-env.outputs.ref }}
+      GIT_SHA: ${{ steps.image-env.outputs.git_sha }}
+      GIT_REF: ${{ steps.image-env.outputs.git_ref }}
     run: ${{ steps.docker.outputs.command }} --print
 
   - name: Docker Build
@@ -346,8 +346,8 @@ runs:
       REGISTRY: ${{ steps.image-env.outputs.registry }}
       IMAGE: ${{ steps.image-env.outputs.image || '' }}
       REPO: ${{ steps.image-env.outputs.repo }}
-      GIT_SHA: ${{ steps.image-env.outputs.short_sha }}
-      GIT_REF: ${{ steps.image-env.outputs.ref }}
+      GIT_SHA: ${{ steps.image-env.outputs.git_sha }}
+      GIT_REF: ${{ steps.image-env.outputs.git_ref }}
     run: ${{ steps.docker.outputs.command }}
 
   - name: Image Summary
