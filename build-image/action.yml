@@ -147,6 +147,7 @@ runs:
       # if neither registry or repo is set dockerhub naming style matching github
       if [[ -z "$REGISTRY" && -z "$REPO" ]]; then
         IMAGE="${GITHUB_REPOSITORY}"
+        REPO="$(basename $GITHUB_REPOSITORY)"
       else
         # otherwise use the repo name to match the image repo
         if [[ -z "$REPO" ]]; then
@@ -158,6 +159,7 @@ runs:
 
       # export short sha for tags
       GIT_SHA="$(git rev-parse --short HEAD)"
+      echo "Short sha is $GIT_SHA"
 
       # ref name
       ## TODO: maybe use this GITHUB_REF_NAME
