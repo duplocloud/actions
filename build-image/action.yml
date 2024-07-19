@@ -40,7 +40,7 @@ inputs:
   push:
     description: Push image to registry
     required: false
-    default: "true"
+    default: "false"
   cache: 
     description: Cache image layers if buildx enabled. 
     required: false
