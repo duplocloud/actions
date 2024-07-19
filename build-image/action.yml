@@ -325,6 +325,17 @@ runs:
       DOCKER_COMMAND="docker ${BUILD_CMD} ${CLI_ARGS}"
       echo "command=$DOCKER_COMMAND" >> $GITHUB_OUTPUT
 
+  - name: Docker Build Preview
+    id: build
+    shell: bash
+    if: steps.setup.outputs.build_from_file == 'true'
+    env:
+      REGISTRY: ${{ steps.image-env.outputs.registry }}
+      REPO: ${{ steps.image-env.outputs.repo }}
+      GIT_SHA: ${{ steps.image-env.outputs.short_sha }}
+      GIT_REF: ${{ steps.image-env.outputs.ref }}
+    run: ${{ steps.docker.outputs.command }} --print
+
   - name: Docker Build
     id: build
     shell: bash
