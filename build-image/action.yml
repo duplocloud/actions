@@ -1,6 +1,11 @@
 name: Build and push Docker image
 description: Deploy to Kubernetes using Helm
 inputs:
+  type:
+    description: |
+      choose one of: docker, buildx, compose, bake
+      This will effect what some of the other inputs mean. 
+    default: docker
   repo:
     description: Repository name, defaults to git repo name
     required: false
@@ -53,24 +58,19 @@ inputs:
   docker-password:
     description: Docker password
     required: false
-  builder:
-    description: |
-      choose one of: docker, buildx, compose, bake
-      This will effect what some of the other inputs mean. 
-    default: docker
 outputs:
   image:
     description: Docker image
-    value: ${{ steps.setup.outputs.image }}
+    value: ${{ steps.image-env.outputs.image }}
   repo:
     description: Repository Name
-    value: ${{ steps.setup.outputs.repo }}
-  branch:
+    value: ${{ steps.image-env.outputs.repo }}
+  ref:
     description: Branch name
-    value: ${{ steps.setup.outputs.branch }}
+    value: ${{ steps.image-env.outputs.ref }}
   uri:
     description: Image URI
-    value: ${{ steps.tags.outputs.uri }}
+    value: ${{ steps.image-env.outputs.uri }}
 
 runs:
   using: composite
@@ -96,27 +96,27 @@ runs:
     id: setup
     shell: bash
     env:
-      BUILDER: ${{ inputs.builder }}
+      BUILD_TYPE: ${{ inputs.type }}
     run: |
       # make available to other steps
-      echo "name=$BUILDER" >> $GITHUB_OUTPUT
+      echo "name=$BUILD_TYPE" >> $GITHUB_OUTPUT
 
-      # if BUILDER is buildx or bake
-      if [[ "$BUILDER" == "buildx" || "$BUILDER" == "bake" ]]; then
+      # if BUILD_TYPE is buildx or bake
+      if [[ "$BUILD_TYPE" == "buildx" || "$BUILD_TYPE" == "bake" ]]; then
         echo "buildx_enabled=true" >> $GITHUB_OUTPUT
       else
         echo "buildx_enabled=false" >> $GITHUB_OUTPUT
       fi
 
-      # if BUILDER is compose or bake then build_from_file is enabled
-      if [[ "$BUILDER" == "compose" || "$BUILDER" == "bake" ]]; then
+      # if BUILD_TYPE is compose or bake then build_from_file is enabled
+      if [[ "$BUILD_TYPE" == "compose" || "$BUILD_TYPE" == "bake" ]]; then
         echo "build_from_file=true" >> $GITHUB_OUTPUT
       else
         echo "build_from_file=false" >> $GITHUB_OUTPUT
       fi
 
       # based on the builder, output the build command
-      case $BUILDER in
+      case $BUILD_TYPE in
         docker)
           echo "build_cmd=build" >> $GITHUB_OUTPUT
           ;;
@@ -131,19 +131,14 @@ runs:
           ;;
       esac
 
-  # build the tags for the cli command
-  - name: Setup Tags
-    id: tags
+  # export useful image environment variables and tags
+  - name: Image Environment
+    id: image-env
     shell: bash
-    if: steps.setup.outputs.build_from_file == 'false'
     env:
       REGISTRY: ${{ inputs.registry }}
       REPO: ${{ inputs.repo }}
-      EXTRA_TAGS: ${{ inputs.tags }}
     run: |
-      ARGS=()
-      TAGS=($EXTRA_TAGS)
-
       # if AWS_ENABLED use ecr registry
       if [[ "$AWS_ENABLED" == "true" ]]; then
         REGISTRY="${{ steps.login-ecr.outputs.registry }}"
@@ -161,28 +156,21 @@ runs:
         IMAGE="${REGISTRY}/${REPO}"
       fi
 
-      # common to use sha as a tag to direct ref commit
-      SHA="$(git rev-parse --short HEAD)"
-      TAGS+=("${SHA}")
-      
-      # the sed part handles dependabot issues with slash names
+      # export short sha for tags
+      GIT_SHA="$(git rev-parse --short HEAD)"
+
+      # ref name
       ## TODO: maybe use this GITHUB_REF_NAME
-      REF="$(echo ${GITHUB_REF##*/} | sed -e 's/\//_/g')"
-      TAGS+=("${REF}")
+      # the sed part handles dependabot issues with slash names
+      GIT_REF="$(echo ${GITHUB_REF##*/} | sed -e 's/\//_/g')"
 
-      # add all the tags with image as args
-      for tag in ${TAGS[*]}; do
-        ARGS+=(--tag "${IMAGE}:${tag}")
-      done
-
+      # this is for the output
       echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
-      echo "repo=${REPO}" >> $GITHUB_OUTPUT
       echo "image=${IMAGE}" >> $GITHUB_OUTPUT
-      echo "ref=$REF" >> $GITHUB_OUTPUT
-      echo "sha=${SHA}" >> $GITHUB_OUTPUT
-      echo "uri=${IMAGE}:${SHA}" >> $GITHUB_OUTPUT
-      echo "tags=${TAGS[*]}" >> $GITHUB_OUTPUT
-      echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
+      echo "repo=${REPO}" >> $GITHUB_OUTPUT
+      echo "git_ref=${GIT_REF}" >> $GITHUB_OUTPUT
+      echo "git_sha=${GIT_SHA}" >> $GITHUB_OUTPUT
+      echo "uri=${IMAGE}:${GIT_SHA}" >> $GITHUB_OUTPUT
 
   # setup the base image
   - name: Setup CLI Args
@@ -192,7 +180,6 @@ runs:
     env:
       EXTRA_ARGS: ${{ inputs.extra-args }}
       BUILD_ARGS: ${{ inputs.build-args }}
-      TAG_ARGS: ${{ steps.tags.outputs.args }}
       PUSH: ${{ inputs.push }}
       DOCKERFILE: ${{ inputs.dockerfile }}
       BUILDFILE: ${{ inputs.file }}
@@ -204,6 +191,10 @@ runs:
       BUILDX_ENABLED: ${{ steps.setup.outputs.buildx_enabled }}
       PLATFORMS: ${{ inputs.platforms }}
       MULTIARCH: "false"
+      EXTRA_TAGS: ${{ inputs.tags }}
+      IMAGE: ${{ steps.image-env.outputs.image }}
+      GIT_SHA: ${{ steps.image-env.outputs.short_sha }}
+      GIT_REF: ${{ steps.image-env.outputs.ref }}
     run: |
       ARGS=($EXTRA_ARGS)
 
@@ -248,13 +239,21 @@ runs:
         ARGS+=(--build-arg "${arg}")
       done
 
-      ## add the tags
-      ARGS+=("${TAG_ARGS}")
+      # add all the tags with image as args
+      TAGS=(
+        $EXTRA_TAGS
+        $GIT_SHA
+        $GIT_REF
+      )
+      for tag in ${TAGS[*]}; do
+        ARGS+=(--tag "${IMAGE}:${tag}")
+      done
       
       # finally add the context
       ARGS+=("${CONTEXT}")
 
       echo "multiarch=${MULTIARCH}" >> $GITHUB_OUTPUT
+      echo "tags=${TAGS[*]}" >> $GITHUB_OUTPUT
       echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
 
   - name: Setup Buildfile Args
@@ -266,7 +265,7 @@ runs:
       PUSH: ${{ inputs.push }}
       TARGET: ${{ inputs.target }}
       CACHE: ${{ inputs.cache }}
-      BUILDER: ${{ inputs.builder }}
+      BUILD_TYPE: ${{ inputs.type }}
       BUILD_ARGS: ${{ inputs.build-args }}
       BUILD_FILE: ${{ inputs.file }}
     run: |
@@ -283,7 +282,7 @@ runs:
       fi
 
       # if the builder is compose it can have build args too
-      if [[ "$BUILDER" == "compose" ]]; then
+      if [[ "$BUILD_TYPE" == "compose" ]]; then
         build_args=($BUILD_ARGS)
         for arg in ${build_args[*]}; do
           ARGS+=(--build-arg "${arg}")
@@ -329,6 +328,11 @@ runs:
   - name: Docker Build
     id: build
     shell: bash
+    env:
+      REGISTRY: ${{ steps.image-env.outputs.registry }}
+      REPO: ${{ steps.image-env.outputs.repo }}
+      GIT_SHA: ${{ steps.image-env.outputs.short_sha }}
+      GIT_REF: ${{ steps.image-env.outputs.ref }}
     run: ${{ steps.docker.outputs.command }}
 
   - name: Image Summary
