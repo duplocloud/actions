@@ -19,7 +19,8 @@ This GitHub Action builds a Docker image and pushes it to a registry. It also se
 
 | Name     | Description      | Example                                    |
 | -------- | ---------------- | ------------------------------------------ |
-| `image`  | Docker image     | `docker.pkg.github.com/repo/image:123abc`  |
+| `image`  | Docker image     | `docker.pkg.github.com/repo/image`         |
+| `uri`    | Docker image     | `docker.pkg.github.com/repo/image:123abc`  |
 | `repo`   | Repository name  | `repo`                                     |
 | `branch` | Branch name      | `main`                                     |
 
