@@ -1,0 +1,67 @@
+name: Duploctl
+description: Run the duploctl command as an action
+inputs:
+  kind:
+    description: Service type
+    required: false 
+  cmd: 
+    description: Command to run
+    required: false
+  name:
+    description: Service name
+    required: true
+  args:
+    description: Image URI
+    required: false
+  query:
+    description: The JMESPATH query to filter down the json result.
+    required: false
+  output:
+    description: The output format for the result of the command
+    required: false
+  wait:
+    description: The wait flag to hold while an action is completed.
+    required: false
+runs:
+  using: composite
+  steps:
+
+  - name: Build Duploctl Command
+    id: duploctl-command
+    shell: bash
+    env:
+      KIND: ${{ inputs.kind }}
+      NAME: ${{ inputs.name }}
+      CMD: ${{ inputs.cmd }}
+      ARGS: ${{ inputs.args }}
+      QUERY: ${{ inputs.query }}
+      OUTPUT: ${{ inputs.output }}
+      WAIT: ${{ inputs.wait }}
+    run: |
+      # build the duploctl arguments
+      DUPLOCTL=(duploctl $KIND $CMD)
+
+      # always comes right after the command
+      if [ -n "$NAME" ]; then
+        DUPLOCTL+=("$NAME")
+      fi
+      # other than name, these are specific to each command and come directly after name
+      if [ -n "$ARGS" ]; then
+        DUPLOCTL+=($ARGS)
+      fi
+      # the rest are optional and can be in any order
+      if [ -n "$QUERY" ]; then
+        DUPLOCTL+=("--query" "$QUERY")
+      fi
+      if [ -n "$OUTPUT" ]; then
+        DUPLOCTL+=("--output" "$OUTPUT")
+      fi
+      if [ -n "$WAIT" ]; then
+        DUPLOCTL+=("--wait")
+      fi
+      echo "run=${DUPLOCTL[@]}" >> $GITHUB_OUTPUT
+
+  - name: Execute Duploctl Command
+    id: duploctl-exec
+    shell: bash
+    run: ${{ steps.duploctl-command.outputs.run }}
