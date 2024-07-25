@@ -22,8 +22,8 @@ inputs:
   wait:
     description: The wait flag to hold while an action is completed.
     required: false
-  show_summary:
-    description: Shows the result of the command as a step summary. 
+  summary:
+    description: True/False to shows the result of the command as a step summary. 
     required: false
     default: "false"
 outputs:
@@ -70,13 +70,13 @@ runs:
       if [ -n "$WAIT" ]; then
         DUPLOCTL+=("--wait")
       fi
+      # preview the command
+      echo """
+      Duploctl Command: 
+        ${DUPLOCTL[@]}
+      """
+      # output the command for the next step
       echo "run=${DUPLOCTL[@]}" >> $GITHUB_OUTPUT
-
-  - name: Preview Command
-    id: duploctl-preview
-    shell: bash
-    run: >
-      echo 'Running: ${{ steps.duploctl-command.outputs.run }}'
 
   - name: Execute Duploctl Command
     id: duploctl-exec
