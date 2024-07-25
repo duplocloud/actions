@@ -16,12 +16,23 @@ inputs:
   query:
     description: The JMESPATH query to filter down the json result.
     required: false
-  output:
+  format:
     description: The output format for the result of the command
     required: false
   wait:
     description: The wait flag to hold while an action is completed.
     required: false
+  show_summary:
+    description: Shows the result of the command as a step summary. 
+    required: false
+    default: "false"
+outputs:
+  result:
+    description: The result of the command
+    value: ${{ steps.duploctl-exec.outputs.result }}
+  command:
+    description: The command that was run
+    value: ${{ steps.duploctl-command.outputs.run }}
 runs:
   using: composite
   steps:
@@ -35,7 +46,7 @@ runs:
       CMD: ${{ inputs.cmd }}
       ARGS: ${{ inputs.args }}
       QUERY: ${{ inputs.query }}
-      OUTPUT: ${{ inputs.output }}
+      FORMAT: ${{ inputs.format }}
       WAIT: ${{ inputs.wait }}
     run: |
       # build the duploctl arguments
@@ -53,15 +64,47 @@ runs:
       if [ -n "$QUERY" ]; then
         DUPLOCTL+=("--query" "$QUERY")
       fi
-      if [ -n "$OUTPUT" ]; then
-        DUPLOCTL+=("--output" "$OUTPUT")
+      if [ -n "$FORMAT" ]; then
+        DUPLOCTL+=("--output" "$FORMAT")
       fi
       if [ -n "$WAIT" ]; then
         DUPLOCTL+=("--wait")
       fi
       echo "run=${DUPLOCTL[@]}" >> $GITHUB_OUTPUT
 
+  - name: Preview Command
+    id: duploctl-preview
+    shell: bash
+    run: >
+      echo 'Running: ${{ steps.duploctl-command.outputs.run }}'
+
   - name: Execute Duploctl Command
     id: duploctl-exec
     shell: bash
-    run: ${{ steps.duploctl-command.outputs.run }}
+    env:
+      DUPLOCTL: ${{ steps.duploctl-command.outputs.run }}
+    run: |
+      RESULT=$($DUPLOCTL)
+      echo "$RESULT"
+      echo "result=$RESULT" >> $GITHUB_OUTPUT
+
+  - name: Show Summary
+    id: duploctl-summary
+    if: ${{ inputs.show_summary == 'true' }}
+    shell: bash
+    env:
+      COMMAND: ${{ steps.duploctl-command.outputs.run }}
+      FORMAT: ${{ inputs.format || 'json' }}
+      RESULT: ${{ steps.duploctl-exec.outputs.result }}
+    run: |
+      cat <<EOF >> $GITHUB_STEP_SUMMARY
+      # Duploctl  
+      ## Command  
+      \`\`\`sh  
+      $COMMAND  
+      \`\`\`
+      ## Result  
+      \`\`\`$FORMAT  
+      $RESULT  
+      \`\`\`  
+      EOF
