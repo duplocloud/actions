@@ -26,6 +26,12 @@ inputs:
     description: True/False to shows the result of the command as a step summary. 
     required: false
     default: "false"
+  file: 
+    description: The `--file` arg pointing to a file with a resource inside.
+    required: false
+  body: 
+    description: This sets `--file -` to read from stdin. Then echoes this input from stdin to the command. 
+    required: false
 outputs:
   result:
     description: The result of the command
@@ -48,6 +54,8 @@ runs:
       QUERY: ${{ inputs.query }}
       FORMAT: ${{ inputs.format }}
       WAIT: ${{ inputs.wait }}
+      BODY: ${{ inputs.body }}
+      FILE: ${{ inputs.file }}
     run: |
       # build the duploctl arguments
       DUPLOCTL=(duploctl $KIND $CMD)
@@ -60,7 +68,7 @@ runs:
       if [ -n "$ARGS" ]; then
         DUPLOCTL+=($ARGS)
       fi
-      # the rest are optional and can be in any order
+      # the rest are optional and global
       if [ -n "$QUERY" ]; then
         DUPLOCTL+=("--query" "$QUERY")
       fi
@@ -69,6 +77,11 @@ runs:
       fi
       if [ -n "$WAIT" ]; then
         DUPLOCTL+=("--wait")
+      fi
+      if [ -n "$BODY" ]; then
+        DUPLOCTL+=("--file" "-")
+      elif [ -n "$FILE" ]; then
+        DUPLOCTL+=("--file" "$FILE")
       fi
       # preview the command
       echo """
@@ -83,8 +96,16 @@ runs:
     shell: bash
     env:
       DUPLOCTL: ${{ steps.duploctl-command.outputs.run }}
+      BODY: ${{ inputs.body }}
     run: |
-      RESULT=$($DUPLOCTL)
+      function duploctl_gha() {
+        if [ -n "$BODY" ]; then
+          echo "$BODY" | $DUPLOCTL
+        else
+          $DUPLOCTL
+        fi
+      }
+      RESULT=$(duploctl_gha)
       echo "$RESULT"
       echo "result=$RESULT" >> $GITHUB_OUTPUT
 
