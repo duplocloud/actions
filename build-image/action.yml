@@ -330,7 +330,9 @@ runs:
   - name: Docker Build Preview
     id: preview
     shell: bash
-    if: steps.setup.outputs.build_from_file == 'true'
+    if: >-
+      steps.setup.outputs.build_from_file == 'true' &&
+      inputs.type != 'compose'
     env:
       REGISTRY: ${{ steps.image-env.outputs.registry }}
       IMAGE: ${{ steps.image-env.outputs.image || '' }}
