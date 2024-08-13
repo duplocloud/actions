@@ -44,19 +44,6 @@ runs:
       # Function to output pod logs
       function pod_logs() {
         wait_for_resource "pods/${1}" && \
-        kubectl wait \
-          --for=condition=Complete \
-          -n "$NAMESPACE" \
-          --timeout="10s" \
-          "pods/${1}" && \
-        safe_logs "$1" && \
-        return
-
-        kubectl wait \
-          --for=condition=Ready \
-          -n "$NAMESPACE" \
-          --timeout="${JOB_TIMEOUT}" \
-          "pods/${1}" && \
         safe_logs "$1"
       }
 
