@@ -251,7 +251,7 @@ runs:
       FANCY_TAGS=()
       ALLOWED_FANCY_TAGS=(DATE GIT_REF GIT_SHA)
       for tag in "${ALLOWED_FANCY_TAGS[@]}"; do
-        if [[ "${fancy_tags}" =~ "$tag" ]]; then
+        if [[ "${fancy-tags}" =~ "$tag" ]]; then
           FANCY_TAGS+=($tag)
         fi
       done
@@ -261,6 +261,7 @@ runs:
         $FANCY_TAGS
       )
       for tag in ${TAGS[*]}; do
+        echo "FOUND TAG ${tag}"
         ARGS+=(--tag "${IMAGE}:${tag}")
       done
       
