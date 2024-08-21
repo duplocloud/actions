@@ -21,8 +21,8 @@ inputs:
   tags:
     description: Extra space delimited tags to add to the image
     required: false
-  fancy-tags:
-    description: Space delimited tags provided by Duplocloud. Choose one or more of DATE, GIT_REF, and/or GIT_SHA. Date is in UTC.
+  tag-strategy:
+    description: Space delimited computed tag strategy. Choose one or more of DATE, GIT_REF, and/or GIT_SHA. Date is in UTC.
     required: false
     default: GIT_REF GIT_SHA
   target:
@@ -201,7 +201,7 @@ runs:
       PLATFORMS: ${{ inputs.platforms }}
       MULTIARCH: "false"
       EXTRA_TAGS: ${{ inputs.tags }}
-      FANCY_TAGS: ${{ inputs.fancy-tags }}
+      FANCY_TAGS: ${{ inputs.tag-strategy }}
       IMAGE: ${{ steps.image-env.outputs.image }}
       GIT_SHA: ${{ steps.image-env.outputs.git_sha }}
       GIT_REF: ${{ steps.image-env.outputs.git_ref }}
