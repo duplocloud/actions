@@ -22,7 +22,7 @@ inputs:
     description: Extra space delimited tags to add to the image
     required: false
   fancy_tags:
-    description: Space delimited tags provided by Duplocloud. Options are DATE, GIT_REF, and/or GIT_SHA. Date is in UTC.
+    description: Space delimited tags provided by Duplocloud. Choose one or more of DATE, GIT_REF, and/or GIT_SHA. Date is in UTC.
     required: false
     default: GIT_REF GIT_SHA
   target:
@@ -255,16 +255,10 @@ runs:
           FANCY_TAGS+=($tag)
         fi
       done
-
-
       # add all the tags with image as args
       TAGS=(
         $EXTRA_TAGS
         $FANCY_TAGS
-      )
-      FANCY_TAGS=(
-        $GIT_SHA
-        $GIT_REF
       )
       for tag in ${TAGS[*]}; do
         ARGS+=(--tag "${IMAGE}:${tag}")
