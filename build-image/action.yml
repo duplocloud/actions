@@ -21,7 +21,7 @@ inputs:
   tags:
     description: Extra space delimited tags to add to the image
     required: false
-  fancy_tags:
+  fancy-tags:
     description: Space delimited tags provided by Duplocloud. Choose one or more of DATE, GIT_REF, and/or GIT_SHA. Date is in UTC.
     required: false
     default: GIT_REF GIT_SHA
