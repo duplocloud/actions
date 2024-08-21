@@ -261,7 +261,7 @@ runs:
       # add all the tags with image as args
       TAGS=(
         $EXTRA_TAGS
-        $COMPUTED_FANCY_TAGS
+        $COMPUTED_FANCY_TAGS[@]
       )
       for tag in ${TAGS[*]}; do
         ARGS+=(--tag "${IMAGE}:${tag}")
