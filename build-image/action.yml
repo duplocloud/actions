@@ -21,6 +21,10 @@ inputs:
   tags:
     description: Extra space delimited tags to add to the image
     required: false
+  tag-strategy:
+    description: Space delimited computed tag strategy. Choose one or more of DATE, GIT_REF, and/or GIT_SHA. Date is in UTC.
+    required: false
+    default: GIT_REF GIT_SHA
   target:
     description: Target stage to build
     required: false
@@ -161,6 +165,8 @@ runs:
       GIT_SHA="$(git rev-parse --short HEAD)"
       echo "Short sha is $GIT_SHA"
 
+      DATE="$(date -u +"%Y%m%d%H%M")"
+
       # ref name
       ## TODO: maybe use this GITHUB_REF_NAME
       # the sed part handles dependabot issues with slash names
@@ -173,6 +179,7 @@ runs:
       echo "git_ref=${GIT_REF}" >> $GITHUB_OUTPUT
       echo "git_sha=${GIT_SHA}" >> $GITHUB_OUTPUT
       echo "uri=${IMAGE}:${GIT_SHA}" >> $GITHUB_OUTPUT
+      echo "date=${DATE}" >> GITHUB_OUTPUT
 
   # setup the base image
   - name: Setup CLI Args
@@ -194,9 +201,11 @@ runs:
       PLATFORMS: ${{ inputs.platforms }}
       MULTIARCH: "false"
       EXTRA_TAGS: ${{ inputs.tags }}
+      FANCY_TAGS: ${{ inputs.tag-strategy }}
       IMAGE: ${{ steps.image-env.outputs.image }}
       GIT_SHA: ${{ steps.image-env.outputs.git_sha }}
       GIT_REF: ${{ steps.image-env.outputs.git_ref }}
+      DATE: ${{ steps.image-env.outputs.date }}
     run: |
       ARGS=($EXTRA_ARGS)
 
@@ -241,11 +250,18 @@ runs:
         ARGS+=(--build-arg "${arg}")
       done
 
+      # Add the fancy tags
+      COMPUTED_FANCY_TAGS=()
+      ALLOWED_FANCY_TAGS=(DATE GIT_REF GIT_SHA)
+      for tag in "${ALLOWED_FANCY_TAGS[@]}"; do
+        if [[ "${FANCY_TAGS}" =~ "$tag" ]]; then
+          COMPUTED_FANCY_TAGS+=("${!tag}")
+        fi
+      done
       # add all the tags with image as args
       TAGS=(
         $EXTRA_TAGS
-        $GIT_SHA
-        $GIT_REF
+        "${COMPUTED_FANCY_TAGS[*]}"
       )
       for tag in ${TAGS[*]}; do
         ARGS+=(--tag "${IMAGE}:${tag}")
