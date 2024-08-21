@@ -179,6 +179,7 @@ runs:
       echo "git_ref=${GIT_REF}" >> $GITHUB_OUTPUT
       echo "git_sha=${GIT_SHA}" >> $GITHUB_OUTPUT
       echo "uri=${IMAGE}:${GIT_SHA}" >> $GITHUB_OUTPUT
+      echo "date=${DATE}" >> GITHUB_OUTPUT
 
   # setup the base image
   - name: Setup CLI Args
@@ -200,9 +201,11 @@ runs:
       PLATFORMS: ${{ inputs.platforms }}
       MULTIARCH: "false"
       EXTRA_TAGS: ${{ inputs.tags }}
+      FANCY_TAGS: ${{ inputs.fancy-tags }}
       IMAGE: ${{ steps.image-env.outputs.image }}
       GIT_SHA: ${{ steps.image-env.outputs.git_sha }}
       GIT_REF: ${{ steps.image-env.outputs.git_ref }}
+      DATE: ${{ steps.image-env.outputs.date }}
     run: |
       ARGS=($EXTRA_ARGS)
 
@@ -248,11 +251,12 @@ runs:
       done
 
       # Add the fancy tags
-      FANCY_TAGS=()
+      COMPUTED_FANCY_TAGS=()
       ALLOWED_FANCY_TAGS=(DATE GIT_REF GIT_SHA)
       for tag in "${ALLOWED_FANCY_TAGS[@]}"; do
         if [[ "${fancy-tags}" =~ "$tag" ]]; then
-          FANCY_TAGS+=($tag)
+          echo "adding fancy tag $tag"
+          FANCY_TAGS+=("${!tag}")
         fi
       done
       # add all the tags with image as args
