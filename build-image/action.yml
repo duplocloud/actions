@@ -254,15 +254,15 @@ runs:
       COMPUTED_FANCY_TAGS=()
       ALLOWED_FANCY_TAGS=(DATE GIT_REF GIT_SHA)
       for tag in "${ALLOWED_FANCY_TAGS[@]}"; do
-        if [[ "${fancy-tags}" =~ "$tag" ]]; then
+        if [[ "${FANCY_TAGS}" =~ "$tag" ]]; then
           echo "adding fancy tag $tag"
-          FANCY_TAGS+=("${!tag}")
+          COMPUTED_FANCY_TAGS+=("${!tag}")
         fi
       done
       # add all the tags with image as args
       TAGS=(
         $EXTRA_TAGS
-        $FANCY_TAGS
+        $COMPUTED_FANCY_TAGS
       )
       for tag in ${TAGS[*]}; do
         echo "FOUND TAG ${tag}"
