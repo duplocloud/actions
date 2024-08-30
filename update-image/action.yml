@@ -11,6 +11,11 @@ inputs:
   image:
     description: Image URI
     required: true
+  wait:
+    description: Wait for deployment
+    required: false
+    default: "false"
+
 runs:
   using: composite
   steps:
@@ -31,4 +36,9 @@ runs:
       RESOURCE: ${{ inputs.type }}
       NAME: ${{ inputs.name }}
       IMAGE: ${{ inputs.image }}
-    run: duploctl $RESOURCE update_image $NAME $IMAGE
+    run: |
+      if [[ "${{ inputs.wait }}" == "true" ]]; then
+        duploctl $RESOURCE update_image $NAME $IMAGE --wait
+      else
+        duploctl $RESOURCE update_image $NAME $IMAGE
+      fi

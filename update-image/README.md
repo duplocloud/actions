@@ -6,11 +6,12 @@ Updates any kind of container service with a new image.
 
 The following input variables can be configured:
 
-| Name      | Description     | Required | Default Value |
-|-----------|-----------------|----------|---------------|
-| name   | Service name    | Yes      |               |
-| image     | Image name      | Yes      |               |
-| type      | Options: service, lambda, ecs, cronjob    | No       | `service`  |
+| Name  | Description                              | Required | Default Value |
+|-------|------------------------------------------|----------|---------------|
+| name  | Service name                             | Yes      |               |
+| image | Image name                               | Yes      |               |
+| type  | Options: `service`, `lambda`, `ecs`, `cronjob` | No       | `service`      |
+| wait  | Wait for deployment                      | No       | `false`        |
 
 ## Example Usage
 
