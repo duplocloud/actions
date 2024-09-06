@@ -6,16 +6,16 @@ This GitHub Action allows you to test a single Terraform module. It provides opt
 
 The following table describes the inputs for this action:
 
-| Name | Description | Required | Default Value |
-| ---- | ----------- | -------- | ------------- |
-| module | Working directory | Yes | N/A |
-| lint | Lint the module | No | "true" |
-| validate | Validate the module | No | "true" |
-| fmt | Format the module | No | "true" |
-| test | Test the module | No | "true" |
-| test_dir | Test directory, defaults to 'tests' | No | tests |
-| review | Do review checks on module. If false only init runs. | No | true |
-| prefix | tfstate s3 bucket prefix | No | duplo-tfstate |
+| Name       | Description                                          | Required | Default Value   |
+|------------|------------------------------------------------------|----------|-----------------|
+| `module`   | Working directory                                    | Yes      | N/A             |
+| `lint`     | Lint the module                                      | No       | `true`          |
+| `validate` | Validate the module                                  | No       | `true`          |
+| `fmt`      | Format the module                                    | No       | `true`          |
+| `test`     | Test the module                                      | No       | `true`          |
+| `test_dir` | Test directory, defaults to 'tests'                  | No       | `tests`         |
+| `review`   | Do review checks on module. If false only init runs. | No       | `true`          |
+| `prefix`   | tfstate s3 bucket prefix                             | No       | `duplo-tfstate` |
 
 ## Example Usage
 

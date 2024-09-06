@@ -28,7 +28,7 @@ inputs:
     required: false
     default: "true"
   prefix:
-    description: The terraform s3 bucket prefix
+    description: tfstate s3 bucket prefix
     required:  false
     default: "duplo-tfstate"
 

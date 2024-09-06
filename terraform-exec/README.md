@@ -6,13 +6,13 @@ This action facilitates the execution of various Terraform commands within a Git
 
 The following table outlines the inputs that you can provide to this action:
 
-| Input | Description | Required | Default |
-| --- | --- | --- | --- |
-| `module` | Working directory where Terraform commands will be run. | yes | - |
-| `workspace` | The Terraform workspace to use. | no | `default` |
-| `command` | The Terraform command to execute (`apply`, `destroy`, or `plan`). | yes | `plan` |
-| `parallelism` | The number of parallel operations as Terraform performs its actions. | no | - |
-| `config` | Relative path to the Terraform configurations. | no | `./config` |
+| Input         | Description                                                          | Required | Default    |
+|---------------|----------------------------------------------------------------------|----------|------------|
+| `module`      | Working directory where Terraform commands will be run.              | yes      | -          |
+| `workspace`   | The Terraform workspace to use.                                      | no       | `default`  |
+| `command`     | The Terraform command to execute (`apply`, `destroy`, or `plan`).    | yes      | `plan`     |
+| `parallelism` | The number of parallel operations as Terraform performs its actions. | no       | -          |
+| `config`      | Relative path to the Terraform configurations.                       | no       | `./config` |
 
 ## Examples
 
@@ -26,7 +26,14 @@ jobs:
     runs-on: ubuntu-latest
     name: Run Terraform Plan
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - uses: duplocloud/actions/setup@main
+        with:
+          admin: true
+
+      - uses: duplocloud/actions/terraform-module@feature/terraform_actions_updates
+
       - name: Terraform Plan
         uses: duplocloud/actions/terraform-exec@v1
         with:
