@@ -31,6 +31,10 @@ inputs:
     description: tfstate s3 bucket prefix
     required:  false
     default: "duplo-tfstate"
+  caching:
+    description: Use github actions caching
+    required:  false
+    default: "false"    
 
 runs:
   using: composite
@@ -45,6 +49,7 @@ runs:
       TEST_DIR: ${{ inputs.test_dir }}
       MODULE_CACHE: "false"
       PREFIX: ${{ inputs.prefix }}
+      CACHING: ${{ inputs.caching }}
     run: |
       MODULE=$(basename $WKDIR)
       DUPLO_TF_BUCKET=${PREFIX}-${DUPLO_ACCOUNT_ID}
@@ -86,9 +91,9 @@ runs:
 
       # check if the terraform lock file is present
       LOCK_FILE=".terraform.lock.hcl"
-      if [ -f "${LOCK_FILE}" ]; then
+      if [ -f "${LOCK_FILE}" ] && [ "$CACHING" = "true" ]; then
         MODULE_CACHE="true"
-        echo "Terraform lock file detected, caching enabled"
+        echo "Terraform lock file detected and caching enabled"
       fi
 
       # these are for the next steps
