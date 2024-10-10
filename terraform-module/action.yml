@@ -34,7 +34,7 @@ inputs:
   caching:
     description: Use github actions caching
     required:  false
-    default: "false"    
+    default: "true"    
 
 runs:
   using: composite
