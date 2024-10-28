@@ -12,7 +12,7 @@ This GitHub Action builds a Docker image and pushes it to a registry. It also se
 | `build-args` | Extra arguments to pass to Docker.                                | No       |               |
 | `context`    | Build context.                                                   | No       | `.`           |
 | `dockerfile` | Dockerfile path.                                                 | No       | `Dockerfile`  |
-| `push`       | Push image to registry.                                           | No       | `true`        |
+| `push`       | Push image to registry.                                           | No       | `false`       |
 | `cache`      | Cache image layers if buildx enabled.                             | No       | `true`        |
 
 ## Outputs
