@@ -151,7 +151,7 @@ runs:
   - name: Set up Cloud SDK
     id: setup-gcloud
     uses: google-github-actions/setup-gcloud@v2
-    if: env.GCP_ENABLED == 'true'
+    if: env.GCP_ENABLED == 'true' && inputs.credentials
     with:
       version: '>= 363.0.0'
 
