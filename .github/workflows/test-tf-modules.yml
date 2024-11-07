@@ -2,6 +2,15 @@ name: Test Modules
 
 on:
   workflow_call:
+    inputs:
+      environment:
+        description: 'Environment to test in'
+        required: true
+        type: string
+      tenant:
+        description: 'Tenant to test in'
+        type: string
+        required: false
     secrets:
       DUPLO_TOKEN:
         required: true
@@ -44,12 +53,14 @@ jobs:
     name: Testing Module
     runs-on: ubuntu-latest
     needs: check_changes
+    environment: 
+      name: ${{ inputs.environment }}
     strategy:
       matrix: ${{ fromJSON(needs.check_changes.outputs.matrix) }}
     env:
       DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
       DUPLO_HOST: ${{ vars.DUPLO_HOST }}
-      DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
+      DUPLO_TENANT: ${{ inputs.tenant || vars.DUPLO_TENANT }}
       TF_LOCKFILE: ./modules/${{ matrix.module }}/.terraform.lock.hcl
     steps:
 
