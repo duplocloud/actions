@@ -30,7 +30,7 @@ jobs:
       uses: duplocloud/actions/setup@main
 
     - name: Update CronJob
-      uses: duplocloud/actions/update-service@v1
+      uses: duplocloud/actions/update-cronjob@v1
       with:
         cronjob: my-cronjob
         image: my-image:latest
