@@ -102,8 +102,8 @@ runs:
         if [[ -z "$REGISTRY" ]]; then
           echo "REGISTRY=${CLOUDSDK_COMPUTE_REGION}-docker.pkg.dev" >> $GITHUB_OUTPUT
         fi
-        gcloud auth configure-docker $REGISTRY
       fi
+      echo "The user is $DOCKER_USERNAME and the registry is $REGISTRY"
 
   # first login. Assume ECR for now. 
   - name: Login to Amazon ECR
