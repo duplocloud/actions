@@ -85,7 +85,6 @@ runs:
     id: login-info
     shell: bash
     env:
-      AWS_ENABLED: ${{ secrets.AWS_ENABLED }}
       DOCKER_USERNAME: ${{ inputs.docker-username }}
       DOCKER_PASSWORD: ${{ inputs.docker-password }}
     run: |
