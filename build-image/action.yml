@@ -87,6 +87,7 @@ runs:
     env:
       DOCKER_USERNAME: ${{ inputs.docker-username }}
       DOCKER_PASSWORD: ${{ inputs.docker-password }}
+      REGISTRY: ${{ inputs.registry }}
     run: |
       # if the docker username is set then use the username and password in the outputs
       if [[ -n "$DOCKER_USERNAME" ]]; then
@@ -96,6 +97,10 @@ runs:
       elif [[ "$GCP_ENABLED" == "true" ]]; then
         echo "username=oauth2accesstoken" >> $GITHUB_OUTPUT
         echo "password=${CLOUDSDK_AUTH_ACCESS_TOKEN}" >> $GITHUB_OUTPUT
+        # if the registry variable is not set then guess it 
+        if [[ -z "$REGISTRY" ]]; then
+          echo "REGISTRY=${CLOUDSDK_COMPUTE_REGION}-docker.pkg.dev" >> $GITHUB_OUTPUT
+        fi
       fi
 
   # first login. Assume ECR for now. 
@@ -112,7 +117,7 @@ runs:
     with:
       username: ${{ steps.login-info.outputs.username }}
       password: ${{ steps.login-info.outputs.password }}
-      registry: ${{ inputs.registry }}
+      registry: ${{ steps.login-info.outputs.registry }}
 
   # start with checking on the builder kind
   - name: Builder Setup
