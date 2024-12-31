@@ -26,6 +26,10 @@ inputs:
     required: false
     description: Admin user name.
     default: "false"
+  python-version:
+    required: false
+    description: Python version to install.
+    default: "3.12"
 runs:
   using: composite
   steps:
@@ -33,7 +37,7 @@ runs:
   - name: Setup Python
     uses: actions/setup-python@v5
     with:
-      python-version: '3.10'
+      python-version: ${{ inputs.python-version }}
 
   - name: Pip Upgrade
     shell: bash
@@ -144,6 +148,24 @@ runs:
   # GCP Configuration Flow
   ###
 
+  # CLOUDSDK_AUTH_ACCESS_TOKEN: join('',['::add-mask::',Token]), 
+  - name: Duplo JIT for GCP
+    id: duplo-jit-gcp
+    shell: bash
+    if: env.GCP_ENABLED == 'true' && !inputs.credentials
+    env:
+      CLOUDSDK_COMPUTE_REGION: ${{ inputs.region || 'us-central1' }}
+    run: >-
+      duploctl jit gcp -q "{
+      CLOUDSDK_AUTH_ACCESS_TOKEN: Token, 
+      CLOUDSDK_CORE_PROJECT: ProjectId,
+      CLOUDSDK_PROJECT: ProjectId,
+      GCP_PROJECT: ProjectId,
+      GCLOUD_PROJECT: ProjectId,
+      GOOGLE_CLOUD_PROJECT: ProjectId,
+      CLOUDSDK_COMPUTE_REGION: '${CLOUDSDK_COMPUTE_REGION}'
+      }" -o env >> $GITHUB_ENV
+
   - name: Authenticate to Google Cloud
     id: login-gcp
     uses: google-github-actions/auth@v2
@@ -158,6 +180,13 @@ runs:
     if: env.GCP_ENABLED == 'true'
     with:
       version: '>= 363.0.0'
+
+  - name: GCloud Info
+    id: gcloud-info
+    shell: bash
+    if: env.GCP_ENABLED == 'true'
+    run: |
+      gcloud info
 
   ###
   # Azure Configuration Flow
