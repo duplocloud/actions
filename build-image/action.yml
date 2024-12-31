@@ -113,6 +113,7 @@ runs:
     with:
       username: ${{ steps.login-info.outputs.username }}
       password: ${{ steps.login-info.outputs.password }}
+      registry: ${{ inputs.registry }}
 
   # start with checking on the builder kind
   - name: Builder Setup
