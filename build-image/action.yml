@@ -102,7 +102,6 @@ runs:
           REGISTRY="${CLOUDSDK_COMPUTE_REGION}-docker.pkg.dev"
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_OUTPUT
         fi
-        gcloud auth configure-docker $REGISTRY --quiet
       fi
 
   # first login. Assume ECR for now. 
