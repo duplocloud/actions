@@ -99,11 +99,11 @@ runs:
         echo "password=${CLOUDSDK_AUTH_ACCESS_TOKEN}" >> $GITHUB_OUTPUT
         # if the registry variable is not set then guess it 
         if [[ -z "$REGISTRY" ]]; then
-          echo "REGISTRY=${CLOUDSDK_COMPUTE_REGION}-docker.pkg.dev" >> $GITHUB_OUTPUT
+          REGISTRY="${CLOUDSDK_COMPUTE_REGION}-docker.pkg.dev"
+          echo "REGISTRY=${REGISTRY}" >> $GITHUB_OUTPUT
         fi
         gcloud auth configure-docker $REGISTRY
       fi
-      echo "The user is $DOCKER_USERNAME for $REGISTRY"
 
   # first login. Assume ECR for now. 
   - name: Login to Amazon ECR
