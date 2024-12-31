@@ -103,6 +103,7 @@ runs:
         fi
         gcloud auth configure-docker $REGISTRY
       fi
+      echo "The user is $DOCKER_USERNAME for $REGISTRY"
 
   # first login. Assume ECR for now. 
   - name: Login to Amazon ECR
