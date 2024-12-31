@@ -148,6 +148,7 @@ runs:
   # GCP Configuration Flow
   ###
 
+  # CLOUDSDK_AUTH_ACCESS_TOKEN: join('',['::add-mask::',Token]), 
   - name: Duplo JIT for GCP
     id: duplo-jit-gcp
     shell: bash
@@ -156,7 +157,7 @@ runs:
       CLOUDSDK_COMPUTE_REGION: ${{ inputs.region || 'us-central1' }}
     run: >-
       duploctl jit gcp -q "{
-      CLOUDSDK_AUTH_ACCESS_TOKEN: join('',['::add-mask::',Token]), 
+      CLOUDSDK_AUTH_ACCESS_TOKEN: Token, 
       CLOUDSDK_CORE_PROJECT: ProjectId,
       CLOUDSDK_PROJECT: ProjectId,
       GCP_PROJECT: ProjectId,
