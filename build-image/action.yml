@@ -102,6 +102,7 @@ runs:
         if [[ -z "$REGISTRY" ]]; then
           echo "REGISTRY=${CLOUDSDK_COMPUTE_REGION}-docker.pkg.dev" >> $GITHUB_OUTPUT
         fi
+        gcloud auth configure-docker $REGISTRY
       fi
 
   # first login. Assume ECR for now. 
