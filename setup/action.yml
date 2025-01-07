@@ -41,9 +41,9 @@ runs:
       VERSION: ${{ inputs.version }}
     run: |
       if [[ "$VERSION" == "latest" ]]; then
-        uv pip install duplocloud-client --system
+        uv pip install duplocloud-client --system || exit 1
       else
-        uv pip install duplocloud-client=$VERSION --system
+        uv pip install duplocloud-client==$VERSION --system || exit 1
       fi
       
   - name: Duplo Version
