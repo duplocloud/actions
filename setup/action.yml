@@ -31,10 +31,9 @@ runs:
     with:
       python-version: '3.10'
 
-  - name: Pip Upgrade
-    shell: bash
-    run: pip install --upgrade pip
-
+  - name: Install uv
+    uses: astral-sh/setup-uv@v5
+  
   - name: Install duploctl
     id: install-duploctl
     shell: bash
@@ -42,9 +41,9 @@ runs:
       VERSION: ${{ inputs.version }}
     run: |
       if [[ "$VERSION" == "latest" ]]; then
-        pip install duplocloud-client
+        uv pip install duplocloud-client --system
       else
-        pip install duplocloud-client==$VERSION
+        uv pip install duplocloud-client=$VERSION --system
       fi
       
   - name: Duplo Version
