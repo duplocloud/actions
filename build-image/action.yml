@@ -75,6 +75,9 @@ outputs:
   uri:
     description: Image URI
     value: ${{ steps.image-env.outputs.uri }}
+  tag: 
+    description: The sha tag unique to this build. 
+    value: ${{ steps.image-env.outputs.git_sha }}
 
 runs:
   using: composite
