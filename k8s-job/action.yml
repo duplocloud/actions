@@ -7,6 +7,10 @@ inputs:
   timeout:
     description: 'The timeout for the job'
     default: 300s
+  cleanup_delay:
+    description: 'Wait time in seconds before cleaning up the job'
+    default: 0
+    type: integer
 runs:
   using: composite
   steps:
@@ -16,6 +20,7 @@ runs:
     env:
       JOB_FILE: ${{ inputs.file }}
       JOB_TIMEOUT: ${{ inputs.timeout }}
+      CLEANUP_DELAY: ${{ inputs.cleanup_delay }}
     run: |
       # Exporting environment variables for use within the shell script
       export JOB JOB_NAME NAMESPACE PODS
@@ -94,8 +99,17 @@ runs:
 
       job_status=$(kubectl get job "${JOB_NAME}" -n "${NAMESPACE}" -o=jsonpath='{.status.conditions[?(@.type=="Failed")].status}')
 
+      # Cleanup with optional delay
+      if [ "${CLEANUP_DELAY}" -gt 0 ]; then
+          echo "Waiting ${CLEANUP_DELAY} seconds before cleanup..."
+          echo "Note: Adding a wait time will consume additional GitHub Action minutes."
+          sleep "${CLEANUP_DELAY}"
+          echo "Cleanup is resuming..."
+      fi
+
       # Delete the Kubernetes job (cleanup)
-      kubectl delete -f "$JOB_FILE"
+      echo "Deleting Kubernetes job..."
+      kubectl delete -f "$JOB_FILE" --ignore-not-found
 
       # job_status update
       if [ "${job_status}" == "True" ]; then
