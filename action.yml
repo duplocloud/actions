@@ -173,6 +173,7 @@ runs:
     with:
       credentials_json: ${{ inputs.credentials }}
       export_environment_variables: true
+      create_credentials_file: true
 
   - name: Set up Cloud SDK
     id: setup-gcloud
