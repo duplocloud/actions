@@ -30,6 +30,10 @@ inputs:
     required: false
     description: Python version to install.
     default: "3.12"
+outputs:
+  access_token:
+    description: GCP Docker access token
+    value: ${{ steps.login-gcp.outputs.access_token }}
 runs:
   using: composite
   steps:
@@ -173,7 +177,6 @@ runs:
     with:
       credentials_json: ${{ inputs.credentials }}
       export_environment_variables: true
-      create_credentials_file: true
 
   - name: Set up Cloud SDK
     id: setup-gcloud

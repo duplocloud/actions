@@ -62,6 +62,9 @@ inputs:
   docker-password:
     description: Docker password
     required: false
+  access_token:
+    description: GCP Access Token
+    required: false
 outputs:
   image:
     description: Docker image
@@ -92,6 +95,7 @@ runs:
       DOCKER_USERNAME: ${{ inputs.docker-username }}
       DOCKER_PASSWORD: ${{ inputs.docker-password }}
       REGISTRY: ${{ inputs.registry }}
+      ACCESS_TOKEN: ${{ inputs.access_token}}
     run: |
       # if the docker username is set then use the username and password in the outputs
       if [[ -n "$DOCKER_USERNAME" ]]; then
@@ -100,8 +104,9 @@ runs:
       # else if there is no username and GCP_ENABLED is true then use the gcloud auth
       elif [[ "$GCP_ENABLED" == "true" ]]; then
         echo "username=oauth2accesstoken" >> $GITHUB_OUTPUT
-        echo "password=${CLOUDSDK_AUTH_ACCESS_TOKEN}" >> $GITHUB_OUTPUT
-        # echo "password=${GOOGLE_OAUTH_ACCESS_TOKEN}" >> $GITHUB_OUTPUT
+        # echo "password=${{ steps.}}" >> $GITHUB_OUTPUT
+        # echo "password=${CLOUDSDK_AUTH_ACCESS_TOKEN}" >> $GITHUB_OUTPUT
+        echo "password=${ACCESS_TOKEN}" >> $GITHUB_OUTPUT
         # if the registry variable is not set then guess it 
         if [[ -z "$REGISTRY" ]]; then
           REGISTRY="${CLOUDSDK_COMPUTE_REGION}-docker.pkg.dev"
