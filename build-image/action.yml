@@ -75,25 +75,54 @@ outputs:
   uri:
     description: Image URI
     value: ${{ steps.image-env.outputs.uri }}
+  tag: 
+    description: The sha tag unique to this build. 
+    value: ${{ steps.image-env.outputs.git_sha }}
 
 runs:
   using: composite
   steps:
 
+  # check up on how we are going to login
+  - name: Login Info
+    id: login-info
+    shell: bash
+    if: inputs.push == 'true'
+    env:
+      DOCKER_USERNAME: ${{ inputs.docker-username }}
+      DOCKER_PASSWORD: ${{ inputs.docker-password }}
+      REGISTRY: ${{ inputs.registry }}
+    run: |
+      # if the docker username is set then use the username and password in the outputs
+      if [[ -n "$DOCKER_USERNAME" ]]; then
+        echo "username=${DOCKER_USERNAME}" >> $GITHUB_OUTPUT
+        echo "password=${DOCKER_PASSWORD}" >> $GITHUB_OUTPUT
+      # else if there is no username and GCP_ENABLED is true then use the gcloud auth
+      elif [[ "$GCP_ENABLED" == "true" ]]; then
+        echo "username=oauth2accesstoken" >> $GITHUB_OUTPUT
+        echo "password=${CLOUDSDK_AUTH_ACCESS_TOKEN}" >> $GITHUB_OUTPUT
+        # if the registry variable is not set then guess it 
+        if [[ -z "$REGISTRY" ]]; then
+          REGISTRY="${CLOUDSDK_COMPUTE_REGION}-docker.pkg.dev"
+          echo "REGISTRY=${REGISTRY}" >> $GITHUB_OUTPUT
+        fi
+      fi
+
   # first login. Assume ECR for now. 
   - name: Login to Amazon ECR
     id: login-ecr
-    if: env.AWS_ENABLED == 'true'
+    if: env.AWS_ENABLED == 'true' && inputs.push == 'true'
     uses: aws-actions/amazon-ecr-login@v2
 
   # if not ecr then login to dockerhub
   - name: Login to DockerHub
     id: login-dockerhub
-    if: env.AWS_ENABLED != 'true' && inputs.docker-username
+    if: env.AWS_ENABLED != 'true' && inputs.push == 'true'
     uses: docker/login-action@v3
     with:
-      username: ${{ inputs.docker-username }}
-      password: ${{ inputs.docker-password }}
+      username: ${{ steps.login-info.outputs.username }}
+      password: ${{ steps.login-info.outputs.password }}
+      registry: ${{ steps.login-info.outputs.registry }}
 
   # start with checking on the builder kind
   - name: Builder Setup

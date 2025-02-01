@@ -11,6 +11,7 @@ It provides the following features:
   - Configuring AWS IAM Credentials.
 - when GCP
   - Installing GCP CLI.
+  - Running Duplo JIT (Just-In-Time) for GCP.
   - Configuring GCP SA Credentials.
 - when Azure
   - Installing Azure CLI.
@@ -25,15 +26,15 @@ The following input variables can be configured:
 | `mask-account-id` | Mask AWS Account ID in logs                                                 | `false`  | `yes`         |
 | `region`          | Overide the cloud region from the default. For gcp this is required.        | `false`  |               |
 | `account-id`      | Overide the cloud account id from the default. Required when on gcp/azure where this would be the project name or directory name. | `false`  |               |
-| `credentials`     | Cloud credentials for Azure or GCP.                                         | `false`  |               |
+| `credentials`     | Cloud credentials for Azure or GCP. Leave this null for gcp jit                                        | `false`  |               |
 | `version`        | Duplo version to install.                                                    | `false`  | `latest`      |
 
 
 ## Usage
 
-**AWS Example:**  
+**JIT for AWS/GCP Example:**  
 ```yaml
-name: Simple AWS Setup
+name: Quick Setup
 on: 
 - push
 jobs:
@@ -48,8 +49,8 @@ jobs:
       uses: duplocloud/actions@main
 ```
 
-**GCP or Azure Example:**  
-The only difference is there is no JIT for GCP or Azure. This means the job needs to have some pre-configured credentials to use for authentication. The name of the account is required for GCP and Azure as well. 
+**GCP or Azure Example with Credentials:**  
+This uses given credentials to setup GCP or Azure. The name of the account is required for GCP and Azure as well. For GCP the account is the project id and for Azure it is the directory id.   
 ```yaml
 steps:
 - name: Duplo Setup
@@ -81,7 +82,7 @@ The action uses the `azure/login` action to authenticate with Azure. To keep thi
 
 ### GCP
 
-The action uses the `google-github-actions/setup-gcloud` action to authenticate with GCP. To keep things consistent this action will use the `CLOUD_CREDENTIALS` secret to authenticate which expects the following format:  
+When no credentials are given, duploctl will run the JIT command for GCP and configure the GCP environment. The action uses the `google-github-actions/setup-gcloud` action to authenticate with GCP when credentials are given. To keep things consistent this action will use the `CLOUD_CREDENTIALS` secret to authenticate which expects the following format:  
 ```json
 {
   "type": "service_account",

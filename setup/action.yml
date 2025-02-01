@@ -1,5 +1,9 @@
-name: Duplo AWS Setup
-description: Install Duplo and AWS tools and login.
+name: Duplocloud
+description: Install Duplocloud tools and login.
+author: duplocloud
+branding:
+  icon: cloud
+  color: orange
 inputs:
   mask-account-id:
     description: Mask AWS Account ID in logs
@@ -22,14 +26,27 @@ inputs:
     required: false
     description: Admin user name.
     default: "false"
+  python-version:
+    required: false
+    description: Python version to install.
+    default: "3.12"
 runs:
   using: composite
   steps:
 
+  - name: Moved Warning
+    shell: bash
+    env:
+      NOTICE: >-
+        This action has been moved one directory up to the root. 
+        Please update this action to use `duplocloud/actions@main`.
+        https://github.com/duplocloud/actions/blob/main/setup/README.md
+    run: echo "::notice::$NOTICE"
+
   - name: Setup Python
     uses: actions/setup-python@v5
     with:
-      python-version: '3.10'
+      python-version: ${{ inputs.python-version }}
 
   - name: Install uv
     uses: astral-sh/setup-uv@v5
@@ -139,6 +156,23 @@ runs:
   # GCP Configuration Flow
   ###
 
+  - name: Duplo JIT for GCP
+    id: duplo-jit-gcp
+    shell: bash
+    if: env.GCP_ENABLED == 'true' && !inputs.credentials
+    env:
+      CLOUDSDK_COMPUTE_REGION: ${{ inputs.region }}
+    run: >-
+      duploctl jit gcp -q "{
+      CLOUDSDK_AUTH_ACCESS_TOKEN: join('',['::add-mask::',Token]), 
+      CLOUDSDK_CORE_PROJECT: ProjectId,
+      CLOUDSDK_PROJECT: ProjectId,
+      GCP_PROJECT: ProjectId,
+      GCLOUD_PROJECT: ProjectId,
+      GOOGLE_CLOUD_PROJECT: ProjectId,
+      CLOUDSDK_COMPUTE_REGION: '${CLOUDSDK_COMPUTE_REGION}'
+      }" -o env >> $GITHUB_ENV
+
   - name: Authenticate to Google Cloud
     id: login-gcp
     uses: google-github-actions/auth@v2
@@ -150,9 +184,16 @@ runs:
   - name: Set up Cloud SDK
     id: setup-gcloud
     uses: google-github-actions/setup-gcloud@v2
-    if: env.GCP_ENABLED == 'true' && inputs.credentials
+    if: env.GCP_ENABLED == 'true'
     with:
       version: '>= 363.0.0'
+
+  - name: GCloud Info
+    id: gcloud-info
+    shell: bash
+    if: env.GCP_ENABLED == 'true'
+    run: |
+      gcloud info
 
   ###
   # Azure Configuration Flow
