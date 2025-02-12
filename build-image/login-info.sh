@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+echo "Discovering login info..."
+
 # if the docker username is set then use the username and password in the outputs
 if [[ -n "$DOCKER_USERNAME" ]]; then
   echo "username=${DOCKER_USERNAME}" >> $GITHUB_OUTPUT
