@@ -92,21 +92,8 @@ runs:
       DOCKER_USERNAME: ${{ inputs.docker-username }}
       DOCKER_PASSWORD: ${{ inputs.docker-password }}
       REGISTRY: ${{ inputs.registry }}
-    run: |
-      # if the docker username is set then use the username and password in the outputs
-      if [[ -n "$DOCKER_USERNAME" ]]; then
-        echo "username=${DOCKER_USERNAME}" >> $GITHUB_OUTPUT
-        echo "password=${DOCKER_PASSWORD}" >> $GITHUB_OUTPUT
-      # else if there is no username and GCP_ENABLED is true then use the gcloud auth
-      elif [[ "$GCP_ENABLED" == "true" ]]; then
-        echo "username=oauth2accesstoken" >> $GITHUB_OUTPUT
-        echo "password=${CLOUDSDK_AUTH_ACCESS_TOKEN}" >> $GITHUB_OUTPUT
-        # if the registry variable is not set then guess it 
-        if [[ -z "$REGISTRY" ]]; then
-          REGISTRY="${CLOUDSDK_COMPUTE_REGION}-docker.pkg.dev"
-          echo "REGISTRY=${REGISTRY}" >> $GITHUB_OUTPUT
-        fi
-      fi
+      DO_PUSH: ${{ inputs.push }}
+    run: $GITHUB_ACTION_PATH/login-info.sh
 
   # first login. Assume ECR for now. 
   - name: Login to Amazon ECR
@@ -169,16 +156,14 @@ runs:
     id: image-env
     shell: bash
     env:
-      REGISTRY: ${{ inputs.registry }}
+      # if ecr was logged into, then use that registry, otherwise the default one
+      REGISTRY: ${{ steps.login-ecr.outputs.registry || steps.login-info.outputs.registry }}
       REPO: ${{ inputs.repo }}
     run: |
-      # if AWS_ENABLED use ecr registry
-      if [[ "$AWS_ENABLED" == "true" ]]; then
-        REGISTRY="${{ steps.login-ecr.outputs.registry }}"
-      fi
+      echo "Using registry: $REGISTRY"
 
-      # if neither registry or repo is set dockerhub naming style matching github
-      if [[ -z "$REGISTRY" && -z "$REPO" ]]; then
+      # if the registry is docker.io and the repo is not set
+      if [[ "$REGISTRY" == "docker.io" && -z "$REPO" ]]; then
         IMAGE="${GITHUB_REPOSITORY}"
         REPO="$(basename $GITHUB_REPOSITORY)"
       else
@@ -200,6 +185,7 @@ runs:
       ## TODO: maybe use this GITHUB_REF_NAME
       # the sed part handles dependabot issues with slash names
       GIT_REF="$(echo ${GITHUB_REF##*/} | sed -e 's/\//_/g')"
+      echo "Ref name is $GIT_REF the other is: $GITHUB_REF_NAME"
 
       # this is for the output
       echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
