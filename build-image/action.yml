@@ -87,7 +87,6 @@ runs:
   - name: Login Info
     id: login-info
     shell: bash
-    if: inputs.push == 'true'
     env:
       DOCKER_USERNAME: ${{ inputs.docker-username }}
       DOCKER_PASSWORD: ${{ inputs.docker-password }}
