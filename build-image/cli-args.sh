@@ -1,4 +1,6 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash  
+
+echo "Building args for docker cli command " 
 
 ARGS=($EXTRA_ARGS)
 

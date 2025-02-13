@@ -191,6 +191,15 @@ runs:
       BUILD_CMD: ${{ steps.setup.outputs.build_cmd }}
       CLI_ARGS: ${{ steps.cli-args.outputs.args || steps.file-args.outputs.args }}
     run: |
+
+      echo """
+      build_cmd=${BUILD_CMD}
+      cli_args=${CLI_ARGS}
+
+      cli=${{ steps.cli-args.outputs.args }}
+      file=${{ steps.file-args.outputs.args }}
+      """
+
       DOCKER_COMMAND="docker ${BUILD_CMD} ${CLI_ARGS}"
       echo "command=$DOCKER_COMMAND" >> $GITHUB_OUTPUT
 
@@ -207,17 +216,6 @@ runs:
       GIT_SHA: ${{ steps.image-env.outputs.git_sha }}
       GIT_REF: ${{ steps.image-env.outputs.git_ref }}
     run: ${{ steps.docker.outputs.command }} --print
-
-  - name: Docker Build
-    id: build
-    shell: bash
-    env:
-      REGISTRY: ${{ steps.image-env.outputs.registry }}
-      IMAGE: ${{ steps.image-env.outputs.image || '' }}
-      REPO: ${{ steps.image-env.outputs.repo }}
-      GIT_SHA: ${{ steps.image-env.outputs.git_sha }}
-      GIT_REF: ${{ steps.image-env.outputs.git_ref }}
-    run: ${{ steps.docker.outputs.command }}
 
   - name: Image Summary
     shell: bash
@@ -246,3 +244,13 @@ runs:
       EOF
       done
         
+  - name: Docker Build
+    id: build
+    shell: bash
+    env:
+      REGISTRY: ${{ steps.image-env.outputs.registry }}
+      IMAGE: ${{ steps.image-env.outputs.image || '' }}
+      REPO: ${{ steps.image-env.outputs.repo }}
+      GIT_SHA: ${{ steps.image-env.outputs.git_sha }}
+      GIT_REF: ${{ steps.image-env.outputs.git_ref }}
+    run: ${{ steps.docker.outputs.command }}

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "Using registry: $REGISTRY"
+echo "Building environment and using registry: $REGISTRY"
 
 # if the registry is docker.io and the repo is not set
 if [[ "$REGISTRY" == "docker.io" && -z "$REPO" ]]; then
@@ -24,8 +24,9 @@ DATE="$(date -u +"%Y%m%d%H%M")"
 # ref name
 ## TODO: maybe use this GITHUB_REF_NAME
 # the sed part handles dependabot issues with slash names
-GIT_REF="$(echo ${GITHUB_REF##*/} | sed -e 's/\//_/g')"
-echo "Ref name is $GIT_REF the other is: $GITHUB_REF_NAME"
+# GIT_REF="$(echo ${GITHUB_REF##*/} | sed -e 's/\//_/g')"
+GIT_REF="$GITHUB_REF_NAME"
+echo "Ref name is $GIT_REF"
 
 # this is for the output
 echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
@@ -34,4 +35,4 @@ echo "repo=${REPO}" >> $GITHUB_OUTPUT
 echo "git_ref=${GIT_REF}" >> $GITHUB_OUTPUT
 echo "git_sha=${GIT_SHA}" >> $GITHUB_OUTPUT
 echo "uri=${IMAGE}:${GIT_SHA}" >> $GITHUB_OUTPUT
-echo "date=${DATE}" >> GITHUB_OUTPUT
+echo "date=${DATE}" >> $GITHUB_OUTPUT

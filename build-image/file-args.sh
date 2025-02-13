@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+echo "Building args for docker file based command"
+
 ARGS=($EXTRA_ARGS)
 
 # if push is true then add the arg and the builder is bake
