@@ -182,16 +182,16 @@ runs:
       BUILD_CMD: ${{ steps.setup.outputs.build_cmd }}
       CLI_ARGS: ${{ steps.cli-args.outputs.args || steps.file-args.outputs.args }}
     run: |
+      DOCKER_COMMAND="docker ${BUILD_CMD} ${CLI_ARGS}"
 
       echo """
-      build_cmd=${BUILD_CMD}
-      cli_args=${CLI_ARGS}
-
+      Will run the following command:
+      ------------
+      ${DOCKER_COMMAND}
+      ------------
       cli=${{ steps.cli-args.outputs.args }}
       file=${{ steps.file-args.outputs.args }}
       """
-
-      DOCKER_COMMAND="docker ${BUILD_CMD} ${CLI_ARGS}"
       echo "command=$DOCKER_COMMAND" >> $GITHUB_OUTPUT
 
   - name: Docker Build Preview
