@@ -65,19 +65,19 @@ inputs:
 outputs:
   image:
     description: Docker image
-    value: ${{ steps.image-env.outputs.image }}
+    value: ${{ steps.setup.outputs.image }}
   repo:
     description: Repository Name
-    value: ${{ steps.image-env.outputs.repo }}
+    value: ${{ steps.setup.outputs.repo }}
   ref:
     description: Branch name
-    value: ${{ steps.image-env.outputs.ref }}
+    value: ${{ steps.setup.outputs.ref }}
   uri:
     description: Image URI
-    value: ${{ steps.image-env.outputs.uri }}
+    value: ${{ steps.setup.outputs.uri }}
   tag: 
     description: The sha tag unique to this build. 
-    value: ${{ steps.image-env.outputs.git_sha }}
+    value: ${{ steps.setup.outputs.git_sha }}
 
 runs:
   using: composite
@@ -141,10 +141,10 @@ runs:
       MULTIARCH: "false"
       EXTRA_TAGS: ${{ inputs.tags }}
       FANCY_TAGS: ${{ inputs.tag-strategy }}
-      IMAGE: ${{ steps.image-env.outputs.image }}
-      GIT_SHA: ${{ steps.image-env.outputs.git_sha }}
-      GIT_REF: ${{ steps.image-env.outputs.git_ref }}
-      DATE: ${{ steps.image-env.outputs.date }}
+      IMAGE: ${{ steps.setup.outputs.image }}
+      GIT_SHA: ${{ steps.setup.outputs.git_sha }}
+      GIT_REF: ${{ steps.setup.outputs.git_ref }}
+      DATE: ${{ steps.setup.outputs.date }}
     run: $GITHUB_ACTION_PATH/cli-args.sh
 
   - name: Setup Buildfile Args
@@ -201,20 +201,20 @@ runs:
       steps.setup.outputs.build_from_file == 'true' &&
       inputs.type != 'compose'
     env:
-      REGISTRY: ${{ steps.image-env.outputs.registry }}
-      IMAGE: ${{ steps.image-env.outputs.image || '' }}
-      REPO: ${{ steps.image-env.outputs.repo }}
-      GIT_SHA: ${{ steps.image-env.outputs.git_sha }}
-      GIT_REF: ${{ steps.image-env.outputs.git_ref }}
+      REGISTRY: ${{ steps.setup.outputs.registry }}
+      IMAGE: ${{ steps.setup.outputs.image || '' }}
+      REPO: ${{ steps.setup.outputs.repo }}
+      GIT_SHA: ${{ steps.setup.outputs.git_sha }}
+      GIT_REF: ${{ steps.setup.outputs.git_ref }}
     run: ${{ steps.docker.outputs.command }} --print
 
   - name: Image Summary
     shell: bash
     if: always()
     env:
-      REPO: ${{ steps.image-env.outputs.repo || '' }}
-      REGISTRY: ${{ steps.image-env.outputs.registry || '' }}
-      IMAGE: ${{ steps.image-env.outputs.image || '' }}
+      REPO: ${{ steps.setup.outputs.repo || '' }}
+      REGISTRY: ${{ steps.setup.outputs.registry || '' }}
+      IMAGE: ${{ steps.setup.outputs.image || '' }}
       TAGS: ${{ steps.cli-args.outputs.tags || '' }}
       DOCKER_COMMAND: ${{ steps.docker.outputs.command }}
     run: |
@@ -239,9 +239,9 @@ runs:
     id: build
     shell: bash
     env:
-      REGISTRY: ${{ steps.image-env.outputs.registry }}
-      IMAGE: ${{ steps.image-env.outputs.image || '' }}
-      REPO: ${{ steps.image-env.outputs.repo }}
-      GIT_SHA: ${{ steps.image-env.outputs.git_sha }}
-      GIT_REF: ${{ steps.image-env.outputs.git_ref }}
+      REGISTRY: ${{ steps.setup.outputs.registry }}
+      IMAGE: ${{ steps.setup.outputs.image || '' }}
+      REPO: ${{ steps.setup.outputs.repo }}
+      GIT_SHA: ${{ steps.setup.outputs.git_sha }}
+      GIT_REF: ${{ steps.setup.outputs.git_ref }}
     run: ${{ steps.docker.outputs.command }}
