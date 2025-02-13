@@ -65,19 +65,19 @@ inputs:
 outputs:
   image:
     description: Docker image
-    value: ${{ steps.image-env.outputs.image }}
+    value: ${{ steps.setup.outputs.image }}
   repo:
     description: Repository Name
-    value: ${{ steps.image-env.outputs.repo }}
+    value: ${{ steps.setup.outputs.repo }}
   ref:
     description: Branch name
-    value: ${{ steps.image-env.outputs.ref }}
+    value: ${{ steps.setup.outputs.ref }}
   uri:
     description: Image URI
-    value: ${{ steps.image-env.outputs.uri }}
+    value: ${{ steps.setup.outputs.uri }}
   tag: 
     description: The sha tag unique to this build. 
-    value: ${{ steps.image-env.outputs.git_sha }}
+    value: ${{ steps.setup.outputs.git_sha }}
 
 runs:
   using: composite
@@ -87,26 +87,12 @@ runs:
   - name: Login Info
     id: login-info
     shell: bash
-    if: inputs.push == 'true'
     env:
       DOCKER_USERNAME: ${{ inputs.docker-username }}
       DOCKER_PASSWORD: ${{ inputs.docker-password }}
       REGISTRY: ${{ inputs.registry }}
-    run: |
-      # if the docker username is set then use the username and password in the outputs
-      if [[ -n "$DOCKER_USERNAME" ]]; then
-        echo "username=${DOCKER_USERNAME}" >> $GITHUB_OUTPUT
-        echo "password=${DOCKER_PASSWORD}" >> $GITHUB_OUTPUT
-      # else if there is no username and GCP_ENABLED is true then use the gcloud auth
-      elif [[ "$GCP_ENABLED" == "true" ]]; then
-        echo "username=oauth2accesstoken" >> $GITHUB_OUTPUT
-        echo "password=${CLOUDSDK_AUTH_ACCESS_TOKEN}" >> $GITHUB_OUTPUT
-        # if the registry variable is not set then guess it 
-        if [[ -z "$REGISTRY" ]]; then
-          REGISTRY="${CLOUDSDK_COMPUTE_REGION}-docker.pkg.dev"
-          echo "REGISTRY=${REGISTRY}" >> $GITHUB_OUTPUT
-        fi
-      fi
+      DO_PUSH: ${{ inputs.push }}
+    run: $GITHUB_ACTION_PATH/login-info.sh
 
   # first login. Assume ECR for now. 
   - name: Login to Amazon ECR
@@ -130,85 +116,9 @@ runs:
     shell: bash
     env:
       BUILD_TYPE: ${{ inputs.type }}
-    run: |
-      # make available to other steps
-      echo "name=$BUILD_TYPE" >> $GITHUB_OUTPUT
-
-      # if BUILD_TYPE is buildx or bake
-      if [[ "$BUILD_TYPE" == "buildx" || "$BUILD_TYPE" == "bake" ]]; then
-        echo "buildx_enabled=true" >> $GITHUB_OUTPUT
-      else
-        echo "buildx_enabled=false" >> $GITHUB_OUTPUT
-      fi
-
-      # if BUILD_TYPE is compose or bake then build_from_file is enabled
-      if [[ "$BUILD_TYPE" == "compose" || "$BUILD_TYPE" == "bake" ]]; then
-        echo "build_from_file=true" >> $GITHUB_OUTPUT
-      else
-        echo "build_from_file=false" >> $GITHUB_OUTPUT
-      fi
-
-      # based on the builder, output the build command
-      case $BUILD_TYPE in
-        docker)
-          echo "build_cmd=build" >> $GITHUB_OUTPUT
-          ;;
-        buildx)
-          echo "build_cmd=buildx build" >> $GITHUB_OUTPUT
-          ;;
-        compose)
-          echo "build_cmd=compose build" >> $GITHUB_OUTPUT
-          ;;
-        bake)
-          echo "build_cmd=buildx bake" >> $GITHUB_OUTPUT
-          ;;
-      esac
-
-  # export useful image environment variables and tags
-  - name: Image Environment
-    id: image-env
-    shell: bash
-    env:
-      REGISTRY: ${{ inputs.registry }}
+      REGISTRY: ${{ steps.login-ecr.outputs.registry || steps.login-info.outputs.registry }}
       REPO: ${{ inputs.repo }}
-    run: |
-      # if AWS_ENABLED use ecr registry
-      if [[ "$AWS_ENABLED" == "true" ]]; then
-        REGISTRY="${{ steps.login-ecr.outputs.registry }}"
-      fi
-
-      # if neither registry or repo is set dockerhub naming style matching github
-      if [[ -z "$REGISTRY" && -z "$REPO" ]]; then
-        IMAGE="${GITHUB_REPOSITORY}"
-        REPO="$(basename $GITHUB_REPOSITORY)"
-      else
-        # otherwise use the repo name to match the image repo
-        if [[ -z "$REPO" ]]; then
-          REPO="$(basename $GITHUB_REPOSITORY)"
-        fi
-        # set the image name
-        IMAGE="${REGISTRY}/${REPO}"
-      fi
-
-      # export short sha for tags
-      GIT_SHA="$(git rev-parse --short HEAD)"
-      echo "Short sha is $GIT_SHA"
-
-      DATE="$(date -u +"%Y%m%d%H%M")"
-
-      # ref name
-      ## TODO: maybe use this GITHUB_REF_NAME
-      # the sed part handles dependabot issues with slash names
-      GIT_REF="$(echo ${GITHUB_REF##*/} | sed -e 's/\//_/g')"
-
-      # this is for the output
-      echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
-      echo "image=${IMAGE}" >> $GITHUB_OUTPUT
-      echo "repo=${REPO}" >> $GITHUB_OUTPUT
-      echo "git_ref=${GIT_REF}" >> $GITHUB_OUTPUT
-      echo "git_sha=${GIT_SHA}" >> $GITHUB_OUTPUT
-      echo "uri=${IMAGE}:${GIT_SHA}" >> $GITHUB_OUTPUT
-      echo "date=${DATE}" >> GITHUB_OUTPUT
+    run: $GITHUB_ACTION_PATH/setup.sh
 
   # setup the base image
   - name: Setup CLI Args
@@ -231,77 +141,11 @@ runs:
       MULTIARCH: "false"
       EXTRA_TAGS: ${{ inputs.tags }}
       FANCY_TAGS: ${{ inputs.tag-strategy }}
-      IMAGE: ${{ steps.image-env.outputs.image }}
-      GIT_SHA: ${{ steps.image-env.outputs.git_sha }}
-      GIT_REF: ${{ steps.image-env.outputs.git_ref }}
-      DATE: ${{ steps.image-env.outputs.date }}
-    run: |
-      ARGS=($EXTRA_ARGS)
-
-      # add dockerfile param if given
-      if [[ -n "$DOCKERFILE" ]]; then
-        ARGS+=(--file "${DOCKERFILE}")
-      elif [[ -n "$BUILDFILE" ]]; then
-        ARGS+=(--file "${BUILDFILE}")
-      fi
-
-      # if target is set then add the arg
-      if [[ -n "$TARGET" ]]; then
-        ARGS+=(--target "${TARGET}")
-      fi
-
-      # if buildx is enabled then add the platforms
-      if [[ "$BUILDX_ENABLED" == "true" && -n "$PLATFORMS" ]]; then
-        ARGS+=(--platform "${PLATFORMS}")
-        MULTIARCH="true"
-      fi
-
-      # if cache is true
-      if [[ "$CACHE" == "true" ]]; then
-        CACHE_CONFIG="type=gha,scope=${CACHE_SCOPE}"
-        ARGS+=(--cache-to ${CACHE_CONFIG},mode=max)
-        ARGS+=(--cache-from ${CACHE_CONFIG})
-      fi
-
-      # add output if given
-      if [[ -n "$OUTPUT" ]]; then
-        ARGS+=(--output "${OUTPUT}")
-      fi
-
-      # if push is true then add the arg
-      if [[ "$PUSH" == "true" ]]; then
-        ARGS+=(--push)
-      fi
-
-      # add any custom build args
-      build_args=($BUILD_ARGS)
-      for arg in ${build_args[*]}; do
-        ARGS+=(--build-arg "${arg}")
-      done
-
-      # Add the fancy tags
-      COMPUTED_FANCY_TAGS=()
-      ALLOWED_FANCY_TAGS=(DATE GIT_REF GIT_SHA)
-      for tag in "${ALLOWED_FANCY_TAGS[@]}"; do
-        if [[ "${FANCY_TAGS}" =~ "$tag" ]]; then
-          COMPUTED_FANCY_TAGS+=("${!tag}")
-        fi
-      done
-      # add all the tags with image as args
-      TAGS=(
-        $EXTRA_TAGS
-        "${COMPUTED_FANCY_TAGS[*]}"
-      )
-      for tag in ${TAGS[*]}; do
-        ARGS+=(--tag "${IMAGE}:${tag}")
-      done
-      
-      # finally add the context
-      ARGS+=("${CONTEXT}")
-
-      echo "multiarch=${MULTIARCH}" >> $GITHUB_OUTPUT
-      echo "tags=${TAGS[*]}" >> $GITHUB_OUTPUT
-      echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
+      IMAGE: ${{ steps.setup.outputs.image }}
+      GIT_SHA: ${{ steps.setup.outputs.git_sha }}
+      GIT_REF: ${{ steps.setup.outputs.git_ref }}
+      DATE: ${{ steps.setup.outputs.date }}
+    run: $GITHUB_ACTION_PATH/cli-args.sh
 
   - name: Setup Buildfile Args
     id: file-args
@@ -315,38 +159,20 @@ runs:
       BUILD_TYPE: ${{ inputs.type }}
       BUILD_ARGS: ${{ inputs.build-args }}
       BUILD_FILE: ${{ inputs.file }}
-    run: |
-      ARGS=($EXTRA_ARGS)
+    run: $GITHUB_ACTION_PATH/file-args.sh
 
-      # if push is true then add the arg and the builder is bake
-      if [[ "$PUSH" == "true" ]]; then
-        ARGS+=(--push)
-      fi
-
-      # optionally disable cache
-      if [[ "$CACHE" == "false" ]]; then
-        ARGS+=(--no-cache)
-      fi
-
-      # if the builder is compose it can have build args too
-      if [[ "$BUILD_TYPE" == "compose" ]]; then
-        build_args=($BUILD_ARGS)
-        for arg in ${build_args[*]}; do
-          ARGS+=(--build-arg "${arg}")
-        done
-      fi
-
-      # if a build file is given then add it
-      if [[ -n "$BUILD_FILE" ]]; then
-        ARGS+=(--file "${BUILD_FILE}")
-      fi
-
-      # if target is set then add the arg
-      if [[ -n "$TARGET" ]]; then
-        ARGS+=("${TARGET}")
-      fi
-
-      echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
+  - name: Build Docker Command
+    id: summary
+    shell: bash
+    if: always()
+    env:
+      BUILD_CMD: ${{ steps.setup.outputs.build_cmd }}
+      CLI_ARGS: ${{ steps.cli-args.outputs.args || steps.file-args.outputs.args }}
+      REPO: ${{ steps.setup.outputs.repo || '' }}
+      REGISTRY: ${{ steps.setup.outputs.registry || '' }}
+      IMAGE: ${{ steps.setup.outputs.image || '' }}
+      TAGS: ${{ steps.cli-args.outputs.tags || '' }}
+    run: $GITHUB_ACTION_PATH/summary.sh
 
   - name: Expose GitHub Runtime
     if: steps.setup.outputs.buildx_enabled == 'true'
@@ -362,16 +188,6 @@ runs:
     if: steps.setup.outputs.buildx_enabled == 'true'
     uses: docker/setup-buildx-action@v3
 
-  - name: Build Docker Command
-    id: docker
-    shell: bash
-    env:
-      BUILD_CMD: ${{ steps.setup.outputs.build_cmd }}
-      CLI_ARGS: ${{ steps.cli-args.outputs.args || steps.file-args.outputs.args }}
-    run: |
-      DOCKER_COMMAND="docker ${BUILD_CMD} ${CLI_ARGS}"
-      echo "command=$DOCKER_COMMAND" >> $GITHUB_OUTPUT
-
   - name: Docker Build Preview
     id: preview
     shell: bash
@@ -379,48 +195,20 @@ runs:
       steps.setup.outputs.build_from_file == 'true' &&
       inputs.type != 'compose'
     env:
-      REGISTRY: ${{ steps.image-env.outputs.registry }}
-      IMAGE: ${{ steps.image-env.outputs.image || '' }}
-      REPO: ${{ steps.image-env.outputs.repo }}
-      GIT_SHA: ${{ steps.image-env.outputs.git_sha }}
-      GIT_REF: ${{ steps.image-env.outputs.git_ref }}
-    run: ${{ steps.docker.outputs.command }} --print
-
+      REGISTRY: ${{ steps.setup.outputs.registry }}
+      IMAGE: ${{ steps.setup.outputs.image || '' }}
+      REPO: ${{ steps.setup.outputs.repo }}
+      GIT_SHA: ${{ steps.setup.outputs.git_sha }}
+      GIT_REF: ${{ steps.setup.outputs.git_ref }}
+    run: ${{ steps.summary.outputs.command }} --print
+        
   - name: Docker Build
     id: build
     shell: bash
     env:
-      REGISTRY: ${{ steps.image-env.outputs.registry }}
-      IMAGE: ${{ steps.image-env.outputs.image || '' }}
-      REPO: ${{ steps.image-env.outputs.repo }}
-      GIT_SHA: ${{ steps.image-env.outputs.git_sha }}
-      GIT_REF: ${{ steps.image-env.outputs.git_ref }}
-    run: ${{ steps.docker.outputs.command }}
-
-  - name: Image Summary
-    shell: bash
-    if: always()
-    env:
-      REPO: ${{ steps.image-env.outputs.repo || '' }}
-      REGISTRY: ${{ steps.image-env.outputs.registry || '' }}
-      IMAGE: ${{ steps.image-env.outputs.image || '' }}
-      TAGS: ${{ steps.cli-args.outputs.tags || '' }}
-      DOCKER_COMMAND: ${{ steps.docker.outputs.command }}
-    run: |
-      cat <<EOF >> $GITHUB_STEP_SUMMARY
-      ## Docker Command
-      \`\`\`bash
-      $DOCKER_COMMAND
-      \`\`\`
-      ## Image Summary
-      **Image**: ${IMAGE}
-      **Tags**: 
-      EOF
-      for tag in $TAGS; do
-        cat <<EOF >> $GITHUB_STEP_SUMMARY
-      \`\`\`bash
-      ${IMAGE}:${tag}
-      \`\`\`
-      EOF
-      done
-        
+      REGISTRY: ${{ steps.setup.outputs.registry }}
+      IMAGE: ${{ steps.setup.outputs.image || '' }}
+      REPO: ${{ steps.setup.outputs.repo }}
+      GIT_SHA: ${{ steps.setup.outputs.git_sha }}
+      GIT_REF: ${{ steps.setup.outputs.git_ref }}
+    run: ${{ steps.summary.outputs.command }}
