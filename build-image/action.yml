@@ -116,18 +116,9 @@ runs:
     shell: bash
     env:
       BUILD_TYPE: ${{ inputs.type }}
-    run: $GITHUB_ACTION_PATH/login-info.sh
-      
-
-  # export useful image environment variables and tags
-  - name: Image Environment
-    id: image-env
-    shell: bash
-    env:
-      # if ecr was logged into, then use that registry, otherwise the default one
       REGISTRY: ${{ steps.login-ecr.outputs.registry || steps.login-info.outputs.registry }}
       REPO: ${{ inputs.repo }}
-    run: $GITHUB_ACTION_PATH/image-env.sh
+    run: $GITHUB_ACTION_PATH/setup.sh
 
   # setup the base image
   - name: Setup CLI Args
