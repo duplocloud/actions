@@ -161,6 +161,19 @@ runs:
       BUILD_FILE: ${{ inputs.file }}
     run: $GITHUB_ACTION_PATH/file-args.sh
 
+  - name: Build Docker Command
+    id: summary
+    shell: bash
+    if: always()
+    env:
+      BUILD_CMD: ${{ steps.setup.outputs.build_cmd }}
+      CLI_ARGS: ${{ steps.cli-args.outputs.args || steps.file-args.outputs.args }}
+      REPO: ${{ steps.setup.outputs.repo || '' }}
+      REGISTRY: ${{ steps.setup.outputs.registry || '' }}
+      IMAGE: ${{ steps.setup.outputs.image || '' }}
+      TAGS: ${{ steps.cli-args.outputs.tags || '' }}
+    run: $GITHUB_ACTION_PATH/summary.sh
+
   - name: Expose GitHub Runtime
     if: steps.setup.outputs.buildx_enabled == 'true'
     uses: crazy-max/ghaction-github-runtime@v3
@@ -175,25 +188,6 @@ runs:
     if: steps.setup.outputs.buildx_enabled == 'true'
     uses: docker/setup-buildx-action@v3
 
-  - name: Build Docker Command
-    id: docker
-    shell: bash
-    env:
-      BUILD_CMD: ${{ steps.setup.outputs.build_cmd }}
-      CLI_ARGS: ${{ steps.cli-args.outputs.args || steps.file-args.outputs.args }}
-    run: |
-      DOCKER_COMMAND="docker ${BUILD_CMD} ${CLI_ARGS}"
-
-      echo """
-      Will run the following command:
-      ------------
-      ${DOCKER_COMMAND}
-      ------------
-      cli=${{ steps.cli-args.outputs.args }}
-      file=${{ steps.file-args.outputs.args }}
-      """
-      echo "command=$DOCKER_COMMAND" >> $GITHUB_OUTPUT
-
   - name: Docker Build Preview
     id: preview
     shell: bash
@@ -206,34 +200,7 @@ runs:
       REPO: ${{ steps.setup.outputs.repo }}
       GIT_SHA: ${{ steps.setup.outputs.git_sha }}
       GIT_REF: ${{ steps.setup.outputs.git_ref }}
-    run: ${{ steps.docker.outputs.command }} --print
-
-  - name: Image Summary
-    shell: bash
-    if: always()
-    env:
-      REPO: ${{ steps.setup.outputs.repo || '' }}
-      REGISTRY: ${{ steps.setup.outputs.registry || '' }}
-      IMAGE: ${{ steps.setup.outputs.image || '' }}
-      TAGS: ${{ steps.cli-args.outputs.tags || '' }}
-      DOCKER_COMMAND: ${{ steps.docker.outputs.command }}
-    run: |
-      cat <<EOF >> $GITHUB_STEP_SUMMARY
-      ## Docker Command
-      \`\`\`bash
-      $DOCKER_COMMAND
-      \`\`\`
-      ## Image Summary
-      **Image**: ${IMAGE}
-      **Tags**: 
-      EOF
-      for tag in $TAGS; do
-        cat <<EOF >> $GITHUB_STEP_SUMMARY
-      \`\`\`bash
-      ${IMAGE}:${tag}
-      \`\`\`
-      EOF
-      done
+    run: ${{ steps.summary.outputs.command }} --print
         
   - name: Docker Build
     id: build
@@ -244,4 +211,4 @@ runs:
       REPO: ${{ steps.setup.outputs.repo }}
       GIT_SHA: ${{ steps.setup.outputs.git_sha }}
       GIT_REF: ${{ steps.setup.outputs.git_ref }}
-    run: ${{ steps.docker.outputs.command }}
+    run: ${{ steps.summary.outputs.command }}
