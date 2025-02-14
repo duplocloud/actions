@@ -49,8 +49,8 @@ DATE="$(date -u +"%Y%m%d%H%M")"
 # ref name
 ## TODO: maybe use this GITHUB_REF_NAME
 # the sed part handles dependabot issues with slash names
-# GIT_REF="$(echo ${GITHUB_REF##*/} | sed -e 's/\//_/g')"
-GIT_REF="$GITHUB_REF_NAME"
+GIT_REF="$(echo ${GITHUB_REF##*/} | sed -e 's/\//_/g')"
+# GIT_REF="$GITHUB_REF_NAME"
 
 # the uri 
 IMG_URI="${IMAGE}:${GIT_SHA}"
