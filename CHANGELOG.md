@@ -8,4 +8,6 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.0.11] - 2025-03-05
+
 - new action that takes a running services image and tags it with a new tag
