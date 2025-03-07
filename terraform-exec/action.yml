@@ -19,6 +19,10 @@ inputs:
     description: Terraform configs
     required: false
     default: config
+outputs:
+  planfile: 
+    description: The plan file
+    value: ${{ steps.setup.outputs.planfile }}
 runs:
   using: composite
   steps:
@@ -75,7 +79,9 @@ runs:
       fi
 
       echo "The tf args: ${ARGS[*]}"
+      echo "The plan file: $PLAN_FILE"
       echo "PLAN_FILE=$PLAN_FILE" >> $GITHUB_ENV
+      echo "planfile=$PLAN_FILE" >> $GITHUB_OUTPUT
       echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
   
   - name: Select Workspace
