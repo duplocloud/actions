@@ -68,7 +68,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Duplo and AWS Setup
-      uses: duplocloud/actions/setup@main
+      uses: duplocloud/actions@main
       with:
         admin: true
     
