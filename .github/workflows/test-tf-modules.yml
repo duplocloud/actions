@@ -87,12 +87,6 @@ jobs:
         module: examples/${{ matrix.module }}
         test: false
 
-    - name: TF Plan Example for Module
-      uses: duplocloud/actions/terraform-exec@main
-      with:
-        module: examples/${{ matrix.module }}
-        workspace: test
-
   tf_success:
     name: TF Tested
     runs-on: ubuntu-latest

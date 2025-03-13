@@ -22,7 +22,7 @@ inputs:
 outputs:
   planfile: 
     description: The plan file
-    value: ${{ steps.setup.outputs.planfile }}
+    value: ${{ steps.setup.outputs.planfile || '' }}
 runs:
   using: composite
   steps:
