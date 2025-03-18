@@ -30,6 +30,10 @@ inputs:
     required: false
     description: Python version to install.
     default: "3.12"
+  from-source:
+    required: false
+    description: Install from source using the version as the git ref.
+    default: "false"
 runs:
   using: composite
   steps:
@@ -48,12 +52,24 @@ runs:
     shell: bash
     env:
       VERSION: ${{ inputs.version }}
+      FROM_SOURCE: ${{ inputs.from-source }}
     run: |
-      if [[ "$VERSION" == "latest" ]]; then
-        pip install duplocloud-client
-      else
-        pip install duplocloud-client==$VERSION
+      PACKAGE=""
+      # if from source is true then package is a git url otherwise just duplocloud-client
+      if [[ "$FROM_SOURCE" == 'true' ]]; then
+        # if the version is latest then reset the value to main
+        if [[ "$VERSION" == "latest" ]]; then
+          VERSION="main"
+        fi
+        PACKAGE="git+https://github.com/duplocloud/duploctl.git@${VERSION}"
+      else 
+        if [[ "$VERSION" == "latest" ]]; then
+          PACKAGE="duplocloud-client"
+        else
+          PACKAGE="duplocloud-client==$VERSION"
+        fi
       fi
+      pip install $PACKAGE
       
   - name: Duplo Version
     id: duplo-version
