@@ -155,7 +155,7 @@ runs:
     if: env.GCP_ENABLED == 'true' && !inputs.credentials
     env:
       CLOUDSDK_COMPUTE_REGION: ${{ inputs.region || 'us-central1' }}
-    run: >-
+    run: |
       duploctl jit gcp -q "{
       CLOUDSDK_AUTH_ACCESS_TOKEN: Token, 
       CLOUDSDK_CORE_PROJECT: ProjectId,
@@ -164,7 +164,11 @@ runs:
       GCLOUD_PROJECT: ProjectId,
       GOOGLE_CLOUD_PROJECT: ProjectId,
       CLOUDSDK_COMPUTE_REGION: '${CLOUDSDK_COMPUTE_REGION}'
-      }" -o env >> $GITHUB_ENV
+      }" -o env >> gcp-env.txt
+      source gcp-env.txt
+      echo "::add-mask::$CLOUDSDK_AUTH_ACCESS_TOKEN"
+      cat gcp-env.txt >> $GITHUB_ENV
+      rm gcp-env.txt
 
   - name: Authenticate to Google Cloud
     id: login-gcp
