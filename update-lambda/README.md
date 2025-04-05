@@ -30,8 +30,8 @@ jobs:
     - name: Duplo Setup
       uses: duplocloud/actions/setup@main
 
-    - name: Update Service
-      uses: duplocloud/actions/update-service@v1
+    - name: Update lambda
+      uses: duplocloud/actions/update-lambda@v1
       with:
         lambda: my-lambda
         image: my-image:latest
@@ -54,8 +54,8 @@ jobs:
     - name: Duplo Setup
       uses: duplocloud/actions/setup@main
 
-    - name: Update Service
-      uses: duplocloud/actions/update-service@v1
+    - name: Update Lambda
+      uses: duplocloud/actions/update-lambda@v1
       with:
         lambda: my-lambda
         s3_path: mybucket/myarchivepath/mysource.zip
