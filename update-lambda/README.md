@@ -1,6 +1,6 @@
 # Update Lambda Github Action
 
-This GitHub Action updates a lambda function using Duploctl. It allows you to specify the lambda name, and an image name or S3 path as inputs.
+This GitHub Action updates a lambda function using Duploctl. It allows you to specify the lambda name and a URI, which can either be an s3://bucket/path uri or a docker image uri.
 
 ## Inputs
 
@@ -15,7 +15,7 @@ The following input variables can be configured:
 ## Example Usage
 
 ```yaml
-name: Update Lambda
+name: Update Lambda Docker Image
 
 on:
   push:
@@ -39,7 +39,7 @@ jobs:
     # Add more steps for your deployment process...
 ```
 ```yaml
-name: Update Lambda
+name: Update Lambda from S3 Source
 
 on:
   push:
