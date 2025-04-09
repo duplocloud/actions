@@ -4,11 +4,8 @@ inputs:
   lambda:
     description: Lambda name
     required: true
-  image:
-    description: Image name
-    required: false
-  s3_path:
-    description: Bucket name and path to archive file, like mybucket/my/path/to/myfile.zip
+  uri:
+    description: A docker image uri or an s3 uri in the form of s3://bucket/path
     required: false
 runs:
   using: composite
@@ -18,16 +15,13 @@ runs:
       shell: bash
       env:
         LAMBDA: ${{ inputs.lambda }}
-        IMAGE: ${{ inputs.image }}
-        S3_PATH: ${{ inputs.s3_path }}
+        URI: ${{ inputs.uri }}
       run: |
-        if [[ -n "${IMAGE}" ]]; then
-          duploctl lambda update_image "${LAMBDA}" "${IMAGE}"
-        elif [[ -n "$S3_PATH" ]]; then
-          bucket=$(echo "$S3_PATH" | cut -d '/' -f1)
-          key=$(echo "$S3_PATH" | cut -d '/' -f2-)
+        if [[ "${URI}" = s3://* ]]; then
+          s3_path="${URI#s3://}"
+          bucket="${s3_path%%/*}"
+          key="${s3_path#*/}"
           duploctl lambda update_s3 "${LAMBDA}" "${bucket}" "${key}"
         else
-          echo "You must pass either 's3_path' or 'image'"
-          exit 1
+          duploctl lambda update_image "${LAMBDA}" "${URI}"
         fi

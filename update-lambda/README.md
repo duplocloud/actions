@@ -9,8 +9,8 @@ The following input variables can be configured:
 | Name      | Description                | Required | Default Value |
 |-----------|----------------------------|----------|---------------|
 | lambda    | Lambda name                | Yes      |               |
-| image     | Image name                 | No       |               |
-| s3_path   | Path to source archive     | No       |               |
+| uri       | update location uri        | Yes      |               |
+
 
 ## Example Usage
 
@@ -34,7 +34,7 @@ jobs:
       uses: duplocloud/actions/update-lambda@v1
       with:
         lambda: my-lambda
-        image: my-image:latest
+        uri: my-image:latest
 
     # Add more steps for your deployment process...
 ```
@@ -58,7 +58,7 @@ jobs:
       uses: duplocloud/actions/update-lambda@v1
       with:
         lambda: my-lambda
-        s3_path: mybucket/myarchivepath/mysource.zip
+        uri: s3://mybucket/mypath/mysource.zip
 
     # Add more steps for your deployment process...
 ```
