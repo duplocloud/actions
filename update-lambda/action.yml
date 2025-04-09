@@ -8,7 +8,7 @@ inputs:
     description: Image name
     required: false
   s3_path:
-    description: Bucket name and path to archive file, like mybucket/my/path/myfile.zip
+    description: Bucket name and path to archive file, like mybucket/my/path/to/myfile.zip
     required: false
 runs:
   using: composite
@@ -21,7 +21,6 @@ runs:
         IMAGE: ${{ inputs.image }}
         S3_PATH: ${{ inputs.s3_path }}
       run: |
-        env
         if [[ -n "${IMAGE}" ]]; then
           duploctl lambda update_image "${LAMBDA}" "${IMAGE}"
         elif [[ -n "$S3_PATH" ]]; then
