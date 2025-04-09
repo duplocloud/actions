@@ -1,0 +1,27 @@
+name: Update Lambda
+description: Updates a given lambda with either an s3 archive or docker image
+inputs:
+  lambda:
+    description: Lambda name
+    required: true
+  uri:
+    description: A docker image uri or an s3 uri in the form of s3://bucket/path
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Update Lambda
+      id: duploctl
+      shell: bash
+      env:
+        LAMBDA: ${{ inputs.lambda }}
+        URI: ${{ inputs.uri }}
+      run: |
+        if [[ "${URI}" = s3://* ]]; then
+          s3_path="${URI#s3://}"
+          bucket="${s3_path%%/*}"
+          key="${s3_path#*/}"
+          duploctl lambda update_s3 "${LAMBDA}" "${bucket}" "${key}"
+        else
+          duploctl lambda update_image "${LAMBDA}" "${URI}"
+        fi
