@@ -21,6 +21,7 @@ runs:
         IMAGE: ${{ inputs.image }}
         S3_PATH: ${{ inputs.s3_path }}
       run: |
+        env
         if [[ -n "${IMAGE}" ]]; then
           duploctl lambda update_image "${LAMBDA}" "${IMAGE}"
         elif [[ -n "$S3_PATH" ]]; then
