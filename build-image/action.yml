@@ -118,7 +118,9 @@ runs:
     env:
       REGISTRY: ${{ steps.login-info.outputs.registry }}
     run: |
+      echo "Checking Token validity"
       curl -H "Content-Type: application/x-www-form-urlencoded" -d "access_token=$CLOUDSDK_AUTH_ACCESS_TOKEN" https://www.googleapis.com/oauth2/v1/tokeninfo
+      echo "Ready to login to the registry"
       gcloud --quiet auth configure-docker "$REGISTRY"
 
   # start with checking on the builder kind
