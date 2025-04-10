@@ -101,8 +101,8 @@ runs:
     uses: aws-actions/amazon-ecr-login@v2
 
   # do the helper login for gcp only when gcp is enabled
-  - name: Image Repo Auth
-    id: gcp-helper
+  - name: Token Validity
+    id: gcp-debug
     if: env.GCP_ENABLED == 'true' && inputs.push == 'true'
     shell: bash
     env:
