@@ -40,8 +40,12 @@ runs:
       NOTICE: >-
         This action has been moved one directory up to the root. 
         Please update this action to use `duplocloud/actions@main`.
+
+        This is officially no longer maintained and no longer will remain in sync with the action in the root.
         https://github.com/duplocloud/actions/blob/main/setup/README.md
-    run: echo "::notice::$NOTICE"
+    run: |
+      echo "::notice::$NOTICE"
+      exit 1
 
   - name: Setup Python
     uses: actions/setup-python@v5
