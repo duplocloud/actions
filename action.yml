@@ -163,8 +163,11 @@ runs:
     id: gcloud-info
     shell: bash
     if: env.GCP_ENABLED == 'true'
+    env:
+      CLOUDSDK_AUTH_ACCESS_TOKEN: ${{ steps.login-gcp.outputs.access_token }}
     run: |
       gcloud info
+      echo "::add-mask::$CLOUDSDK_AUTH_ACCESS_TOKEN"
 
   ###
   # Azure Configuration Flow
