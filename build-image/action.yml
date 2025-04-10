@@ -117,7 +117,9 @@ runs:
     shell: bash
     env:
       REGISTRY: ${{ steps.login-info.outputs.registry }}
-    run: gcloud auth configure-docker "$REGISTRY"
+    run: |
+      curl -H "Content-Type: application/x-www-form-urlencoded" -d "access_token=$CLOUDSDK_AUTH_ACCESS_TOKEN" https://www.googleapis.com/oauth2/v1/tokeninfo
+      gcloud auth configure-docker "$REGISTRY"
 
   # start with checking on the builder kind
   - name: Builder Setup
