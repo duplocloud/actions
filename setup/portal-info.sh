@@ -16,20 +16,18 @@ elif [[ "$GCP_ENABLED" == "true" ]]; then
 elif [[ "$AZURE_ENABLED" == "true" ]]; then
   DUPLO_PROVIDER="azure"
 fi
-echo "AWS_ENABLED=$AWS_ENABLED" >> "$GITHUB_ENV"
-echo "GCP_ENABLED=$GCP_ENABLED" >> "$GITHUB_ENV"
-echo "AZURE_ENABLED=$AZURE_ENABLED" >> "$GITHUB_ENV"
-echo "DUPLO_PROVIDER=$DUPLO_PROVIDER" >> "$GITHUB_ENV"
 echo "Configuring for $DUPLO_PROVIDER"
 
 # if this is gcp or azure then we'll discover the default account and region
 if [ "$DUPLO_PROVIDER" == "aws" ]; then
   DUPLO_ACCOUNT_ID="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsAccount')"
   DUPLO_DEFAULT_REGION="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsRegion')"
-  echo "AWS_DEFAULT_REGION=$DUPLO_DEFAULT_REGION" >> "$GITHUB_ENV"
-  echo "AWS_ACCOUNT_ID=$DUPLO_ACCOUNT_ID" >> "$GITHUB_ENV"
-  echo "DUPLO_ACCOUNT_ID=$DUPLO_ACCOUNT_ID" >> "$GITHUB_ENV"
-  echo "DUPLO_DEFAULT_REGION=$DUPLO_DEFAULT_REGION" >> "$GITHUB_ENV"
+  {
+    echo "AWS_DEFAULT_REGION=$DUPLO_DEFAULT_REGION"
+    echo "AWS_ACCOUNT_ID=$DUPLO_ACCOUNT_ID"
+    echo "DUPLO_ACCOUNT_ID=$DUPLO_ACCOUNT_ID"
+    echo "DUPLO_DEFAULT_REGION=$DUPLO_DEFAULT_REGION"
+  } >> "$GITHUB_ENV"
 else 
   # if DUPLO_ACCOUNT_ID is not set then
   if [ -z "$DUPLO_ACCOUNT_ID" ]; then
@@ -49,8 +47,10 @@ else
       --query "{DUPLO_ACCOUNT_ID: $ACCOUNT_KEY, DUPLO_DEFAULT_REGION: $REGION_KEY}" \
       --output env >> "$GITHUB_ENV"
   else
-    echo "DUPLO_ACCOUNT_ID=$DUPLO_ACCOUNT_ID" >> "$GITHUB_ENV"
-    echo "DUPLO_DEFAULT_REGION=$DUPLO_DEFAULT_REGION" >> "$GITHUB_ENV"
+    {
+      echo "DUPLO_ACCOUNT_ID=$DUPLO_ACCOUNT_ID"
+      echo "DUPLO_DEFAULT_REGION=$DUPLO_DEFAULT_REGION"
+    } >> "$GITHUB_ENV"
   fi
 fi
 
@@ -61,6 +61,11 @@ else
   echo "ADMIN_FLAG=" >> "$GITHUB_OUTPUT"
 fi
 
-# re-export duplo creds as lowercase
-echo "duplo_token=$DUPLO_TOKEN" >> "$GITHUB_ENV"
-echo "duplo_host=$DUPLO_HOST" >> "$GITHUB_ENV"
+{
+  echo "AWS_ENABLED=$AWS_ENABLED"
+  echo "GCP_ENABLED=$GCP_ENABLED"
+  echo "AZURE_ENABLED=$AZURE_ENABLED"
+  echo "DUPLO_PROVIDER=$DUPLO_PROVIDER"
+  echo "duplo_token=$DUPLO_TOKEN"
+  echo "duplo_host=$DUPLO_HOST"
+} >> "$GITHUB_ENV"

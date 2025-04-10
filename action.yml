@@ -132,7 +132,7 @@ runs:
     shell: bash
     if: env.GCP_ENABLED == 'true' && !inputs.credentials
     env:
-      CLOUDSDK_COMPUTE_REGION: ${{ inputs.region || 'us-central1' }}
+      CLOUDSDK_COMPUTE_REGION: ${{ inputs.region || env.DUPLO_DEFAULT_REGION }}
     run: >-
       duploctl jit gcp -q "{
       CLOUDSDK_AUTH_ACCESS_TOKEN: Token, 
