@@ -85,45 +85,7 @@ runs:
       DUPLO_ACCOUNT_ID: ${{ inputs.account-id }}
       DUPLO_DEFAULT_REGION: ${{ inputs.region }}
       ISADMIN: ${{ inputs.admin }}
-    run: |
-      PORTAL_INFO="$(duploctl system info)"
-
-      AWS_ENABLED="$(echo "$PORTAL_INFO" | jq -r '.IsAwsCloudEnabled')"
-      GCP_ENABLED="$(echo "$PORTAL_INFO" | jq -r '.IsGoogleCloudEnabled')"
-      AZURE_ENABLED="$(echo "$PORTAL_INFO" | jq -r '.IsAzureCloudEnabled')"
-
-      echo "AWS_ENABLED=$AWS_ENABLED" >> $GITHUB_ENV
-      echo "GCP_ENABLED=$GCP_ENABLED" >> $GITHUB_ENV
-      echo "AZURE_ENABLED=$AZURE_ENABLED" >> $GITHUB_ENV
-
-      echo "Portal info discovered"
-
-      # configure the cloud environments
-      if [[ "$AWS_ENABLED" == "true" ]]; then
-        echo "Configuring AWS Backend"
-        DUPLO_ACCOUNT_ID="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsAccount')"
-        DUPLO_DEFAULT_REGION="$(echo "$PORTAL_INFO" | jq -r '.DefaultAwsRegion')"
-        echo "AWS_DEFAULT_REGION=$DUPLO_DEFAULT_REGION" >> $GITHUB_ENV
-        echo "AWS_ACCOUNT_ID=$DUPLO_ACCOUNT_ID" >> $GITHUB_ENV
-      elif [[ "$GCP_ENABLED" == "true" ]]; then
-        echo "Configuring GCP Backend"
-      elif [[ "$AZURE_ENABLED" == "true" ]]; then
-        echo "Configuring Azure Backend"
-      fi
-
-      # if is admin 
-      if [[ "$ISADMIN" == "true" ]]; then
-        echo "ADMIN_FLAG=--admin" >> $GITHUB_OUTPUT
-      else
-        echo "ADMIN_FLAG=" >> $GITHUB_OUTPUT
-      fi
-
-      echo "DUPLO_ACCOUNT_ID=$DUPLO_ACCOUNT_ID" >> $GITHUB_ENV
-      echo "DUPLO_DEFAULT_REGION=$DUPLO_DEFAULT_REGION" >> $GITHUB_ENV
-
-      # re-export duplo creds as lowercase
-      echo "duplo_token=$DUPLO_TOKEN" >> $GITHUB_ENV
-      echo "duplo_host=$DUPLO_HOST" >> $GITHUB_ENV
+    run: $GITHUB_ACTION_PATH/setup/portal-info.sh
 
   ###
   # AWS Configuration Flow

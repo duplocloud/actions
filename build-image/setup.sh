@@ -38,7 +38,11 @@ else
     REPO="$(basename $GITHUB_REPOSITORY)"
   fi
   # set the image name
-  IMAGE="${REGISTRY}/${REPO}"
+  if [ "$DUPLO_PROVIDER" == "gcp" ]; then
+    IMAGE="${REGISTRY}/${DUPLO_ACCOUNT_ID}/${REPO}"
+  else 
+    IMAGE="${REGISTRY}/${REPO}"
+  fi
 fi
 
 # export short sha for tags
