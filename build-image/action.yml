@@ -110,6 +110,15 @@ runs:
       password: ${{ steps.login-info.outputs.password }}
       registry: ${{ steps.login-info.outputs.registry }}
 
+  # do the helper login for gcp only when gcp is enabled
+  - name: Image Repo Auth
+    id: gcp-helper
+    if: env.GCP_ENABLED == 'true' && inputs.push == 'true'
+    shell: bash
+    env:
+      REGISTRY: ${{ steps.login-info.outputs.registry }}
+    run: gcloud auth configure-docker "$REGISTRY"
+
   # start with checking on the builder kind
   - name: Builder Setup
     id: setup
