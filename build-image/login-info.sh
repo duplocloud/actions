@@ -15,7 +15,7 @@ elif [[ "$GCP_ENABLED" == "true" ]]; then
   echo "password=${CLOUDSDK_AUTH_ACCESS_TOKEN}" >> $GITHUB_OUTPUT
   # if the registry variable is not set then guess it 
   if [[ -z "$REGISTRY" ]]; then
-    REGISTRY="${CLOUDSDK_COMPUTE_REGION}-docker.pkg.dev"
+    REGISTRY="${DUPLO_DEFAULT_REGION}-docker.pkg.dev"
     echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
   fi
 # else it's aws we need to check if push is false or else the registry won't get set
