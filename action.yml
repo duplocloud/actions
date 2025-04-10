@@ -168,6 +168,7 @@ runs:
     run: |
       gcloud info
       echo "::add-mask::$CLOUDSDK_AUTH_ACCESS_TOKEN"
+      echo "CLOUDSDK_AUTH_ACCESS_TOKEN=$CLOUDSDK_AUTH_ACCESS_TOKEN" >> $GITHUB_ENV
 
   ###
   # Azure Configuration Flow
