@@ -8,11 +8,14 @@ if [[ -n "$DOCKER_USERNAME" ]]; then
   echo "password=${DOCKER_PASSWORD}" >> $GITHUB_OUTPUT
 # else if there is no username and GCP_ENABLED is true then use the gcloud auth
 elif [[ "$GCP_ENABLED" == "true" ]]; then
+  if [[ -z $CLOUDSDK_AUTH_ACCESS_TOKEN ]]; then 
+    CLOUDSDK_AUTH_ACCESS_TOKEN="$(gcloud auth print-access-token)"
+  fi 
   echo "username=oauth2accesstoken" >> $GITHUB_OUTPUT
   echo "password=${CLOUDSDK_AUTH_ACCESS_TOKEN}" >> $GITHUB_OUTPUT
   # if the registry variable is not set then guess it 
   if [[ -z "$REGISTRY" ]]; then
-    REGISTRY="${CLOUDSDK_COMPUTE_REGION}-docker.pkg.dev"
+    REGISTRY="${DUPLO_DEFAULT_REGION}-docker.pkg.dev"
     echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
   fi
 # else it's aws we need to check if push is false or else the registry won't get set

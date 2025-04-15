@@ -100,6 +100,18 @@ runs:
     if: env.AWS_ENABLED == 'true' && inputs.push == 'true'
     uses: aws-actions/amazon-ecr-login@v2
 
+  # do the helper login for gcp only when gcp is enabled
+  - name: Token Validity
+    id: gcp-debug
+    if: env.GCP_ENABLED == 'true' && inputs.push == 'true'
+    shell: bash
+    env:
+      REGISTRY: ${{ steps.login-info.outputs.registry }}
+    run: |
+      echo "Checking Token validity"
+      curl -H "Content-Type: application/x-www-form-urlencoded" -d "access_token=$CLOUDSDK_AUTH_ACCESS_TOKEN" https://www.googleapis.com/oauth2/v1/tokeninfo
+      echo "Ready to login to the registry"
+
   # if not ecr then login to dockerhub
   - name: Login to DockerHub
     id: login-dockerhub
@@ -109,6 +121,15 @@ runs:
       username: ${{ steps.login-info.outputs.username }}
       password: ${{ steps.login-info.outputs.password }}
       registry: ${{ steps.login-info.outputs.registry }}
+
+  # do the helper login for gcp only when gcp is enabled
+  # - name: Image Repo Auth
+  #   id: gcp-helper
+  #   if: env.GCP_ENABLED == 'true' && inputs.push == 'true'
+  #   shell: bash
+  #   env:
+  #     REGISTRY: ${{ steps.login-info.outputs.registry }}
+  #   run: gcloud --quiet auth configure-docker "$REGISTRY"
 
   # start with checking on the builder kind
   - name: Builder Setup
