@@ -28,7 +28,7 @@ jobs:
 
     steps:
     - name: Duplo Setup
-      uses: duplocloud/actions/setup@main
+      uses: duplocloud/actions@main
 
     - name: Update lambda
       uses: duplocloud/actions/update-lambda@v1
@@ -52,7 +52,7 @@ jobs:
 
     steps:
     - name: Duplo Setup
-      uses: duplocloud/actions/setup@main
+      uses: duplocloud/actions@main
 
     - name: Update Lambda
       uses: duplocloud/actions/update-lambda@v1
