@@ -21,7 +21,7 @@ inputs:
   version: 
     required: false
     description: The version of the duploctl to install.
-    default: latest
+    default: '0.2.49'
   admin:
     required: false
     description: Admin user name.
