@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added  
+
+- an override for the bucket name on the terrafom-module action
+
 ## [0.0.12] - 2025-04-15
 
 ## [0.0.11] - 2025-03-05
