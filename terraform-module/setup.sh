@@ -10,7 +10,7 @@ ARGS=(
 if [ "$AWS_ENABLED" == "true" ]; then
   echo "AWS enabled, setting up backend config for S3 and DynamoDB"
   ARGS+=(
-    -backend-config=dynamodb_table=${DUPLO_TF_BUCKET}-lock
+    -backend-config=dynamodb_table="${PREFIX}-${DUPLO_ACCOUNT_ID}-lock"
     -backend-config=region=$DUPLO_DEFAULT_REGION
     -backend-config=bucket=$DUPLO_TF_BUCKET
   )
