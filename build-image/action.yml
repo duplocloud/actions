@@ -140,6 +140,7 @@ runs:
       REGISTRY: ${{ steps.login-ecr.outputs.registry || steps.login-info.outputs.registry }}
       REPO: ${{ inputs.repo }}
       TAG_STRATEGY: ${{ inputs.tag-strategy }}
+      TAGS: ${{ inputs.tags }}
     run: $GITHUB_ACTION_PATH/setup.sh
 
   # setup the base image
