@@ -17,4 +17,4 @@ runs:
       SERVICE: ${{ inputs.service }}
       IMAGE: ${{ inputs.image }}
     run: >
-      duploctl service update_image $SERVICE $IMAGE
+      duploctl service update_image $SERVICE $IMAGE --wait
