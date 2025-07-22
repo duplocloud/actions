@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: duplocloud/actions/setup@main
+      - uses: duplocloud/actions@main
         with:
           admin: true
 

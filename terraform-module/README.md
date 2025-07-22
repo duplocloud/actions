@@ -38,3 +38,7 @@ In the above example, the action is being used to validate a Terraform module lo
 ## Azure Notes  
 
 When using Azure, you will need to set this environment variable in your workflow file: `RESOURCE_GROUP`. This will allow the azure cli to retrieve the `ARM_ACCESS_KEY` value and set the variable in the environment. This is needed by Azure TF provider to authenticate to Azure to use the storage bucket backend. The variable may be set at any level as long as it is available to the action. 
+
+## Override TF State Bucket Name  
+
+Set the `DUPLO_TF_BUCKET` environment variable to override the default bucket name. This is useful when you want to use a different bucket for your Terraform state files. The action will use this bucket name instead of the default one.

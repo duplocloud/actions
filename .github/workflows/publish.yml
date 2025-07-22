@@ -1,0 +1,86 @@
+name: Publish Version
+description: Publishes a new version and tag. 
+on: 
+  workflow_dispatch: 
+    inputs: 
+      action: 
+        description: Version to bump to
+        default: patch
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+        - premajor
+        - preminor
+        - prepatch
+      push: 
+        description: Push changes to the repository
+        default: false
+        type: boolean
+jobs:
+  bump:
+    name: Bump Version
+    runs-on: ubuntu-latest
+    environment: 
+      name: actions-market
+      url: ${{ steps.registry.outputs.url }}
+    steps:
+
+    - name: Create GitHub App Token
+      uses: actions/create-github-app-token@v2
+      id: app-token
+      with:
+        app-id: ${{ vars.GH_APP_ID }}
+        private-key: ${{ secrets.GH_APP_KEY }}
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        token: ${{ steps.app-token.outputs.token }}
+    
+    - name: Bump Version
+      id: bump
+      uses: duplocloud/version-bump@main
+      with:
+        token:  ${{ steps.app-token.outputs.token }}
+        version: ${{ inputs.action }}
+        push: ${{ inputs.push }}
+
+    - name: Registry URL
+      id: registry
+      env:
+        URL: https://github.com/marketplace/actions/duplocloud
+        VERSION: ${{ steps.bump.outputs.version }}
+      run: |
+        URL="${URL}?version=v${VERSION}"
+        BADGE="[![Release](https://img.shields.io/badge/Github-Actions-blue?style=flat-square&logo=github)](${URL})"
+        echo "url=${URL}" >> $GITHUB_OUTPUT
+        echo "badge=${BADGE}" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      id: release
+      if: inputs.push
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ steps.app-token.outputs.token }}
+        name: ${{ steps.bump.outputs.tag }}
+        tag_name: ${{ steps.bump.outputs.tag }}
+        prerelease: false
+        body: |
+          [![Publish](${{ github.server_url }}/${{ github.repository }}/actions/workflows/publish.yml/badge.svg)](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) ${{ steps.registry.outputs.badge }}
+
+          ${{ steps.bump.outputs.release-notes }}
+
+    - name: Summary 
+      id: summary
+      run: |
+        cat <<EOF > $GITHUB_STEP_SUMMARY
+        ${{ steps.registry.outputs.badge }} [![Release](https://img.shields.io/badge/Github-Release-blue?style=flat-square&logo=github)](${{ steps.release.outputs.url || '' }})
+        New Version: ${{ steps.bump.outputs.version }}
+        Previous Version: ${{ steps.bump.outputs.previous-version }}
+
+        ## Release Notes: 
+        --------------
+        ${{ steps.bump.outputs.release-notes }}
+        EOF
