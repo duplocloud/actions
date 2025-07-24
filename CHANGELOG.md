@@ -11,6 +11,7 @@ and this project adheres to
 ### Added  
 
 - an override for the bucket name on the terrafom-module action
+- target architecture of the Python or PyPy interpreter in duplo setup
 
 ## [0.0.12] - 2025-04-15
 

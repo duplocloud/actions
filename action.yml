@@ -34,6 +34,9 @@ inputs:
     required: false
     description: Install from source using the version as the git ref.
     default: "false"
+  python-architecture:
+    description: "The target architecture (x86, x64, arm64) of the Python or PyPy interpreter."
+    default: "x64"
 runs:
   using: composite
   steps:
@@ -42,6 +45,7 @@ runs:
     uses: actions/setup-python@v5
     with:
       python-version: ${{ inputs.python-version }}
+      architecture: ${{ inputs.python-architecture }}
 
   - name: Pip Upgrade
     shell: bash
