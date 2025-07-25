@@ -45,11 +45,25 @@ runs:
       python-version: ${{ inputs.python-version }}
 
   - name: Pip Upgrade
+    if: inputs.python-version != 'none'
     shell: bash
     run: pip install --upgrade pip
 
+  - name: Check duploctl
+    id: check-duploctl
+    shell: bash
+    run: |
+      if which duploctl > /dev/null 2>&1; then
+        echo "duploctl is already installed at: $(which duploctl)"
+        echo "duploctl_exists=true" >> $GITHUB_OUTPUT
+      else
+        echo "duploctl is not installed"
+        echo "duploctl_exists=false" >> $GITHUB_OUTPUT
+      fi
+
   - name: Install duploctl
     id: install-duploctl
+    if: steps.check-duploctl.outputs.duploctl_exists != 'true'
     shell: bash
     env:
       VERSION: ${{ inputs.version }}
