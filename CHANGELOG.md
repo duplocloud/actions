@@ -11,6 +11,8 @@ and this project adheres to
 ### Added  
 
 - an override for the bucket name on the terrafom-module action
+- Validation to prevent redundant duploctl install in setup
+- Added condition to skip setting python and pip upgrade when python-version is 'none'
 
 ## [0.0.12] - 2025-04-15
 
