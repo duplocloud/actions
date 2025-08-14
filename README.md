@@ -46,7 +46,9 @@ jobs:
       DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
     steps:
     - name: Duplo Setup
-      uses: duplocloud/actions@main
+      uses: duplocloud/actions@<VERSION OF THIS ACTION>
+      with:
+        version: <DUPLOCTL VERSION>
 ```
 
 **GCP or Azure Example with Credentials:**  
@@ -54,10 +56,11 @@ This uses given credentials to setup GCP or Azure. The name of the account is re
 ```yaml
 steps:
 - name: Duplo Setup
-  uses: duplocloud/actions@main
+  uses: duplocloud/actions@<VERSION OF THIS ACTION>
   with:
     account-id: ${{ vars.CLOUD_ACCOUNT }}
     credentials: ${{ secrets.CLOUD_CREDENTIALS }}
+    version: <DUPLOCTL VERSION>
 ```
 
 ## Authentication  

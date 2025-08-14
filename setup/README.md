@@ -5,12 +5,16 @@ This specific directory has been moved to the root of the repository. Therefore,
 Change the following: 
 ```yaml
 - name: Setup
-  uses: duplocloud/actions/setup@main
+  uses: duplocloud/actions/setup@<VERSION OF THIS ACTION>
+  with:
+    version: <DUPLOCTL VERSION>
 ```
 To be: 
 ```yaml
 - name: Setup
-  uses: duplocloud/actions@main
+  uses: duplocloud/actions@<VERSION OF THIS ACTION>
+  with:
+    version: <DUPLOCTL VERSION>
 ```
 
 New location: [../README.md](../README.md)
