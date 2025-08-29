@@ -18,6 +18,29 @@ elif [[ "$GCP_ENABLED" == "true" ]]; then
     REGISTRY="${DUPLO_DEFAULT_REGION}-docker.pkg.dev"
     echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
   fi
+# else if Azure is enabled, use Azure Container Registry authentication
+elif [[ "$AZURE_ENABLED" == "true" ]]; then
+  # Get ACR access token if not already set
+  if [[ -z $ACR_ACCESS_TOKEN ]]; then
+    # Get the access token for ACR using the Azure CLI
+    if [[ -n "$REGISTRY" ]]; then
+      ACR_ACCESS_TOKEN=$(az acr login --name "${REGISTRY%.*}" --expose-token --output tsv --query accessToken)
+    fi
+  fi
+  # Set the username and password for ACR
+  if [[ -n "$ACR_ACCESS_TOKEN" ]]; then
+    echo "username=00000000-0000-0000-0000-000000000000" >> $GITHUB_OUTPUT
+    echo "password=${ACR_ACCESS_TOKEN}" >> $GITHUB_OUTPUT
+  fi
+  # If registry is not set, try to get the default ACR
+  if [[ -z "$REGISTRY" ]]; then
+    # Try to get the default ACR from the subscription
+    DEFAULT_ACR=$(az acr list --query "[0].loginServer" -o tsv)
+    if [[ -n "$DEFAULT_ACR" ]]; then
+      REGISTRY="$DEFAULT_ACR"
+      echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
+    fi
+  fi
 # else it's aws we need to check if push is false or else the registry won't get set
 elif [[ "$AWS_ENABLED" == "true" ]]; then
   # If the registry is not set then default it to the default region
