@@ -19,6 +19,9 @@ inputs:
     description: Terraform configs
     required: false
     default: config
+  target:
+    description: Specific resource to target
+    required: false
 outputs:
   planfile: 
     description: The plan file
@@ -46,6 +49,7 @@ runs:
       TF_PARALLELISM: ${{ inputs.parallelism }}
       MODULE: ${{ inputs.module }}
       CONFIG_DIR: ${{ github.workspace }}/${{ inputs.config }}
+      TF_TARGET: ${{ inputs.target }}
     run: |
       ARGS=(
         -input=false
@@ -57,6 +61,11 @@ runs:
       # if parallelism is set then add it to the args
       if [ -n "$TF_PARALLELISM" ]; then
         ARGS+=("-parallelism=$TF_PARALLELISM")
+      fi
+
+      # if target is set then add it to the args
+      if [ -n "$TF_TARGET" ]; then
+        ARGS+=("-target=$TF_TARGET")
       fi
 
       # append workspace variables files if they exist
