@@ -14,6 +14,7 @@ and this project adheres to
 - Validation to prevent redundant duploctl install in setup
 - Added condition to skip setting python and pip upgrade when python-version is 'none'
 - Added build-image support to build and push docker image to Azure Container Registry
+- Added target input to terraform-exec action
 
 ## [0.0.12] - 2025-04-15
 
