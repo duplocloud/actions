@@ -139,21 +139,11 @@ When `include_sensitive_data: false`, only workflow name, run ID, and event type
 
 ### Environment Variables
 
-The action requires the following environment variables to be set (typically by the main `duplocloud/actions@main` setup action):
+The action requires the following environment variables to be set:
 
 - `DUPLO_HOST` - Duplo host URL
-- `DUPLO_TENANT` - Duplo tenant name  
+- `DUPLO_TENANT` - Duplo tenant name
 - `DUPLO_TOKEN` - Duplo authentication token
-
-The action also uses standard GitHub environment variables and assumes `duploctl` is available in the environment (installed by the main setup action).
-
-**Example environment setup:**
-```yaml
-env:
-  DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
-  DUPLO_HOST: ${{ vars.DUPLO_HOST }}
-  DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
-```
 
 ## Example
 
