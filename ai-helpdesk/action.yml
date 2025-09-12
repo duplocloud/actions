@@ -1,0 +1,95 @@
+name: AI HelpDesk Ticket
+description: Creates a HelpDesk ticket for AI analysis when workflows fail
+author: duplocloud
+branding:
+  icon: ticket
+  color: blue
+inputs:
+  agent_name:
+    description: Agent Name (e.g. ci-cd)
+    required: true
+  agent_instance:
+    description: Agent Instance ID (e.g. ci-cd-v1)
+    required: true
+  title:
+    description: Ticket title (optional)
+    required: false
+    default: ''
+  context:
+    description: Contextual header content (optional)
+    required: false
+    default: ''
+  content:
+    description: Main ticket content (optional)
+    required: false
+    default: ''
+  include_sensitive_data:
+    description: Include sensitive data like repository name, actor, branch in ticket (optional)
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: Create HelpDesk Ticket
+      id: create-ticket
+      shell: bash
+      env:
+        AGENT_NAME: ${{ inputs.agent_name }}
+        AGENT_INSTANCE: ${{ inputs.agent_instance }}
+        TITLE: ${{ inputs.title }}
+        CONTEXT: ${{ inputs.context }}
+        CONTENT: ${{ inputs.content }}
+        INCLUDE_SENSITIVE_DATA: ${{ inputs.include_sensitive_data }}
+      run: |
+        # Build title
+        if [ -n "$TITLE" ]; then
+          TICKET_TITLE="$TITLE"
+        else
+          TICKET_TITLE="Workflow Failure: $GITHUB_WORKFLOW"
+        fi
+
+        # Build context
+        if [ -n "$CONTEXT" ]; then
+          TICKET_CONTEXT="$CONTEXT"
+        else
+          if [ "$INCLUDE_SENSITIVE_DATA" = "true" ]; then
+            TICKET_CONTEXT="GitHub Actions workflow failure detected!
+
+        Workflow Details:
+        - Repository: $GITHUB_REPOSITORY
+        - Workflow: $GITHUB_WORKFLOW
+        - Run ID: $GITHUB_RUN_ID
+        - Commit: $GITHUB_SHA
+        - Actor: $GITHUB_ACTOR
+        - Branch: $GITHUB_REF_NAME
+        - Event: $GITHUB_EVENT_NAME
+        - Run URL: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+
+        "
+          else
+            TICKET_CONTEXT="GitHub Actions workflow failure detected!
+
+        Workflow Details:
+        - Workflow: $GITHUB_WORKFLOW
+        - Run ID: $GITHUB_RUN_ID
+        - Event: $GITHUB_EVENT_NAME
+
+        "
+          fi
+        fi
+
+        # Build content
+        if [ -n "$CONTENT" ]; then
+          TICKET_MESSAGE="$TICKET_CONTEXT$CONTENT"
+        else
+          TICKET_MESSAGE="$TICKET_CONTEXT"
+        fi
+
+        # Create the ticket
+        duploctl \
+          ai create_ticket \
+          --agent_name "$AGENT_NAME" \
+          --instance_id "$AGENT_INSTANCE" \
+          --title "$TICKET_TITLE" \
+          --message "$TICKET_MESSAGE"
