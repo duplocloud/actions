@@ -15,7 +15,7 @@ and this project adheres to
 - Added condition to skip setting python and pip upgrade when python-version is 'none'
 - Added build-image support to build and push docker image to Azure Container Registry
 - Added target input to terraform-exec action
-- Added `ai-ci-cd` action for creating HelpDesk tickets from workflows
+- Added `ai-helpdesk` action for creating HelpDesk tickets from workflows
 
 ## [0.0.12] - 2025-04-15
 
