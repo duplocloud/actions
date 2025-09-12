@@ -1,0 +1,81 @@
+name: 'CI/CD AI HelpDesk Ticket'
+description: 'Creates a HelpDesk ticket for AI analysis when CI/CD workflows fail'
+inputs:
+  agent_name:
+    description: 'Agent Name (e.g. ci-cd)'
+    required: true
+  agent_instance:
+    description: 'Agent Instance ID (e.g. ci-cd-v1)'
+    required: true
+  duplo_host:
+    description: 'DuploCloud Host URL (e.g. https://org.duplocloud.net)'
+    required: true
+  duplo_tenant:
+    description: 'DuploCloud Tenant (e.g. dev, prod, staging)'
+    required: true
+  duplo_token:
+    description: 'DuploCloud Token'
+    required: true
+  additional_content:
+    description: 'Additional content to append to default ticket content (optional)'
+    required: false
+    default: ''
+  override_title:
+    description: 'Override ticket title (optional)'
+    required: false
+    default: ''
+  override_content:
+    description: 'Override ticket content (optional)'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install duploctl
+      shell: bash
+      run: |
+        pip install git+https://github.com/duplocloud/duploctl.git
+        duploctl --version
+
+    - name: Create HelpDesk Ticket
+      shell: bash
+      run: |
+        DEFAULT_CONTENT="GitHub Actions workflow failure detected!
+
+        Workflow Details:
+        - Repository: ${{ github.repository }}
+        - Workflow: ${{ github.workflow }}
+        - Run ID: ${{ github.run_id }}
+        - Commit: ${{ github.sha }}
+        - Actor: ${{ github.actor }}
+        - Branch: ${{ github.ref_name }}
+        - Event: ${{ github.event_name }}
+        - Run URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+        "
+
+        if [ -n "${{ inputs.override_content }}" ]; then
+          TICKET_CONTENT="${{ inputs.override_content }}"
+        else
+          TICKET_CONTENT="$DEFAULT_CONTENT"
+          if [ -n "${{ inputs.additional_content }}" ]; then
+            TICKET_CONTENT="$TICKET_CONTENT${{ inputs.additional_content }}"
+          fi
+        fi
+
+        if [ -n "${{ inputs.override_title }}" ]; then
+          TICKET_TITLE="${{ inputs.override_title }}"
+        else
+          TICKET_TITLE="CI/CD Failure: ${{ github.repository }}"
+        fi
+
+        duploctl \
+          --host "${{ inputs.duplo_host }}" \
+          --tenant "${{ inputs.duplo_tenant }}" \
+          --token "${{ inputs.duplo_token }}" \
+          ai create_ticket \
+          --agent_name "${{ inputs.agent_name }}" \
+          --instance_id "${{ inputs.agent_instance }}" \
+          --title "$TICKET_TITLE" \
+          --message "$TICKET_CONTENT"
