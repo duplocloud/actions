@@ -54,7 +54,7 @@ runs:
           TICKET_CONTEXT="$CONTEXT"
         else
           if [ "$INCLUDE_SENSITIVE_DATA" = "true" ]; then
-            TICKET_CONTEXT="GitHub Actions workflow failure detected!
+            TICKET_CONTEXT="""GitHub Actions workflow failure detected!
 
         Workflow Details:
         - Repository: $GITHUB_REPOSITORY
@@ -66,16 +66,16 @@ runs:
         - Event: $GITHUB_EVENT_NAME
         - Run URL: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
 
-        "
+        """
           else
-            TICKET_CONTEXT="GitHub Actions workflow failure detected!
+            TICKET_CONTEXT="""GitHub Actions workflow failure detected!
 
         Workflow Details:
         - Workflow: $GITHUB_WORKFLOW
         - Run ID: $GITHUB_RUN_ID
         - Event: $GITHUB_EVENT_NAME
 
-        "
+        """
           fi
         fi
 
