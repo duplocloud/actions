@@ -47,57 +47,78 @@ Workflow Details:
 ### Basic Usage
 
 ```yaml
-- name: Duplo Setup
-  uses: duplocloud/actions@main
-
-- name: Create AI HelpDesk Ticket
-  uses: duplocloud/actions/ai-ticket@v1
-  with:
-    agent_name: ${{ vars.AGENT_NAME }}
-    agent_instance: ${{ vars.AGENT_INSTANCE }}
+jobs:
+  create-helpdesk-ticket:
+    runs-on: ubuntu-latest
+    env:
+      DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
+      DUPLO_HOST: ${{ vars.DUPLO_HOST }}
+      DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
+    steps:
+      - name: Duplo Setup
+        uses: duplocloud/actions@main
+      - name: Create AI HelpDesk Ticket
+        uses: duplocloud/actions/ai-helpdesk@v1
+        with:
+          agent_name: ${{ vars.AGENT_NAME }}
+          agent_instance: ${{ vars.AGENT_INSTANCE }}
 ```
 
 ### Custom Content
 
 ```yaml
-- name: Duplo Setup
-  uses: duplocloud/actions@main
+jobs:
+  create-helpdesk-ticket:
+    runs-on: ubuntu-latest
+    env:
+      DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
+      DUPLO_HOST: ${{ vars.DUPLO_HOST }}
+      DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
+    steps:
+      - name: Duplo Setup
+        uses: duplocloud/actions@main
+      - name: Create AI HelpDesk Ticket
+        uses: duplocloud/actions/ai-helpdesk@v1
+        with:
+          agent_name: ${{ vars.AGENT_NAME }}
+          agent_instance: ${{ vars.AGENT_INSTANCE }}
+          title: "Critical Deployment Failure"
+          context: |
+            Deployment failed in production environment
 
-- name: Create AI HelpDesk Ticket
-  uses: duplocloud/actions/ai-ticket@v1
-  with:
-    agent_name: ${{ vars.AGENT_NAME }}
-    agent_instance: ${{ vars.AGENT_INSTANCE }}
-    title: "Critical Deployment Failure"
-    context: |
-      Deployment failed in production environment
-
-      Environment Details:
-      - Environment: production
-      - Region: us-east-1
-      - Impact: service unavailable
-    content: |
-      Additional troubleshooting information:
-      - Check logs in CloudWatch
-      - Verify database connectivity
-      - Review recent configuration changes
+            Environment Details:
+            - Environment: production
+            - Region: us-east-1
+            - Impact: service unavailable
+          content: |
+            Additional troubleshooting information:
+            - Check logs in CloudWatch
+            - Verify database connectivity
+            - Review recent configuration changes
 ```
 
 ### Security Mode
 
 ```yaml
-- name: Duplo Setup
-  uses: duplocloud/actions@main
-
-- name: Create AI HelpDesk Ticket
-  uses: duplocloud/actions/ai-ticket@v1
-  with:
-    agent_name: ${{ vars.AGENT_NAME }}
-    agent_instance: ${{ vars.AGENT_INSTANCE }}
-    include_sensitive_data: false
-    content: |
-      Workflow failed but sensitive details are excluded.
-      Please check the workflow logs for more information.
+jobs:
+  create-helpdesk-ticket:
+    runs-on: ubuntu-latest
+    env:
+      DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
+      DUPLO_HOST: ${{ vars.DUPLO_HOST }}
+      DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
+    steps:
+      - name: Duplo Setup
+        uses: duplocloud/actions@main
+      - name: Create AI HelpDesk Ticket
+        uses: duplocloud/actions/ai-helpdesk@v1
+        with:
+          agent_name: ${{ vars.AGENT_NAME }}
+          agent_instance: ${{ vars.AGENT_INSTANCE }}
+          include_sensitive_data: false
+          content: |
+            Workflow failed but sensitive details are excluded.
+            Please check the workflow logs for more information.
 ```
 
 ## Security Considerations
@@ -118,7 +139,21 @@ When `include_sensitive_data: false`, only workflow name, run ID, and event type
 
 ### Environment Variables
 
-The action uses standard GitHub environment variables and assumes `duploctl` is available in the environment (installed by the main setup action).
+The action requires the following environment variables to be set (typically by the main `duplocloud/actions@main` setup action):
+
+- `DUPLO_HOST` - Duplo host URL
+- `DUPLO_TENANT` - Duplo tenant name  
+- `DUPLO_TOKEN` - Duplo authentication token
+
+The action also uses standard GitHub environment variables and assumes `duploctl` is available in the environment (installed by the main setup action).
+
+**Example environment setup:**
+```yaml
+env:
+  DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
+  DUPLO_HOST: ${{ vars.DUPLO_HOST }}
+  DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
+```
 
 ## Example
 
@@ -136,13 +171,17 @@ jobs:
     needs: [build] # List all jobs to be monitored for failures
     if: failure() # Only run when the specified jobs fail
     runs-on: ubuntu-latest
+    env:
+      DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
+      DUPLO_HOST: ${{ vars.DUPLO_HOST }}
+      DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Duplo Setup
         uses: duplocloud/actions@main
       - name: Create AI HelpDesk Ticket
-        uses: duplocloud/actions/ai-ticket@v1
+        uses: duplocloud/actions/ai-helpdesk@v1
         with:
           agent_name: ${{ vars.AGENT_NAME }}
           agent_instance: ${{ vars.AGENT_INSTANCE }}
