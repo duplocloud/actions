@@ -1,23 +1,35 @@
 # AI HelpDesk Ticket Action
 
-An action that automatically creates a HelpDesk ticket when a workflow fails.
-
-**Default Behavior**: Creates tickets with comprehensive workflow context for AI analysis.
-
-**Flexible Content**: Supports custom title, context, and content inputs for maximum flexibility.
+Creates AI HelpDesk tickets when GitHub Actions workflows fail, providing comprehensive context for automated analysis and troubleshooting.
 
 ## Inputs
 
 | Name | Description | Required | Default |
 |------|-------------|----------|---------|
-| `agent_name` | Agent Name | true | - |
-| `agent_instance` | Agent Instance ID | true | - |
-| `title` | Ticket title (optional) | false | `Workflow Failure: {workflow}` |
-| `context` | Contextual header content (optional) | false | [Default Context](#default-context) |
-| `content` | Main ticket content (optional) | false | - |
-| `include_sensitive_data` | Include sensitive data like repository name, actor, branch in ticket (optional) | false | `true` |
+| `title` | Custom ticket title. If not provided, defaults to "Workflow Failure: {workflow_name}" | No | `""` |
+| `context` | Custom contextual header content. If not provided, auto-generates workflow context | No | `""` |
+| `content` | Main ticket content/body. Appended to context if provided | No | `""` |
+| `include_sensitive_data` | Whether to include sensitive data (repository, actor, branch, commit) in ticket context | No | `true` |
 
-### Default Context
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| `ticket_id` | The created ticket ID |
+| `ticket_url` | The URL to the created ticket |
+
+## Prerequisites
+
+- DuploCloud account with AI HelpDesk enabled
+- duploctl version 0.3.5+ installed (handled by Duplo Setup action)
+- Required environment variables (set by Duplo Setup action):
+  - `DUPLO_HOST` - DuploCloud host URL
+  - `DUPLO_TOKEN` - DuploCloud authentication token
+  - `DUPLO_TENANT` - DuploCloud tenant name
+
+**Important**: This action requires the `duplocloud/actions@main` setup action to be run first to install duploctl and configure environment variables.
+
+## Default Context
 
 When `context` is not provided, the action generates contextual information:
 
@@ -58,10 +70,12 @@ jobs:
       - name: Duplo Setup
         uses: duplocloud/actions@main
       - name: Create AI HelpDesk Ticket
+        id: create-ticket
         uses: duplocloud/actions/ai-helpdesk@v1
-        with:
-          agent_name: ${{ vars.AGENT_NAME }}
-          agent_instance: ${{ vars.AGENT_INSTANCE }}
+      - name: Display Ticket Info
+        run: |
+          echo "Ticket ID: ${{ steps.create-ticket.outputs.ticket_id }}"
+          echo "Ticket URL: ${{ steps.create-ticket.outputs.ticket_url }}"
 ```
 
 ### Custom Content
@@ -78,10 +92,9 @@ jobs:
       - name: Duplo Setup
         uses: duplocloud/actions@main
       - name: Create AI HelpDesk Ticket
+        id: create-ticket
         uses: duplocloud/actions/ai-helpdesk@v1
         with:
-          agent_name: ${{ vars.AGENT_NAME }}
-          agent_instance: ${{ vars.AGENT_INSTANCE }}
           title: "Critical Deployment Failure"
           context: |
             Deployment failed in production environment
@@ -111,10 +124,9 @@ jobs:
       - name: Duplo Setup
         uses: duplocloud/actions@main
       - name: Create AI HelpDesk Ticket
+        id: create-ticket
         uses: duplocloud/actions/ai-helpdesk@v1
         with:
-          agent_name: ${{ vars.AGENT_NAME }}
-          agent_instance: ${{ vars.AGENT_INSTANCE }}
           include_sensitive_data: false
           content: |
             Workflow failed but sensitive details are excluded.
@@ -125,17 +137,42 @@ jobs:
 
 ### Sensitive Data Control
 
-By default, the action includes sensitive information in tickets (repository name, actor, branch, commit SHA, run URL). For private repositories or sensitive environments, you can disable this:
+**Important Security Note**: By default, the action includes sensitive information in tickets (repository name, actor, branch, commit SHA, run URL). This information may be visible to the AI HelpDesk system and could potentially expose private repository details.
+
+For private repositories or sensitive environments, you should disable this:
 
 ```yaml
 - name: Create AI HelpDesk Ticket
-  uses: duplocloud/actions/ai-ticket@v1
+  uses: duplocloud/actions/ai-helpdesk@v1
   with:
     # ... other inputs ...
     include_sensitive_data: false
 ```
 
 When `include_sensitive_data: false`, only workflow name, run ID, and event type are included.
+
+### Data Privacy
+
+- **Repository Information**: Repository name and URL are included by default
+- **User Information**: GitHub actor (username) is included by default
+- **Code Information**: Branch name and commit SHA are included by default
+- **Workflow Information**: Run ID and workflow name are always included
+
+Consider your organization's data privacy policies when using this action with private repositories.
+
+### Command Structure
+
+The action uses the following `duploctl` command structure:
+
+```bash
+duploctl ai create_ticket \
+  --title "$TICKET_TITLE" \
+  --agent_name "github-actions-dev" \
+  --instance_id "github-actions-dev-v1" \
+  --message "$TICKET_MESSAGE"
+```
+
+**Note**: This command requires duploctl version 0.3.5 or later, which includes the AI HelpDesk functionality.
 
 ### Environment Variables
 
@@ -171,8 +208,6 @@ jobs:
       - name: Duplo Setup
         uses: duplocloud/actions@main
       - name: Create AI HelpDesk Ticket
+        id: create-ticket
         uses: duplocloud/actions/ai-helpdesk@v1
-        with:
-          agent_name: ${{ vars.AGENT_NAME }}
-          agent_instance: ${{ vars.AGENT_INSTANCE }}
 ```
