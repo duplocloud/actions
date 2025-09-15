@@ -95,26 +95,15 @@ runs:
       fi
 
       # Create the ticket
-      echo "Creating AI HelpDesk ticket..."
-      timeout 300 duploctl \
-        ai create_ticket \
+      RESPONSE=$(duploctl ai create_ticket \
         --title "$TICKET_TITLE" \
         --agent_name "$AGENT_NAME" \
         --instance_id "$AGENT_INSTANCE" \
-        --message "$TICKET_MESSAGE" > response.txt 2>&1 &
-
-      echo "Request sent, waiting for response..."
-      wait
+        --message "$TICKET_MESSAGE" 2>&1)
       EXIT_CODE=$?
 
-      # Read the response
-      RESPONSE=$(cat response.txt)
-      rm -f response.txt
-
-      # Check if command succeeded (duploctl may exit 0 even with API errors)
-      if [ $EXIT_CODE -eq 0 ] && ! echo "$RESPONSE" | grep -q "Error.*Not Found\|Message.*Error"; then
+      if [ $EXIT_CODE -eq 0 ] && ! echo "$RESPONSE" | grep -q "Error\|Message.*Error"; then
         echo "Ticket created successfully"
-        echo "Response: $RESPONSE"
 
         # Extract ticket ID and URL from response
         TICKET_ID=$(echo "$RESPONSE" | grep -o '"ticketname": "[^"]*"' | cut -d'"' -f4)
@@ -128,20 +117,13 @@ runs:
         echo "Ticket URL: $TICKET_URL"
       else
         echo "Failed to create ticket"
-        echo "Raw error response: $RESPONSE"
-
-        # Provide helpful guidance based on error type
-        if echo "$RESPONSE" | grep -q "404.*Not Found"; then
-          echo ""
-          echo "Agent configuration error:"
-          echo "  Agent name: $AGENT_NAME"
-          echo "  Agent instance: $AGENT_INSTANCE"
-          echo "Check your DuploCloud console for the correct values"
-        elif echo "$RESPONSE" | grep -q "401\|403\|Unauthorized\|Forbidden"; then
-          echo ""
-          echo "Authentication failed"
-          echo "Check your DUPLO_TOKEN and permissions"
-        fi
+        echo "Error: $RESPONSE"
+        echo ""
+        echo "Configuration:"
+        echo "  DUPLO_HOST: $DUPLO_HOST"
+        echo "  DUPLO_TENANT: $DUPLO_TENANT"
+        echo "  AGENT_NAME: $AGENT_NAME"
+        echo "  AGENT_INSTANCE: $AGENT_INSTANCE"
 
         exit 1
       fi
