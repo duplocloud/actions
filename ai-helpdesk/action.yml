@@ -95,31 +95,8 @@ runs:
       fi
 
       # Create the ticket
-      echo "Creating AI HelpDesk ticket..."
-      RESPONSE=$(duploctl \
-        ai create_ticket \
+      duploctl ai create_ticket \
         --title "$TICKET_TITLE" \
-        --agent_name "github-actions-dev" \
-        --instance_id "github-actions-dev-v1" \
-        --message "$TICKET_MESSAGE" 2>&1)
-
-      # Check if command succeeded
-      if [ $? -eq 0 ]; then
-        echo "Ticket created successfully"
-        echo "Response: $RESPONSE"
-
-        # Extract ticket ID and URL from response
-        TICKET_ID=$(echo "$RESPONSE" | grep -o '"ticketname": "[^"]*"' | cut -d'"' -f4)
-        TICKET_URL=$(echo "$RESPONSE" | grep -o '"chat_url": "[^"]*"' | cut -d'"' -f4)
-
-        # Set outputs
-        echo "ticket_id=$TICKET_ID" >> $GITHUB_OUTPUT
-        echo "ticket_url=$TICKET_URL" >> $GITHUB_OUTPUT
-
-        echo "Ticket ID: $TICKET_ID"
-        echo "Ticket URL: $TICKET_URL"
-      else
-        echo "Failed to create ticket"
-        echo "Error: $RESPONSE"
-        exit 1
-      fi
+        --agent_name "$AGENT_NAME" \
+        --instance_id "$AGENT_INSTANCE" \
+        --message "$TICKET_MESSAGE"
