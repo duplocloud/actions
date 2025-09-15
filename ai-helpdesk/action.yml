@@ -148,5 +148,5 @@ runs:
           echo "Unknown error occurred"
         fi
 
-        exit $EXIT_CODE
+        exit 1
       fi
