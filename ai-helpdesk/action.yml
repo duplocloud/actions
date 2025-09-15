@@ -97,6 +97,21 @@ runs:
 
       # Create the ticket
       echo "Creating AI HelpDesk ticket..."
+      echo "Debug: Testing if duploctl ai command exists..."
+      duploctl ai --help > debug.txt 2>&1
+      if [ $? -ne 0 ]; then
+        echo "Error: duploctl ai command not available"
+        cat debug.txt
+        exit 1
+      fi
+      echo "duploctl ai command available"
+
+      echo "Debug: Exact parameters being sent:"
+      echo "  Title: '$TICKET_TITLE'"
+      echo "  Agent: '$AGENT_NAME'"
+      echo "  Instance: '$AGENT_INSTANCE'"
+      echo "  Message length: ${#TICKET_MESSAGE}"
+
       timeout 300 duploctl \
         ai create_ticket \
         --title "$TICKET_TITLE" \
@@ -110,7 +125,7 @@ runs:
 
       # Read the response
       RESPONSE=$(cat response.txt)
-      rm -f response.txt
+      rm -f response.txt debug.txt
 
       # Check if command succeeded (duploctl may exit 0 even with API errors)
       if [ $EXIT_CODE -eq 0 ] && ! echo "$RESPONSE" | grep -q "Error.*Not Found\|Message.*Error"; then
