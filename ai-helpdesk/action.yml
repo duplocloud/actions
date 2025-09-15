@@ -95,12 +95,18 @@ runs:
       fi
 
       # Create the ticket
-      RESPONSE=$(duploctl ai create_ticket \
+      duploctl ai create_ticket \
         --title "$TICKET_TITLE" \
         --agent_name "$AGENT_NAME" \
         --instance_id "$AGENT_INSTANCE" \
-        --message "$TICKET_MESSAGE" 2>&1)
+        --message "$TICKET_MESSAGE" > response.txt 2>&1 &
+
+      wait
       EXIT_CODE=$?
+
+      # Read the response
+      RESPONSE=$(cat response.txt)
+      rm -f response.txt
 
       if [ $EXIT_CODE -eq 0 ] && ! echo "$RESPONSE" | grep -q "Error\|Message.*Error"; then
         echo "Ticket created successfully"
