@@ -106,7 +106,7 @@ runs:
       echo "  TICKET_TITLE: $TICKET_TITLE"
       echo "  TICKET_MESSAGE length: ${#TICKET_MESSAGE}"
 
-      RESPONSE=$(duploctl \
+      RESPONSE=$(timeout 30 duploctl \
         ai create_ticket \
         --title "$TICKET_TITLE" \
         --agent_name "$AGENT_NAME" \
@@ -148,7 +148,7 @@ runs:
           echo ""
           echo "Authentication failed"
           echo "Check your DUPLO_TOKEN and permissions"
-        elif echo "$RESPONSE" | grep -q "timeout\|Timeout"; then
+        elif echo "$RESPONSE" | grep -q "timeout\|Timeout" || [ $EXIT_CODE -eq 124 ]; then
           echo ""
           echo "Request timed out"
           echo "Check network connectivity or try again"
