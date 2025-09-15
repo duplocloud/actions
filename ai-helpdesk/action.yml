@@ -106,12 +106,27 @@ runs:
       echo "  TICKET_TITLE: $TICKET_TITLE"
       echo "  TICKET_MESSAGE length: ${#TICKET_MESSAGE}"
 
-      RESPONSE=$(timeout 300 duploctl \
-        ai create_ticket \
-        --title "$TICKET_TITLE" \
-        --agent_name "$AGENT_NAME" \
-        --instance_id "$AGENT_INSTANCE" \
-        --message "$TICKET_MESSAGE" 2>&1)
+      # Run with progress output to prevent GitHub Actions from killing the process
+      echo "Calling duploctl AI service (timeout: 5 minutes)..."
+      RESPONSE=$(timeout 300 bash -c '
+        duploctl ai create_ticket \
+          --title "$TICKET_TITLE" \
+          --agent_name "$AGENT_NAME" \
+          --instance_id "$AGENT_INSTANCE" \
+          --message "$TICKET_MESSAGE" 2>&1 &
+        PID=$!
+
+        # Show progress every 30 seconds to keep GitHub Actions happy
+        for i in {1..10}; do
+          sleep 30
+          if kill -0 $PID 2>/dev/null; then
+            echo "AI processing... ($((i*30))s elapsed)"
+          else
+            wait $PID
+            break
+          fi
+        done
+      ')
       EXIT_CODE=$?
 
       echo "duploctl exit code: $EXIT_CODE"
