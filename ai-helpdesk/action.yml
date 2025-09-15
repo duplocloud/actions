@@ -43,6 +43,7 @@ runs:
       CONTENT: ${{ inputs.content }}
       INCLUDE_SENSITIVE_DATA: ${{ inputs.include_sensitive_data }}
     run: |
+      set -x
       # Validate required environment variables
       if [ -z "$DUPLO_HOST" ] || [ -z "$DUPLO_TOKEN" ] || [ -z "$DUPLO_TENANT" ]; then
         echo "Error: Required environment variables DUPLO_HOST, DUPLO_TOKEN, and DUPLO_TENANT must be set"
@@ -96,15 +97,28 @@ runs:
 
       # Create the ticket
       echo "Creating AI HelpDesk ticket..."
+      echo "Command: duploctl ai create_ticket --title \"$TICKET_TITLE\" --agent_name \"$AGENT_NAME\" --instance_id \"$AGENT_INSTANCE\" --message \"$TICKET_MESSAGE\""
+      echo "Environment check:"
+      echo "  DUPLO_HOST: $DUPLO_HOST"
+      echo "  DUPLO_TENANT: $DUPLO_TENANT"
+      echo "  AGENT_NAME: $AGENT_NAME"
+      echo "  AGENT_INSTANCE: $AGENT_INSTANCE"
+      echo "  TICKET_TITLE: $TICKET_TITLE"
+      echo "  TICKET_MESSAGE length: ${#TICKET_MESSAGE}"
+
       RESPONSE=$(duploctl \
         ai create_ticket \
         --title "$TICKET_TITLE" \
         --agent_name "$AGENT_NAME" \
         --instance_id "$AGENT_INSTANCE" \
         --message "$TICKET_MESSAGE" 2>&1)
+      EXIT_CODE=$?
+
+      echo "duploctl exit code: $EXIT_CODE"
+      echo "duploctl response: $RESPONSE"
 
       # Check if command succeeded
-      if [ $? -eq 0 ]; then
+      if [ $EXIT_CODE -eq 0 ]; then
         echo "Ticket created successfully"
         echo "Response: $RESPONSE"
 
@@ -120,6 +134,7 @@ runs:
         echo "Ticket URL: $TICKET_URL"
       else
         echo "Failed to create ticket"
+        echo "Exit code: $EXIT_CODE"
         echo "Error: $RESPONSE"
-        exit 1
+        exit $EXIT_CODE
       fi
