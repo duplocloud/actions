@@ -43,7 +43,6 @@ runs:
       CONTENT: ${{ inputs.content }}
       INCLUDE_SENSITIVE_DATA: ${{ inputs.include_sensitive_data }}
     run: |
-      set -x
       # Validate required environment variables
       if [ -z "$DUPLO_HOST" ] || [ -z "$DUPLO_TOKEN" ] || [ -z "$DUPLO_TENANT" ]; then
         echo "Error: Required environment variables DUPLO_HOST, DUPLO_TOKEN, and DUPLO_TENANT must be set"
