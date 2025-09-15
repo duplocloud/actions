@@ -136,5 +136,26 @@ runs:
         echo "Failed to create ticket"
         echo "Exit code: $EXIT_CODE"
         echo "Error: $RESPONSE"
+
+        # Check for specific error types and provide helpful guidance
+        if echo "$RESPONSE" | grep -q "404.*Not Found"; then
+          echo ""
+          echo "Agent configuration error:"
+          echo "  Agent name: $AGENT_NAME"
+          echo "  Agent instance: $AGENT_INSTANCE"
+          echo "Check your DuploCloud console for the correct values"
+        elif echo "$RESPONSE" | grep -q "401\|403\|Unauthorized\|Forbidden"; then
+          echo ""
+          echo "Authentication failed"
+          echo "Check your DUPLO_TOKEN and permissions"
+        elif echo "$RESPONSE" | grep -q "timeout\|Timeout"; then
+          echo ""
+          echo "Request timed out"
+          echo "Check network connectivity or try again"
+        else
+          echo ""
+          echo "Unknown error occurred"
+        fi
+
         exit $EXIT_CODE
       fi
