@@ -106,28 +106,19 @@ runs:
       echo "  TICKET_TITLE: $TICKET_TITLE"
       echo "  TICKET_MESSAGE length: ${#TICKET_MESSAGE}"
 
-      # Run with progress output to prevent GitHub Actions from killing the process
-      echo "Calling duploctl AI service (timeout: 5 minutes)..."
-      RESPONSE=$(timeout 300 bash -c '
-        duploctl ai create_ticket \
-          --title "$TICKET_TITLE" \
-          --agent_name "$AGENT_NAME" \
-          --instance_id "$AGENT_INSTANCE" \
-          --message "$TICKET_MESSAGE" 2>&1 &
-        PID=$!
-
-        # Show progress every 30 seconds to keep GitHub Actions happy
-        for i in {1..10}; do
-          sleep 30
-          if kill -0 $PID 2>/dev/null; then
-            echo "AI processing... ($((i*30))s elapsed)"
-          else
-            wait $PID
-            break
-          fi
-        done
-      ')
+      # Create the ticket (avoid subshell to prevent instant 144 error)
+      echo "Creating AI HelpDesk ticket..."
+      duploctl \
+        ai create_ticket \
+        --title "$TICKET_TITLE" \
+        --agent_name "$AGENT_NAME" \
+        --instance_id "$AGENT_INSTANCE" \
+        --message "$TICKET_MESSAGE" > response.txt 2>&1
       EXIT_CODE=$?
+
+      # Read the response
+      RESPONSE=$(cat response.txt)
+      rm -f response.txt
 
       echo "duploctl exit code: $EXIT_CODE"
       echo "duploctl response: $RESPONSE"
@@ -163,10 +154,6 @@ runs:
           echo ""
           echo "Authentication failed"
           echo "Check your DUPLO_TOKEN and permissions"
-        elif echo "$RESPONSE" | grep -q "timeout\|Timeout" || [ $EXIT_CODE -eq 124 ]; then
-          echo ""
-          echo "Request timed out"
-          echo "Check network connectivity or try again"
         else
           echo ""
           echo "Unknown error occurred"
