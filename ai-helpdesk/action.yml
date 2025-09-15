@@ -99,8 +99,8 @@ runs:
       RESPONSE=$(duploctl \
         ai create_ticket \
         --title "$TICKET_TITLE" \
-        --agent_name "github-actions-dev" \
-        --instance_id "github-actions-dev-v1" \
+        --agent_name "$AGENT_NAME" \
+        --instance_id "$AGENT_INSTANCE" \
         --message "$TICKET_MESSAGE" 2>&1)
 
       # Check if command succeeded

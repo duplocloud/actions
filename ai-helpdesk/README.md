@@ -22,10 +22,13 @@ Creates AI HelpDesk tickets when GitHub Actions workflows fail, providing compre
 
 - DuploCloud account with AI HelpDesk enabled
 - duploctl version 0.3.5+ installed (handled by Duplo Setup action)
+
 - Required environment variables (set by Duplo Setup action):
   - `DUPLO_HOST` - DuploCloud host URL
   - `DUPLO_TOKEN` - DuploCloud authentication token
   - `DUPLO_TENANT` - DuploCloud tenant name
+  - `AGENT_NAME` - AI HelpDesk agent name (e.g., `github-actions-dev`)
+  - `AGENT_INSTANCE` - AI HelpDesk agent instance ID (e.g., `github-actions-dev-v1`)
 
 **Important**: This action requires the `duplocloud/actions@main` setup action to be run first to install duploctl and configure environment variables.
 
@@ -66,6 +69,8 @@ jobs:
       DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
       DUPLO_HOST: ${{ vars.DUPLO_HOST }}
       DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
+      AGENT_NAME: ${{ vars.AGENT_NAME }}
+      AGENT_INSTANCE: ${{ vars.AGENT_INSTANCE }}
     steps:
       - name: Duplo Setup
         uses: duplocloud/actions@main
@@ -88,6 +93,8 @@ jobs:
       DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
       DUPLO_HOST: ${{ vars.DUPLO_HOST }}
       DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
+      AGENT_NAME: ${{ vars.AGENT_NAME }}
+      AGENT_INSTANCE: ${{ vars.AGENT_INSTANCE }}
     steps:
       - name: Duplo Setup
         uses: duplocloud/actions@main
@@ -120,6 +127,8 @@ jobs:
       DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
       DUPLO_HOST: ${{ vars.DUPLO_HOST }}
       DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
+      AGENT_NAME: ${{ vars.AGENT_NAME }}
+      AGENT_INSTANCE: ${{ vars.AGENT_INSTANCE }}
     steps:
       - name: Duplo Setup
         uses: duplocloud/actions@main
@@ -167,8 +176,8 @@ The action uses the following `duploctl` command structure:
 ```bash
 duploctl ai create_ticket \
   --title "$TICKET_TITLE" \
-  --agent_name "github-actions-dev" \
-  --instance_id "github-actions-dev-v1" \
+  --agent_name "$AGENT_NAME" \
+  --instance_id "$AGENT_INSTANCE" \
   --message "$TICKET_MESSAGE"
 ```
 
@@ -181,6 +190,8 @@ The action requires the following environment variables to be set:
 - `DUPLO_HOST` - Duplo host URL
 - `DUPLO_TENANT` - Duplo tenant name
 - `DUPLO_TOKEN` - Duplo authentication token
+- `AGENT_NAME` - AI HelpDesk agent name
+- `AGENT_INSTANCE` - AI HelpDesk agent instance ID
 
 ## Example
 
@@ -202,6 +213,8 @@ jobs:
       DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
       DUPLO_HOST: ${{ vars.DUPLO_HOST }}
       DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
+      AGENT_NAME: ${{ vars.AGENT_NAME }}
+      AGENT_INSTANCE: ${{ vars.AGENT_INSTANCE }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
