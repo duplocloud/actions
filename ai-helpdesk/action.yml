@@ -61,33 +61,37 @@ runs:
       if [ -n "$TITLE" ]; then
         TICKET_TITLE="$TITLE"
       else
-        TICKET_TITLE="Workflow Failure: $GITHUB_WORKFLOW"
+        TICKET_TITLE="Workflow Failure: ${GITHUB_WORKFLOW:-Unknown Workflow}"
       fi
 
       # Build context
       if [ -n "$CONTEXT" ]; then
         TICKET_CONTEXT="$CONTEXT"
       else
-        TICKET_CONTEXT="GitHub Actions workflow failure detected!"
-        TICKET_CONTEXT="$TICKET_CONTEXT"$'\n\n'"Workflow Details:"
+        TICKET_CONTEXT="GitHub Actions workflow failure detected!"$'\n\n'"Workflow Details:"
+        [ -n "$GITHUB_WORKFLOW" ] && TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Workflow: $GITHUB_WORKFLOW"
+        [ -n "$GITHUB_RUN_ID" ] && TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Run ID: $GITHUB_RUN_ID"
+        [ -n "$GITHUB_EVENT_NAME" ] && TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Event: $GITHUB_EVENT_NAME"
+
         if [ "$INCLUDE_SENSITIVE_DATA" = "true" ]; then
-          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Repository: $GITHUB_REPOSITORY"
+          [ -n "$GITHUB_REPOSITORY" ] && TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Repository: $GITHUB_REPOSITORY"
+          [ -n "$GITHUB_SHA" ] && TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Commit: $GITHUB_SHA"
+          [ -n "$GITHUB_ACTOR" ] && TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Actor: $GITHUB_ACTOR"
+          [ -n "$GITHUB_REF_NAME" ] && TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Branch: $GITHUB_REF_NAME"
+          if [ -n "$GITHUB_REPOSITORY" ] && [ -n "$GITHUB_RUN_ID" ]; then
+            TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Run URL: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          fi
         fi
-        TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Workflow: $GITHUB_WORKFLOW"
-        TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Run ID: $GITHUB_RUN_ID"
-        if [ "$INCLUDE_SENSITIVE_DATA" = "true" ]; then
-          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Commit: $GITHUB_SHA"
-          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Actor: $GITHUB_ACTOR"
-          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Branch: $GITHUB_REF_NAME"
+
+        # Add fallback content if no GitHub vars
+        if [ -z "$GITHUB_WORKFLOW$GITHUB_RUN_ID$GITHUB_EVENT_NAME" ]; then
+          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Source: Manual execution or testing environment"
         fi
-        TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Event: $GITHUB_EVENT_NAME"
-        if [ "$INCLUDE_SENSITIVE_DATA" = "true" ]; then
-          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Run URL: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-        fi
+
         TICKET_CONTEXT="$TICKET_CONTEXT"$'\n\n'
       fi
 
-      # Build content
+      # Build final message
       if [ -n "$CONTENT" ]; then
         TICKET_MESSAGE="$TICKET_CONTEXT$CONTENT"
       else
