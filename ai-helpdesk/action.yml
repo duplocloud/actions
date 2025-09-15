@@ -97,34 +97,13 @@ runs:
 
       # Create the ticket
       echo "Creating AI HelpDesk ticket..."
-      echo "Command: duploctl ai create_ticket --title \"$TICKET_TITLE\" --agent_name \"$AGENT_NAME\" --instance_id \"$AGENT_INSTANCE\" --message \"$TICKET_MESSAGE\""
-      echo "Environment check:"
-      echo "  DUPLO_HOST: $DUPLO_HOST"
-      echo "  DUPLO_TENANT: $DUPLO_TENANT"
-      echo "  AGENT_NAME: $AGENT_NAME"
-      echo "  AGENT_INSTANCE: $AGENT_INSTANCE"
-      echo "  TICKET_TITLE: $TICKET_TITLE"
-      echo "  TICKET_MESSAGE length: ${#TICKET_MESSAGE}"
-
-      # Create the ticket with immediate output to prevent GitHub Actions from killing it
-      echo "Creating AI HelpDesk ticket..."
-      echo "Testing duploctl connectivity first..."
-      duploctl system info > /dev/null 2>&1
-      if [ $? -ne 0 ]; then
-        echo "Error: duploctl cannot connect to DuploCloud API"
-        echo "Check DUPLO_HOST, DUPLO_TOKEN, and DUPLO_TENANT configuration"
-        exit 1
-      fi
-      echo "duploctl connectivity OK"
-      
-      echo "Calling DuploCloud AI service..."
       timeout 300 duploctl \
         ai create_ticket \
         --title "$TICKET_TITLE" \
         --agent_name "$AGENT_NAME" \
         --instance_id "$AGENT_INSTANCE" \
         --message "$TICKET_MESSAGE" > response.txt 2>&1 &
-      
+
       echo "Request sent, waiting for response..."
       wait
       EXIT_CODE=$?
@@ -133,11 +112,8 @@ runs:
       RESPONSE=$(cat response.txt)
       rm -f response.txt
 
-      echo "duploctl exit code: $EXIT_CODE"
-      echo "duploctl response: $RESPONSE"
-
-      # Check if command succeeded
-      if [ $EXIT_CODE -eq 0 ]; then
+      # Check if command succeeded (duploctl may exit 0 even with API errors)
+      if [ $EXIT_CODE -eq 0 ] && ! echo "$RESPONSE" | grep -q "Error.*Not Found\|Message.*Error"; then
         echo "Ticket created successfully"
         echo "Response: $RESPONSE"
 
