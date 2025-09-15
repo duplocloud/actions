@@ -106,9 +106,9 @@ runs:
       echo "  TICKET_TITLE: $TICKET_TITLE"
       echo "  TICKET_MESSAGE length: ${#TICKET_MESSAGE}"
 
-      # Create the ticket (avoid subshell to prevent instant 144 error)
+      # Create the ticket with timeout (direct execution to avoid subshell issues)
       echo "Creating AI HelpDesk ticket..."
-      duploctl \
+      timeout 300 duploctl \
         ai create_ticket \
         --title "$TICKET_TITLE" \
         --agent_name "$AGENT_NAME" \
