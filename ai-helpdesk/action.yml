@@ -106,7 +106,7 @@ runs:
       echo "  TICKET_TITLE: $TICKET_TITLE"
       echo "  TICKET_MESSAGE length: ${#TICKET_MESSAGE}"
 
-      RESPONSE=$(timeout 30 duploctl \
+      RESPONSE=$(timeout 300 duploctl \
         ai create_ticket \
         --title "$TICKET_TITLE" \
         --agent_name "$AGENT_NAME" \
