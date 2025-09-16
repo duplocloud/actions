@@ -6,15 +6,15 @@ branding:
   color: 'blue'
 inputs:
   title:
-    description: 'Custom ticket title. If not provided, defaults to "Workflow Failure: {workflow_name}"'
+    description: 'Ticket title. Defaults to "Workflow Failure: {workflow_name}" if not provided'
     required: false
     default: ''
   context:
-    description: Custom contextual header content. If not provided, auto-generates workflow context
+    description: 'Contextual header section. Defaults to auto-generated workflow details if not provided'
     required: false
     default: ''
   content:
-    description: Main ticket content/body. Appended to context if provided
+    description: 'Additional content appended after the context section'
     required: false
     default: ''
   include_sensitive_data:
@@ -22,20 +22,13 @@ inputs:
     required: false
     default: 'true'
 
-outputs:
-  ticket_id:
-    description: The created ticket ID
-    value: ${{ steps.create-ticket.outputs.ticket_id }}
-  ticket_url:
-    description: The URL to the created ticket
-    value: ${{ steps.create-ticket.outputs.ticket_url }}
 
 runs:
   using: composite
   steps:
 
-  - name: Create HelpDesk Ticket
-    id: create-ticket
+  - name: Prepare Ticket Data
+    id: prepare-ticket
     shell: bash
     env:
       TITLE: ${{ inputs.title }}
@@ -68,33 +61,55 @@ runs:
       if [ -n "$CONTEXT" ]; then
         TICKET_CONTEXT="$CONTEXT"
       else
-        TICKET_CONTEXT="GitHub Actions workflow failure detected!"
-        TICKET_CONTEXT="$TICKET_CONTEXT"$'\n\n'"Workflow Details:"
+        # Build default context cleanly
         if [ "$INCLUDE_SENSITIVE_DATA" = "true" ]; then
-          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Repository: $GITHUB_REPOSITORY"
+          TICKET_CONTEXT=$(
+            echo "GitHub Actions workflow failure detected!"
+            echo ""
+            echo "Workflow Details:"
+            echo "- Repository: $GITHUB_REPOSITORY"
+            echo "- Workflow: $GITHUB_WORKFLOW"
+            echo "- Run ID: $GITHUB_RUN_ID"
+            echo "- Commit: $GITHUB_SHA"
+            echo "- Actor: $GITHUB_ACTOR"
+            echo "- Branch: $GITHUB_REF_NAME"
+            echo "- Event: $GITHUB_EVENT_NAME"
+            echo "- Run URL: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo ""
+          )
+        else
+          TICKET_CONTEXT=$(
+            echo "GitHub Actions workflow failure detected!"
+            echo ""
+            echo "Workflow Details:"
+            echo "- Workflow: $GITHUB_WORKFLOW"
+            echo "- Run ID: $GITHUB_RUN_ID"
+            echo "- Event: $GITHUB_EVENT_NAME"
+            echo ""
+          )
         fi
-        TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Workflow: $GITHUB_WORKFLOW"
-        TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Run ID: $GITHUB_RUN_ID"
-        if [ "$INCLUDE_SENSITIVE_DATA" = "true" ]; then
-          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Commit: $GITHUB_SHA"
-          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Actor: $GITHUB_ACTOR"
-          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Branch: $GITHUB_REF_NAME"
-        fi
-        TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Event: $GITHUB_EVENT_NAME"
-        if [ "$INCLUDE_SENSITIVE_DATA" = "true" ]; then
-          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Run URL: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-        fi
-        TICKET_CONTEXT="$TICKET_CONTEXT"$'\n\n'
       fi
 
-      # Build content
+      # Build final message
       if [ -n "$CONTENT" ]; then
         TICKET_MESSAGE="$TICKET_CONTEXT$CONTENT"
       else
         TICKET_MESSAGE="$TICKET_CONTEXT"
       fi
 
-      # Create the ticket
+      # Set outputs for next step
+      echo "ticket_title=$TICKET_TITLE" >> $GITHUB_OUTPUT
+      echo "ticket_message<<EOF" >> $GITHUB_OUTPUT
+      echo "$TICKET_MESSAGE" >> $GITHUB_OUTPUT
+      echo "EOF" >> $GITHUB_OUTPUT
+
+  - name: Create HelpDesk Ticket
+    id: duploctl-create-ticket
+    shell: bash
+    env:
+      TICKET_TITLE: ${{ steps.prepare-ticket.outputs.ticket_title }}
+      TICKET_MESSAGE: ${{ steps.prepare-ticket.outputs.ticket_message }}
+    run: |
       duploctl ai create_ticket \
         --title "$TICKET_TITLE" \
         --agent_name "$AGENT_NAME" \
