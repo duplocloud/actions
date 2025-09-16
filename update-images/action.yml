@@ -6,93 +6,26 @@ branding:
   color: 'blue'
 inputs:
   services:
-    description: 'JSON array of service-image pairs. Format: [{"service": "service1", "image": "image1:tag"}, {"service": "service2", "image": "image2:tag"}]'
+    description: 'JSON array of service-image pairs. Format: [{"service": "service1", "image": "image1:tag"}]'
     required: true
   wait:
     description: Wait for all deployments to complete
     required: false
     default: "false"
-  loglevel:
-    description: Log level for duploctl output
-    required: false
-    default: "INFO"
-
-outputs:
-  result:
-    description: The result of the bulk update operation
-    value: ${{ steps.execute-update.outputs.result }}
-  services_updated:
-    description: Number of services updated
-    value: ${{ steps.validate-input.outputs.service_count }}
 
 runs:
   using: composite
   steps:
 
-  - name: Validate Environment
-    id: validate-environment
-    shell: bash
-    run: |
-      # Validate required environment variables
-      if [ -z "$DUPLO_HOST" ] || [ -z "$DUPLO_TOKEN" ] || [ -z "$DUPLO_TENANT" ]; then
-        echo "Error: Required environment variables DUPLO_HOST, DUPLO_TOKEN, and DUPLO_TENANT must be set"
-        echo "Please ensure the Duplo Setup action is run before this action"
-        exit 1
-      fi
-
-      # Validate duploctl is available
-      if ! command -v duploctl &> /dev/null; then
-        echo "Error: duploctl command not found"
-        echo "Please ensure the Duplo Setup action is run before this action"
-        exit 1
-      fi
-
-      echo "Environment validation passed"
-
-  - name: Validate Services Input
-    id: validate-input
-    shell: bash
-    env:
-      SERVICES: ${{ inputs.services }}
-    run: |
-      # Validate that services input is valid JSON
-      if ! echo "$SERVICES" | jq empty 2>/dev/null; then
-        echo "Error: services input must be valid JSON"
-        exit 1
-      fi
-
-      # Validate that it's an array
-      if ! echo "$SERVICES" | jq 'type == "array"' 2>/dev/null | grep -q true; then
-        echo "Error: services input must be a JSON array"
-        exit 1
-      fi
-
-      # Validate that each item has required fields
-      if ! echo "$SERVICES" | jq 'all(has("service") and has("image"))' 2>/dev/null | grep -q true; then
-        echo "Error: each service object must have 'service' and 'image' fields"
-        exit 1
-      fi
-
-      # Count services
-      SERVICE_COUNT=$(echo "$SERVICES" | jq 'length')
-      echo "Validated $SERVICE_COUNT service(s) for bulk update"
-      echo "service_count=$SERVICE_COUNT" >> $GITHUB_OUTPUT
-
-  - name: Build Duploctl Command
-    id: build-command
+  - name: Bulk Update Images
+    id: bulk-update
     shell: bash
     env:
       SERVICES: ${{ inputs.services }}
       WAIT: ${{ inputs.wait }}
-      LOGLEVEL: ${{ inputs.loglevel }}
     run: |
-      # Build the duploctl command array
+      # Build the duploctl command
       DUPLOCTL_ARGS=("duploctl" "service" "bulk_update_image")
-
-      # Add log level
-      if [ -n "$LOGLEVEL" ]; then
-        DUPLOCTL_ARGS+=("--loglevel" "$LOGLEVEL")
-      fi
 
       # Add wait flag if requested
       if [ "$WAIT" = "true" ]; then
@@ -106,57 +39,5 @@ runs:
         DUPLOCTL_ARGS+=("-S" "$SERVICE" "$IMAGE")
       done < <(echo "$SERVICES" | jq -c '.[]')
 
-      # Convert array to string for output
-      DUPLOCTL_CMD="${DUPLOCTL_ARGS[*]}"
-
-      # Store the complete command
-      echo "command=$DUPLOCTL_CMD" >> $GITHUB_OUTPUT
-
-      # Show the command that will be executed
-      echo "Duploctl Command:"
-      echo "$DUPLOCTL_CMD"
-
-  - name: Execute Bulk Update
-    id: execute-update
-    shell: bash
-    env:
-      COMMAND: ${{ steps.build-command.outputs.command }}
-      SERVICES: ${{ inputs.services }}
-    run: |
-      # Execute the bulk update command
-      echo "Executing bulk image update..."
-      echo "Command: $COMMAND"
-
-      # Run the command and capture output
-      set +e  # Don't exit on error, we want to handle it
-      OUTPUT=$($COMMAND 2>&1)
-      EXIT_CODE=$?
-      set -e  # Re-enable exit on error
-
-      if [ $EXIT_CODE -eq 0 ]; then
-        echo "✅ Bulk update completed successfully"
-        echo "$OUTPUT"
-        echo "result=success" >> $GITHUB_OUTPUT
-      else
-        echo "❌ Bulk update failed with exit code $EXIT_CODE"
-        echo "$OUTPUT"
-        echo "result=failed" >> $GITHUB_OUTPUT
-        exit 1
-      fi
-
-  - name: Show Summary
-    id: show-summary
-    shell: bash
-    env:
-      SERVICES: ${{ inputs.services }}
-      RESULT: ${{ steps.execute-update.outputs.result }}
-    run: |
-      cat <<EOF >> $GITHUB_STEP_SUMMARY
-      # Bulk Image Update
-
-      ## Services Updated
-      $(echo "$SERVICES" | jq -r '.[] | "- **\(.service)**: \(.image)"')
-
-      ## Status
-      $([ "$RESULT" = "success" ] && echo "✅ **Success** - All services updated successfully" || echo "❌ **Failed** - Some services failed to update")
-      EOF
+      # Execute the bulk update
+      "${DUPLOCTL_ARGS[@]}"
