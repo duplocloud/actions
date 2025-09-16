@@ -114,4 +114,20 @@ runs:
         --title "$TICKET_TITLE" \
         --agent_name "$AGENT_NAME" \
         --instance_id "$AGENT_INSTANCE" \
-        --message "$TICKET_MESSAGE"
+        --message "$TICKET_MESSAGE" > /tmp/duploctl_output.json 2>&1
+
+  - name: Build Step Summary
+    shell: bash
+    run: |
+      TICKET_NAME=$(grep -o '"ticketname": "[^"]*"' /tmp/duploctl_output.json | cut -d'"' -f4 || echo "")
+      CHAT_URL=$(grep -o '"chat_url": "[^"]*"' /tmp/duploctl_output.json | cut -d'"' -f4 || echo "")
+
+      echo "## AI HelpDesk Ticket Created" > $GITHUB_STEP_SUMMARY
+      [ -n "$TICKET_NAME" ] && echo "**Ticket:** \`$TICKET_NAME\`" >> $GITHUB_STEP_SUMMARY
+      [ -n "$CHAT_URL" ] && echo "**Chat URL:** [$CHAT_URL]($CHAT_URL)" >> $GITHUB_STEP_SUMMARY
+      echo "**Agent:** \`$AGENT_NAME\`" >> $GITHUB_STEP_SUMMARY
+      echo "**Instance:** \`$AGENT_INSTANCE\`" >> $GITHUB_STEP_SUMMARY
+      echo "**Tenant:** \`$DUPLO_TENANT\`" >> $GITHUB_STEP_SUMMARY
+
+      echo "AI HelpDesk ticket created successfully"
+      cat /tmp/duploctl_output.json
