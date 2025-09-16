@@ -123,8 +123,8 @@ runs:
       CHAT_URL=$(grep -o '"chat_url": "[^"]*"' /tmp/duploctl_output.json | cut -d'"' -f4 || echo "")
 
       echo "## AI HelpDesk Ticket Created" > $GITHUB_STEP_SUMMARY
-      [ -n "$TICKET_NAME" ] && echo "**Ticket:** \`$TICKET_NAME\`" >> $GITHUB_STEP_SUMMARY
       [ -n "$CHAT_URL" ] && echo "**Chat URL:** [$CHAT_URL]($CHAT_URL)" >> $GITHUB_STEP_SUMMARY
+      [ -n "$TICKET_NAME" ] && echo "**Ticket:** \`$TICKET_NAME\`" >> $GITHUB_STEP_SUMMARY
       echo "**Agent:** \`$AGENT_NAME\`" >> $GITHUB_STEP_SUMMARY
       echo "**Instance:** \`$AGENT_INSTANCE\`" >> $GITHUB_STEP_SUMMARY
       echo "**Tenant:** \`$DUPLO_TENANT\`" >> $GITHUB_STEP_SUMMARY
