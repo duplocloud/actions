@@ -6,7 +6,9 @@ branding:
   color: 'blue'
 inputs:
   services:
-    description: 'JSON array of service-image pairs. Format: [{"service": "service1", "image": "image1:tag"}]'
+    description: |
+      JSON array of service-image pairs.
+      Format: [{"service": "service1", "image": "image1:tag"}]
     required: true
   wait:
     description: Wait for all deployments to complete
