@@ -56,8 +56,22 @@ DATE="$(date -u +"%Y%m%d%H%M")"
 GIT_REF="$(echo ${GITHUB_REF##*/} | sed -e 's/\//_/g')"
 # GIT_REF="$GITHUB_REF_NAME"
 
-# the uri 
-IMG_URI="${IMAGE}:${GIT_SHA}"
+# Set the uri. Generate from tag strategy. If strategy is not set, use the first passed-in tag
+case $TAG_STRATEGY in
+  *GIT_SHA*)
+    IMG_URI="${IMAGE}:${GIT_SHA}"
+    ;;
+  *GIT_REF*)
+    IMG_URI="${IMAGE}:${GIT_REF}"
+    ;;
+  *DATE*)
+    IMG_URI="${IMAGE}:${DATE}"
+    ;;
+  *)
+    IMG_URI="${IMAGE}:${TAGS%% *}"
+    ;;
+esac
+
 
 echo """
 Built environment for Docker command

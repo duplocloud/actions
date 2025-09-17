@@ -1,0 +1,125 @@
+name: 'AI HelpDesk Ticket'
+description: 'Creates a HelpDesk ticket for AI analysis when workflows fail'
+author: 'duplocloud'
+branding:
+  icon: 'ticket'
+  color: 'blue'
+inputs:
+  title:
+    description: 'Custom ticket title. If not provided, defaults to "Workflow Failure: {workflow_name}"'
+    required: false
+    default: ''
+  context:
+    description: Custom contextual header content. If not provided, auto-generates workflow context
+    required: false
+    default: ''
+  content:
+    description: Main ticket content/body. Appended to context if provided
+    required: false
+    default: ''
+  include_sensitive_data:
+    description: Whether to include sensitive data (repository, actor, branch, commit) in ticket context
+    required: false
+    default: 'true'
+
+outputs:
+  ticket_id:
+    description: The created ticket ID
+    value: ${{ steps.create-ticket.outputs.ticket_id }}
+  ticket_url:
+    description: The URL to the created ticket
+    value: ${{ steps.create-ticket.outputs.ticket_url }}
+
+runs:
+  using: composite
+  steps:
+
+  - name: Create HelpDesk Ticket
+    id: create-ticket
+    shell: bash
+    env:
+      TITLE: ${{ inputs.title }}
+      CONTEXT: ${{ inputs.context }}
+      CONTENT: ${{ inputs.content }}
+      INCLUDE_SENSITIVE_DATA: ${{ inputs.include_sensitive_data }}
+    run: |
+      # Validate required environment variables
+      if [ -z "$DUPLO_HOST" ] || [ -z "$DUPLO_TOKEN" ] || [ -z "$DUPLO_TENANT" ]; then
+        echo "Error: Required environment variables DUPLO_HOST, DUPLO_TOKEN, and DUPLO_TENANT must be set"
+        echo "Please ensure the Duplo Setup action is run before this action"
+        exit 1
+      fi
+
+      # Validate duploctl is available
+      if ! command -v duploctl &> /dev/null; then
+        echo "Error: duploctl command not found"
+        echo "Please ensure the Duplo Setup action is run before this action"
+        exit 1
+      fi
+
+      # Build title
+      if [ -n "$TITLE" ]; then
+        TICKET_TITLE="$TITLE"
+      else
+        TICKET_TITLE="Workflow Failure: $GITHUB_WORKFLOW"
+      fi
+
+      # Build context
+      if [ -n "$CONTEXT" ]; then
+        TICKET_CONTEXT="$CONTEXT"
+      else
+        TICKET_CONTEXT="GitHub Actions workflow failure detected!"
+        TICKET_CONTEXT="$TICKET_CONTEXT"$'\n\n'"Workflow Details:"
+        if [ "$INCLUDE_SENSITIVE_DATA" = "true" ]; then
+          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Repository: $GITHUB_REPOSITORY"
+        fi
+        TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Workflow: $GITHUB_WORKFLOW"
+        TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Run ID: $GITHUB_RUN_ID"
+        if [ "$INCLUDE_SENSITIVE_DATA" = "true" ]; then
+          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Commit: $GITHUB_SHA"
+          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Actor: $GITHUB_ACTOR"
+          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Branch: $GITHUB_REF_NAME"
+        fi
+        TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Event: $GITHUB_EVENT_NAME"
+        if [ "$INCLUDE_SENSITIVE_DATA" = "true" ]; then
+          TICKET_CONTEXT="$TICKET_CONTEXT"$'\n'"- Run URL: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+        fi
+        TICKET_CONTEXT="$TICKET_CONTEXT"$'\n\n'
+      fi
+
+      # Build content
+      if [ -n "$CONTENT" ]; then
+        TICKET_MESSAGE="$TICKET_CONTEXT$CONTENT"
+      else
+        TICKET_MESSAGE="$TICKET_CONTEXT"
+      fi
+
+      # Create the ticket
+      echo "Creating AI HelpDesk ticket..."
+      RESPONSE=$(duploctl \
+        ai create_ticket \
+        --title "$TICKET_TITLE" \
+        --agent_name "github-actions-dev" \
+        --instance_id "github-actions-dev-v1" \
+        --message "$TICKET_MESSAGE" 2>&1)
+
+      # Check if command succeeded
+      if [ $? -eq 0 ]; then
+        echo "Ticket created successfully"
+        echo "Response: $RESPONSE"
+
+        # Extract ticket ID and URL from response
+        TICKET_ID=$(echo "$RESPONSE" | grep -o '"ticketname": "[^"]*"' | cut -d'"' -f4)
+        TICKET_URL=$(echo "$RESPONSE" | grep -o '"chat_url": "[^"]*"' | cut -d'"' -f4)
+
+        # Set outputs
+        echo "ticket_id=$TICKET_ID" >> $GITHUB_OUTPUT
+        echo "ticket_url=$TICKET_URL" >> $GITHUB_OUTPUT
+
+        echo "Ticket ID: $TICKET_ID"
+        echo "Ticket URL: $TICKET_URL"
+      else
+        echo "Failed to create ticket"
+        echo "Error: $RESPONSE"
+        exit 1
+      fi
