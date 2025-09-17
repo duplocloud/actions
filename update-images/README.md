@@ -135,25 +135,3 @@ Where `SERVICES_TO_UPDATE` is a repository variable containing:
   }
 ]
 ```
-
-## Benefits
-
-- **Efficient Updates**: Updates multiple services in a single operation
-- **Atomic Updates**: All services are updated together, ensuring consistency
-- **Better Performance**: Reduces the number of API calls compared to individual updates
-- **Comprehensive Logging**: Provides detailed output and summary of all updates
-
-## Error Handling
-
-The action will:
-- Validate the JSON format of the services input
-- Verify that each service object has required `service` and `image` fields
-- Fail fast if any validation errors are found
-- Provide clear error messages for troubleshooting
-
-## Outputs
-
-The action provides:
-- Step summary showing all services updated
-- Success/failure status for the entire operation
-- Detailed logs of the duploctl command execution
