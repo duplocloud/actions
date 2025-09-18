@@ -16,6 +16,7 @@ and this project adheres to
 - Added build-image support to build and push docker image to Azure Container Registry
 - Added target input to terraform-exec action
 - Added `ai-helpdesk` action for creating HelpDesk tickets from workflows
+- Added `update-images` action for bulk updating multiple service images
 
 ## [0.0.12] - 2025-04-15
 
