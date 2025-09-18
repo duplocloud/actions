@@ -6,6 +6,8 @@ Creates AI HelpDesk tickets when GitHub Actions workflows fail, providing compre
 
 | Name | Description | Required | Default |
 |------|-------------|----------|---------|
+| `agent_name` | Name of the AI agent to handle the ticket | Yes | - |
+| `agent_instance` | Instance ID of the AI agent | Yes | - |
 | `title` | Ticket title. Defaults to "Workflow Failure: {workflow_name}" if not provided | No | `""` |
 | `context` | Contextual header section. Defaults to auto-generated workflow details if not provided | No | `""` |
 | `content` | Additional content appended after the context section | No | `""` |
@@ -30,14 +32,14 @@ jobs:
       DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
       DUPLO_HOST: ${{ vars.DUPLO_HOST }}
       DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
-      AGENT_NAME: ${{ vars.AGENT_NAME }}
-      AGENT_INSTANCE: ${{ vars.AGENT_INSTANCE }}
     steps:
       - name: Duplo Setup
         uses: duplocloud/actions@main
       - name: Create AI HelpDesk Ticket
         uses: duplocloud/actions/ai-helpdesk@v1
         with:
+          agent_name: ${{ vars.AGENT_NAME }}
+          agent_instance: ${{ vars.AGENT_INSTANCE }}
           content: |
             Additional troubleshooting information:
             - Check logs in CloudWatch

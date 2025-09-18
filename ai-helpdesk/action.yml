@@ -21,6 +21,12 @@ inputs:
     description: Whether to include sensitive data (repository, actor, branch, commit) in ticket context
     required: false
     default: 'true'
+  agent_name:
+    description: 'Name of the AI agent to handle the ticket'
+    required: true
+  agent_instance:
+    description: 'Instance ID of the AI agent'
+    required: true
 
 
 runs:
@@ -109,6 +115,8 @@ runs:
     env:
       TICKET_TITLE: ${{ steps.prepare-ticket.outputs.ticket_title }}
       TICKET_MESSAGE: ${{ steps.prepare-ticket.outputs.ticket_message }}
+      AGENT_NAME: ${{ inputs.agent_name }}
+      AGENT_INSTANCE: ${{ inputs.agent_instance }}
     run: |
       duploctl ai create_ticket \
         --title "$TICKET_TITLE" \
