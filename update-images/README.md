@@ -91,35 +91,13 @@ jobs:
           ]
 ```
 
-### With Wait and Custom Log Level
-
-```yaml
-    - name: Update Multiple Images
-      uses: duplocloud/actions/update-images@v1
-      with:
-        services: |
-          [
-            {
-              "service": "api",
-              "image": "myregistry/api:v2.0.0"
-            },
-            {
-              "service": "worker",
-              "image": "myregistry/worker:v2.0.0"
-            }
-          ]
-        wait: "true"
-        loglevel: "DEBUG"
-```
-
-### Using GitHub Variables
+### Using Variables
 
 ```yaml
     - name: Update Multiple Images
       uses: duplocloud/actions/update-images@v1
       with:
         services: ${{ vars.SERVICES_TO_UPDATE }}
-        wait: "true"
 ```
 
 Where `SERVICES_TO_UPDATE` is a repository variable containing:
