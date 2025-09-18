@@ -26,6 +26,12 @@ runs:
       SERVICES: ${{ inputs.services }}
       WAIT: ${{ inputs.wait }}
     run: |
+      set -euo pipefail
+      
+      # Check dependencies
+      command -v jq >/dev/null || { echo "jq is required"; exit 1; }
+      command -v duploctl >/dev/null || { echo "duploctl is required"; exit 1; }
+      
       # Build the duploctl command
       DUPLOCTL_ARGS=("duploctl" "service" "bulk_update_image")
 
