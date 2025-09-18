@@ -126,6 +126,9 @@ runs:
 
   - name: Build Step Summary
     shell: bash
+    env:
+      AGENT_NAME: ${{ inputs.agent_name }}
+      AGENT_INSTANCE: ${{ inputs.agent_instance }}
     run: |
       TICKET_NAME=$(grep -o '"ticketname": "[^"]*"' /tmp/duploctl_output.json | cut -d'"' -f4 || echo "")
       CHAT_URL=$(grep -o '"chat_url": "[^"]*"' /tmp/duploctl_output.json | cut -d'"' -f4 || echo "")
