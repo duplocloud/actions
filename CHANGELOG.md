@@ -18,6 +18,10 @@ and this project adheres to
 - Added `ai-helpdesk` action for creating HelpDesk tickets from workflows
 - Added `update-images` action for bulk updating multiple service images
 
+### Changed
+
+- Removed the step that checks if the plan artifact exists in Terraform workflow
+
 ## [0.0.12] - 2025-04-15
 
 ## [0.0.11] - 2025-03-05
