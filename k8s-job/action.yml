@@ -9,8 +9,7 @@ inputs:
     default: 300s
   cleanup_delay:
     description: 'Wait time in seconds before cleaning up the job'
-    default: 0
-    type: integer
+    default: "0"
 runs:
   using: composite
   steps:
@@ -118,3 +117,8 @@ runs:
       else
           echo "Executed ${length} pods for job ${JOB_NAME}"
       fi
+      
+  - name: Deprecation Warning
+    shell: bash
+    run: |
+      echo "::warning::DEPRECATION NOTICE: The k8s-job action is deprecated and will be removed in a future release. Please use duplocloud/actions/run-job instead, which offers improved integration with DuploCloud."

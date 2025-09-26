@@ -1,0 +1,52 @@
+name: Run DuploCloud Job
+description: Runs a Kubernetes job using duploctl and waits for completion
+inputs:
+  file:
+    description: 'The file with the job definition to run'
+    default: job.yaml
+    required: false
+  wait:
+    description: 'Wait for the job to complete'
+    default: 'true'
+    required: false
+  loglevel:
+    description: 'Log level for duploctl (INFO, WARN, ERROR, DEBUG)'
+    default: 'INFO'
+    required: false
+  # timeout:
+  #   description: 'Timeout in seconds for the job'
+  #   default: '300'
+  #   required: false
+    
+runs:
+  using: composite
+  steps:
+  - name: Run Job
+    id: duploctl-job
+    shell: bash
+    env:
+      JOB_FILE: ${{ inputs.file }}
+      WAIT: ${{ inputs.wait }}
+      LOGLEVEL: ${{ inputs.loglevel }}
+      # TIMEOUT: ${{ inputs.timeout }}
+    run: |
+      # Construct command based on inputs
+      CMD="duploctl job create -f ${JOB_FILE}"
+      
+      # Add wait flag if specified
+      if [[ "${WAIT}" == "true" ]]; then
+        CMD="${CMD} --wait"
+      fi
+      
+      # Add log level if specified
+      if [[ -n "${LOGLEVEL}" ]]; then
+        CMD="${CMD} --loglevel ${LOGLEVEL}"
+      fi
+      
+      # # Add timeout if specified - Not yet implemented in CLI
+      # if [[ -n "${TIMEOUT}" ]]; then
+      #   CMD="${CMD} --timeout ${TIMEOUT}"
+      # fi
+      
+      echo "Running command: ${CMD}"
+      $CMD
