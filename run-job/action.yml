@@ -30,23 +30,23 @@ runs:
       LOGLEVEL: ${{ inputs.loglevel }}
       # TIMEOUT: ${{ inputs.timeout }}
     run: |
-      # Construct command based on inputs
-      CMD="duploctl job create -f ${JOB_FILE}"
-      
+      # Construct command in an array to prevent injection
+      cmd_args=("duploctl" "job" "create" "-f" "${JOB_FILE}")
+  
       # Add wait flag if specified
       if [[ "${WAIT}" == "true" ]]; then
-        CMD="${CMD} --wait"
+        cmd_args+=("--wait")
       fi
-      
+  
       # Add log level if specified
       if [[ -n "${LOGLEVEL}" ]]; then
-        CMD="${CMD} --loglevel ${LOGLEVEL}"
+        cmd_args+=("--loglevel" "${LOGLEVEL}")
       fi
-      
+  
       # # Add timeout if specified - Not yet implemented in CLI
       # if [[ -n "${TIMEOUT}" ]]; then
-      #   CMD="${CMD} --timeout ${TIMEOUT}"
+      #   cmd_args+=("--timeout" "${TIMEOUT}")
       # fi
-      
-      echo "Running command: ${CMD}"
-      $CMD
+  
+      echo "Running command: ${cmd_args[*]}"
+      "${cmd_args[@]}"
