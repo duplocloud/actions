@@ -119,6 +119,7 @@ runs:
       AGENT_INSTANCE: ${{ inputs.agent_instance }}
     run: |
       duploctl ai create_ticket \
+        --origin pipelines \
         --title "$TICKET_TITLE" \
         --agent_name "$AGENT_NAME" \
         --instance_id "$AGENT_INSTANCE" \
