@@ -41,7 +41,7 @@ while [ $ATTEMPT -le $MAX_RETRIES ]; do
     exit 1
   fi
   
-  # Wait before retrying with exponential backoff
+  # Wait before retrying with linear backoff
   WAIT_TIME=$((RETRY_DELAY * ATTEMPT))
   echo "Retrying in $WAIT_TIME seconds..."
   sleep $WAIT_TIME
