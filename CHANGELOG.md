@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added 
+
+- New run-job action for running Kubernetes jobs via duploctl which deprecates the k8s-job action
+
 ## [0.0.13] - 2025-09-23
 
 ### Added
