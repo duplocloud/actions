@@ -41,7 +41,7 @@ if [ -n "$TF_INPUT_VAR_FILES" ]; then
     ARGS+=("-var-file=$VAR_FILE_PATH")
   done <<< "$TF_INPUT_VAR_FILES"
 fi
-fi
+
 
 # if the plan is to destroy then add -destroy to the args
 if [ "$TF_COMMAND" == "destroy" ]; then
