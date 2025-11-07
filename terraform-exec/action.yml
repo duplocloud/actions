@@ -19,6 +19,9 @@ inputs:
     description: Terraform configs
     required: false
     default: config
+  var-files:
+    description: A list of terraform var files to append to the command. This will be relative to the config directory.
+    required: false
   target:
     description: Specific resource to target
     required: false
@@ -50,48 +53,7 @@ runs:
       MODULE: ${{ inputs.module }}
       CONFIG_DIR: ${{ github.workspace }}/${{ inputs.config }}
       TF_TARGET: ${{ inputs.target }}
-    run: |
-      ARGS=(
-        -input=false
-      )
-      MODULE_NAME=$(basename $MODULE)
-      PLAN_FILE="${TF_WORKSPACE}-${MODULE_NAME}.tfplan"
-      echo "module_name=$MODULE_NAME" >> $GITHUB_OUTPUT
-
-      # if parallelism is set then add it to the args
-      if [ -n "$TF_PARALLELISM" ]; then
-        ARGS+=("-parallelism=$TF_PARALLELISM")
-      fi
-
-      # if target is set then add it to the args
-      if [ -n "$TF_TARGET" ]; then
-        ARGS+=("-target=$TF_TARGET")
-      fi
-
-      # append workspace variables files if they exist
-      TF_VARS_FILE="$CONFIG_DIR/$TF_WORKSPACE/$MODULE_NAME.tfvars"
-      echo "Discovering vars at $TF_VARS_FILE"
-      if [ -f "$TF_VARS_FILE" ]; then
-        echo "Found $TF_VARS_FILE"
-        ARGS+=("-var-file=$TF_VARS_FILE")
-      fi
-      echo "Discovering vars at $TF_VARS_FILE.json"
-      if [ -f "$TF_VARS_FILE.json" ]; then
-        echo "Found $TF_VARS_FILE.json"
-        ARGS+=("-var-file=$TF_VARS_FILE.json")
-      fi
-      
-      # if the plan is to destroy then add -destroy to the args
-      if [ "$TF_COMMAND" == "destroy" ]; then
-        ARGS+=("-destroy")
-        PLAN_FILE="${TF_COMMAND}-${PLAN_FILE}"
-      fi
-
-      echo "The tf args: ${ARGS[*]}"
-      echo "The plan file: $PLAN_FILE"
-      echo "PLAN_FILE=$PLAN_FILE" >> $GITHUB_ENV
-      echo "planfile=$PLAN_FILE" >> $GITHUB_OUTPUT
-      echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT
+    run: $GITHUB_ACTION_PATH/setup.sh
   
   - name: Select Workspace
     id: select-workspace
