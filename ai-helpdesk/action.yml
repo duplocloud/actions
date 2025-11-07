@@ -21,6 +21,10 @@ inputs:
     description: Whether to include sensitive data (repository, actor, branch, commit) in ticket context
     required: false
     default: 'true'
+  hide_response:
+    description: 'Hide the agent response in the summary. Response is shown by default.'
+    required: false
+    default: 'false'
   agent_name:
     description: 'Name of the AI agent to handle the ticket'
     required: true
@@ -129,6 +133,7 @@ runs:
     env:
       AGENT_NAME: ${{ inputs.agent_name }}
       AGENT_INSTANCE: ${{ inputs.agent_instance }}
+      HIDE_RESPONSE: ${{ inputs.hide_response }}
     run: |
       TICKET_NAME=$(grep -o '"ticketname": "[^"]*"' /tmp/duploctl_output.json | cut -d'"' -f4 || echo "")
       CHAT_URL=$(grep -o '"chat_url": "[^"]*"' /tmp/duploctl_output.json | cut -d'"' -f4 || echo "")
@@ -139,6 +144,19 @@ runs:
       echo "**Agent:** \`$AGENT_NAME\`" >> $GITHUB_STEP_SUMMARY
       echo "**Instance:** \`$AGENT_INSTANCE\`" >> $GITHUB_STEP_SUMMARY
       echo "**Tenant:** \`$DUPLO_TENANT\`" >> $GITHUB_STEP_SUMMARY
+      echo "" >> $GITHUB_STEP_SUMMARY
+
+      if [ "$HIDE_RESPONSE" != "true" ]; then
+        AGENT_RESPONSE=$(jq -r '.ai_response.content // empty' /tmp/duploctl_output.json 2>/dev/null || echo "")
+
+        if [ -n "$AGENT_RESPONSE" ]; then
+          echo "### Agent Initial Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "$AGENT_RESPONSE" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> **Note:** Open the HelpDesk ticket to review and approve any suggested commands." >> $GITHUB_STEP_SUMMARY
+        fi
+      fi
 
       echo "AI HelpDesk ticket created successfully"
       cat /tmp/duploctl_output.json

@@ -12,6 +12,7 @@ Creates AI HelpDesk tickets when GitHub Actions workflows fail, providing compre
 | `context` | Contextual header section. Defaults to auto-generated workflow details if not provided | No | `""` |
 | `content` | Additional content appended after the context section | No | `""` |
 | `include_sensitive_data` | Whether to include sensitive data (repository, actor, branch, commit) in ticket context | No | `true` |
+| `hide_response` | Set to true to hide the agent response in the summary. The response is shown by default. | No | `false` |
 
 ## Usage
 
