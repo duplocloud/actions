@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+Added var-files for terraform-exec action, to allow custom tfvars.json files to be used
+
 ## [0.0.13] - 2025-09-23
 
 ### Added

@@ -31,13 +31,17 @@ if [ -f "$TF_VARS_FILE.json" ]; then
 fi
 
 # the var-files is string with each new line containing a file path to a vars file. The files are relative to the CONFIG_DIR. For each of these files adda -var-file arg to the ARGS
-if [ -n "$TF_VAR_FILES" ]; then
-  VAR_FILES=("$TF_VAR_FILES")
-  for VAR_FILE in "${VAR_FILES[@]}"; do
+if [ -n "$TF_INPUT_VAR_FILES" ]; then
+  while IFS= read -r VAR_FILE; do
+    # Skip empty lines
+    if [ -z "$VAR_FILE" ]; then
+      continue
+    fi
     VAR_FILE_PATH="$CONFIG_DIR/$VAR_FILE"
     ARGS+=("-var-file=$VAR_FILE_PATH")
-  done
+  done <<< "$TF_INPUT_VAR_FILES"
 fi
+
 
 # if the plan is to destroy then add -destroy to the args
 if [ "$TF_COMMAND" == "destroy" ]; then
