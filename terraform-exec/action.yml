@@ -53,7 +53,7 @@ runs:
       MODULE: ${{ inputs.module }}
       CONFIG_DIR: ${{ github.workspace }}/${{ inputs.config }}
       TF_TARGET: ${{ inputs.target }}
-      TF_VAR_FILES: ${{ inputs.var-files }}
+      TF_INPUT_VAR_FILES: ${{ inputs.var-files }}
     run: $GITHUB_ACTION_PATH/setup.sh
   
   - name: Select Workspace

@@ -31,8 +31,8 @@ if [ -f "$TF_VARS_FILE.json" ]; then
 fi
 
 # the var-files is string with each new line containing a file path to a vars file. The files are relative to the CONFIG_DIR. For each of these files adda -var-file arg to the ARGS
-if [ -n "$TF_VAR_FILES" ]; then
-  VAR_FILES=("$TF_VAR_FILES")
+if [ -n "$TF_INPUT_VAR_FILES" ]; then
+  VAR_FILES=("$TF_INPUT_VAR_FILES")
   for VAR_FILE in "${VAR_FILES[@]}"; do
     VAR_FILE_PATH="$CONFIG_DIR/$VAR_FILE"
     ARGS+=("-var-file=$VAR_FILE_PATH")
