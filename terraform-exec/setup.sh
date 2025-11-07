@@ -34,6 +34,7 @@ fi
 if [ -n "$TF_INPUT_VAR_FILES" ]; then
   VAR_FILES=("$TF_INPUT_VAR_FILES")
   for VAR_FILE in "${VAR_FILES[@]}"; do
+    echo "Adding var file: $VAR_FILE"
     VAR_FILE_PATH="$CONFIG_DIR/$VAR_FILE"
     ARGS+=("-var-file=$VAR_FILE_PATH")
   done
