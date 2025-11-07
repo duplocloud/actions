@@ -1,0 +1,144 @@
+name: 'AI HelpDesk Ticket'
+description: 'Creates a HelpDesk ticket for AI analysis when workflows fail'
+author: 'duplocloud'
+branding:
+  icon: 'ticket'
+  color: 'blue'
+inputs:
+  title:
+    description: 'Ticket title. Defaults to "Workflow Failure: {workflow_name}" if not provided'
+    required: false
+    default: ''
+  context:
+    description: 'Contextual header section. Defaults to auto-generated workflow details if not provided'
+    required: false
+    default: ''
+  content:
+    description: 'Additional content appended after the context section'
+    required: false
+    default: ''
+  include_sensitive_data:
+    description: Whether to include sensitive data (repository, actor, branch, commit) in ticket context
+    required: false
+    default: 'true'
+  agent_name:
+    description: 'Name of the AI agent to handle the ticket'
+    required: true
+  agent_instance:
+    description: 'Instance ID of the AI agent'
+    required: true
+
+
+runs:
+  using: composite
+  steps:
+
+  - name: Prepare Ticket Data
+    id: prepare-ticket
+    shell: bash
+    env:
+      TITLE: ${{ inputs.title }}
+      CONTEXT: ${{ inputs.context }}
+      CONTENT: ${{ inputs.content }}
+      INCLUDE_SENSITIVE_DATA: ${{ inputs.include_sensitive_data }}
+    run: |
+      # Validate required environment variables
+      if [ -z "$DUPLO_HOST" ] || [ -z "$DUPLO_TOKEN" ] || [ -z "$DUPLO_TENANT" ]; then
+        echo "Error: Required environment variables DUPLO_HOST, DUPLO_TOKEN, and DUPLO_TENANT must be set"
+        echo "Please ensure the Duplo Setup action is run before this action"
+        exit 1
+      fi
+
+      # Validate duploctl is available
+      if ! command -v duploctl &> /dev/null; then
+        echo "Error: duploctl command not found"
+        echo "Please ensure the Duplo Setup action is run before this action"
+        exit 1
+      fi
+
+      # Build title
+      if [ -n "$TITLE" ]; then
+        TICKET_TITLE="$TITLE"
+      else
+        TICKET_TITLE="Workflow Failure: $GITHUB_WORKFLOW"
+      fi
+
+      # Build context
+      if [ -n "$CONTEXT" ]; then
+        TICKET_CONTEXT="$CONTEXT"
+      else
+        # Build default context cleanly
+        if [ "$INCLUDE_SENSITIVE_DATA" = "true" ]; then
+          TICKET_CONTEXT=$(
+            echo "GitHub Actions workflow failure detected!"
+            echo ""
+            echo "Workflow Details:"
+            echo "- Repository: $GITHUB_REPOSITORY"
+            echo "- Workflow: $GITHUB_WORKFLOW"
+            echo "- Run ID: $GITHUB_RUN_ID"
+            echo "- Commit: $GITHUB_SHA"
+            echo "- Actor: $GITHUB_ACTOR"
+            echo "- Branch: $GITHUB_REF_NAME"
+            echo "- Event: $GITHUB_EVENT_NAME"
+            echo "- Run URL: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo ""
+          )
+        else
+          TICKET_CONTEXT=$(
+            echo "GitHub Actions workflow failure detected!"
+            echo ""
+            echo "Workflow Details:"
+            echo "- Workflow: $GITHUB_WORKFLOW"
+            echo "- Run ID: $GITHUB_RUN_ID"
+            echo "- Event: $GITHUB_EVENT_NAME"
+            echo ""
+          )
+        fi
+      fi
+
+      # Build final message
+      if [ -n "$CONTENT" ]; then
+        TICKET_MESSAGE="$TICKET_CONTEXT$CONTENT"
+      else
+        TICKET_MESSAGE="$TICKET_CONTEXT"
+      fi
+
+      # Set outputs for next step
+      echo "ticket_title=$TICKET_TITLE" >> $GITHUB_OUTPUT
+      echo "ticket_message<<EOF" >> $GITHUB_OUTPUT
+      echo "$TICKET_MESSAGE" >> $GITHUB_OUTPUT
+      echo "EOF" >> $GITHUB_OUTPUT
+
+  - name: Create HelpDesk Ticket
+    id: duploctl-create-ticket
+    shell: bash
+    env:
+      TICKET_TITLE: ${{ steps.prepare-ticket.outputs.ticket_title }}
+      TICKET_MESSAGE: ${{ steps.prepare-ticket.outputs.ticket_message }}
+      AGENT_NAME: ${{ inputs.agent_name }}
+      AGENT_INSTANCE: ${{ inputs.agent_instance }}
+    run: |
+      duploctl ai create_ticket \
+        --title "$TICKET_TITLE" \
+        --agent_name "$AGENT_NAME" \
+        --instance_id "$AGENT_INSTANCE" \
+        --message "$TICKET_MESSAGE" > /tmp/duploctl_output.json 2>&1
+
+  - name: Build Step Summary
+    shell: bash
+    env:
+      AGENT_NAME: ${{ inputs.agent_name }}
+      AGENT_INSTANCE: ${{ inputs.agent_instance }}
+    run: |
+      TICKET_NAME=$(grep -o '"ticketname": "[^"]*"' /tmp/duploctl_output.json | cut -d'"' -f4 || echo "")
+      CHAT_URL=$(grep -o '"chat_url": "[^"]*"' /tmp/duploctl_output.json | cut -d'"' -f4 || echo "")
+
+      echo "## AI HelpDesk Ticket Created" > $GITHUB_STEP_SUMMARY
+      [ -n "$CHAT_URL" ] && echo "**Chat URL:** [$CHAT_URL]($CHAT_URL)" >> $GITHUB_STEP_SUMMARY
+      [ -n "$TICKET_NAME" ] && echo "**Ticket:** \`$TICKET_NAME\`" >> $GITHUB_STEP_SUMMARY
+      echo "**Agent:** \`$AGENT_NAME\`" >> $GITHUB_STEP_SUMMARY
+      echo "**Instance:** \`$AGENT_INSTANCE\`" >> $GITHUB_STEP_SUMMARY
+      echo "**Tenant:** \`$DUPLO_TENANT\`" >> $GITHUB_STEP_SUMMARY
+
+      echo "AI HelpDesk ticket created successfully"
+      cat /tmp/duploctl_output.json

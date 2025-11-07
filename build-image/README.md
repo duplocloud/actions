@@ -44,7 +44,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Duplo Setup
-      uses: duplocloud/actions/setup@main
+      uses: duplocloud/actions@main
 
     - name: Build and Push Docker Image
       uses: duplocloud/actions/build-image@main

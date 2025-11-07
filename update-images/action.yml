@@ -1,0 +1,51 @@
+name: Update Images
+description: Bulk update images for multiple services using duploctl
+author: 'duplocloud'
+branding:
+  icon: 'layers'
+  color: 'blue'
+inputs:
+  services:
+    description: |
+      JSON array of service-image pairs.
+      Format: [{"service": "service1", "image": "image1:tag"}]
+    required: true
+  wait:
+    description: Wait for all deployments to complete
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+
+  - name: Bulk Update Images
+    id: bulk-update
+    shell: bash
+    env:
+      SERVICES: ${{ inputs.services }}
+      WAIT: ${{ inputs.wait }}
+    run: |
+      set -euo pipefail
+      
+      # Check dependencies
+      command -v jq >/dev/null || { echo "jq is required"; exit 1; }
+      command -v duploctl >/dev/null || { echo "duploctl is required"; exit 1; }
+      
+      # Build the duploctl command
+      DUPLOCTL_ARGS=("duploctl" "service" "bulk_update_image")
+
+      # Add wait flag if requested
+      if [ "$WAIT" = "true" ]; then
+        DUPLOCTL_ARGS+=("--wait")
+      fi
+
+      # Add service-image pairs
+      while IFS= read -r line; do
+        SERVICE=$(echo "$line" | jq -r '.service')
+        IMAGE=$(echo "$line" | jq -r '.image')
+        DUPLOCTL_ARGS+=("-S" "$SERVICE" "$IMAGE")
+      done < <(echo "$SERVICES" | jq -c '.[]')
+
+      # Execute the bulk update
+      "${DUPLOCTL_ARGS[@]}"

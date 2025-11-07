@@ -12,6 +12,11 @@ if [ -n "$TF_PARALLELISM" ]; then
   ARGS+=("-parallelism=$TF_PARALLELISM")
 fi
 
+# if target is set then add it to the args
+if [ -n "$TF_TARGET" ]; then
+  ARGS+=("-target=$TF_TARGET")
+fi
+
 # append workspace variables files if they exist
 TF_VARS_FILE="$CONFIG_DIR/$TF_WORKSPACE/$MODULE_NAME.tfvars"
 echo "Discovering vars at $TF_VARS_FILE"
@@ -41,5 +46,7 @@ if [ "$TF_COMMAND" == "destroy" ]; then
 fi
 
 echo "The tf args: ${ARGS[*]}"
-echo "PLAN_FILE=$PLAN_FILE" >> "$GITHUB_ENV"
-echo "args=${ARGS[*]}" >> "$GITHUB_OUTPUT"
+echo "The plan file: $PLAN_FILE"
+echo "PLAN_FILE=$PLAN_FILE" >> $GITHUB_ENV
+echo "planfile=$PLAN_FILE" >> $GITHUB_OUTPUT
+echo "args=${ARGS[*]}" >> $GITHUB_OUTPUT

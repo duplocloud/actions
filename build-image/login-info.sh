@@ -8,12 +8,32 @@ if [[ -n "$DOCKER_USERNAME" ]]; then
   echo "password=${DOCKER_PASSWORD}" >> $GITHUB_OUTPUT
 # else if there is no username and GCP_ENABLED is true then use the gcloud auth
 elif [[ "$GCP_ENABLED" == "true" ]]; then
+  if [[ -z $CLOUDSDK_AUTH_ACCESS_TOKEN ]]; then 
+    CLOUDSDK_AUTH_ACCESS_TOKEN="$(gcloud auth print-access-token)"
+  fi 
   echo "username=oauth2accesstoken" >> $GITHUB_OUTPUT
   echo "password=${CLOUDSDK_AUTH_ACCESS_TOKEN}" >> $GITHUB_OUTPUT
   # if the registry variable is not set then guess it 
   if [[ -z "$REGISTRY" ]]; then
-    REGISTRY="${CLOUDSDK_COMPUTE_REGION}-docker.pkg.dev"
+    REGISTRY="${DUPLO_DEFAULT_REGION}-docker.pkg.dev"
     echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
+  fi
+# else if Azure is enabled, use Azure Container Registry authentication
+elif [[ "$AZURE_ENABLED" == "true" ]]; then
+  if [[ -n "$REGISTRY" ]]; then
+    ACR_NAME=$(echo "$REGISTRY" | sed -E 's/\.azurecr\.io$//')
+  else
+    echo "Error: REGISTRY environment variable is not set"
+    exit 1
+  fi
+  TOKEN=$(az acr login --name "$ACR_NAME" --expose-token --output tsv --query accessToken)
+  if [[ $? -eq 0 && -n "$TOKEN" ]]; then
+    echo "Successfully obtained ACR token"
+    echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
+    echo "username=00000000-0000-0000-0000-000000000000" >> $GITHUB_OUTPUT
+    echo "password=${TOKEN}" >> $GITHUB_OUTPUT
+  else
+    echo "Failed to get ACR token"
   fi
 # else it's aws we need to check if push is false or else the registry won't get set
 elif [[ "$AWS_ENABLED" == "true" ]]; then

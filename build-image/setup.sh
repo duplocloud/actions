@@ -38,7 +38,11 @@ else
     REPO="$(basename $GITHUB_REPOSITORY)"
   fi
   # set the image name
-  IMAGE="${REGISTRY}/${REPO}"
+  if [ "$DUPLO_PROVIDER" == "gcp" ]; then
+    IMAGE="${REGISTRY}/${DUPLO_ACCOUNT_ID}/${REPO}"
+  else 
+    IMAGE="${REGISTRY}/${REPO}"
+  fi
 fi
 
 # export short sha for tags
@@ -52,8 +56,22 @@ DATE="$(date -u +"%Y%m%d%H%M")"
 GIT_REF="$(echo ${GITHUB_REF##*/} | sed -e 's/\//_/g')"
 # GIT_REF="$GITHUB_REF_NAME"
 
-# the uri 
-IMG_URI="${IMAGE}:${GIT_SHA}"
+# Set the uri. Generate from tag strategy. If strategy is not set, use the first passed-in tag
+case $TAG_STRATEGY in
+  *GIT_SHA*)
+    IMG_URI="${IMAGE}:${GIT_SHA}"
+    ;;
+  *GIT_REF*)
+    IMG_URI="${IMAGE}:${GIT_REF}"
+    ;;
+  *DATE*)
+    IMG_URI="${IMAGE}:${DATE}"
+    ;;
+  *)
+    IMG_URI="${IMAGE}:${TAGS%% *}"
+    ;;
+esac
+
 
 echo """
 Built environment for Docker command
@@ -65,14 +83,16 @@ Uri: $IMG_URI
 """
 
 # this is for the output
-echo "name=$BUILD_TYPE" >> $GITHUB_OUTPUT
-echo "build_cmd=${BUILD_CMD}" >> $GITHUB_OUTPUT
-echo "build_from_file=${BUILD_FROM_FILE}" >> $GITHUB_OUTPUT
-echo "buildx_enabled=${BUILDX_ENABLED}" >> $GITHUB_OUTPUT
-echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
-echo "image=${IMAGE}" >> $GITHUB_OUTPUT
-echo "repo=${REPO}" >> $GITHUB_OUTPUT
-echo "git_ref=${GIT_REF}" >> $GITHUB_OUTPUT
-echo "git_sha=${GIT_SHA}" >> $GITHUB_OUTPUT
-echo "uri=${IMG_URI}" >> $GITHUB_OUTPUT
-echo "date=${DATE}" >> $GITHUB_OUTPUT
+{
+  echo "name=$BUILD_TYPE"
+  echo "build_cmd=${BUILD_CMD}"
+  echo "build_from_file=${BUILD_FROM_FILE}"
+  echo "buildx_enabled=${BUILDX_ENABLED}"
+  echo "registry=${REGISTRY}"
+  echo "image=${IMAGE}"
+  echo "repo=${REPO}"
+  echo "git_ref=${GIT_REF}"
+  echo "git_sha=${GIT_SHA}"
+  echo "uri=${IMG_URI}"
+  echo "date=${DATE}"
+} >> $GITHUB_OUTPUT

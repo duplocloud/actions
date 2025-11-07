@@ -29,7 +29,7 @@ jobs:
 
     steps:
     - name: Duplo Setup
-      uses: duplocloud/actions/setup@main
+      uses: duplocloud/actions@main
 
     - name: Update Image
       uses: duplocloud/actions/update-image@v1

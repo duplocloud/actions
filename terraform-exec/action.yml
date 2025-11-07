@@ -22,6 +22,13 @@ inputs:
   var-files:
     description: A list of terraform var files to append to the command. This will be relative to the config directory.
     required: false
+  target:
+    description: Specific resource to target
+    required: false
+outputs:
+  planfile: 
+    description: The plan file
+    value: ${{ steps.setup.outputs.planfile || '' }}
 runs:
   using: composite
   steps:
@@ -45,6 +52,7 @@ runs:
       TF_PARALLELISM: ${{ inputs.parallelism }}
       MODULE: ${{ inputs.module }}
       CONFIG_DIR: ${{ github.workspace }}/${{ inputs.config }}
+      TF_TARGET: ${{ inputs.target }}
     run: $GITHUB_ACTION_PATH/setup.sh
   
   - name: Select Workspace
@@ -53,19 +61,10 @@ runs:
     working-directory: ${{ inputs.module }}
     run: terraform workspace select -or-create ${{ inputs.workspace }}
   
-  - name: Check if Plan Exists
-    id: archived-plan
-    continue-on-error: true
-    uses: actions/download-artifact@v4
-    with:
-      name: ${{ env.PLAN_FILE }}
-      path: ${{ inputs.module }}
-  
   - name: Plan Module
     id: plan
     shell: bash
     working-directory: ${{ inputs.module }}
-    if: steps.archived-plan.outcome == 'failure'
     env:
       TF_ARGS: ${{ steps.setup.outputs.args }}
     run: terraform plan $TF_ARGS -out=$PLAN_FILE
@@ -74,14 +73,10 @@ runs:
     id: show
     shell: bash
     working-directory: ${{ inputs.module }}
-    if: |
-      steps.archived-plan.outcome == 'success'
     run: terraform show $PLAN_FILE
   
   - name: Archive Plan
     id: archive-plan
-    if: |
-      steps.archived-plan.outcome == 'failure'
     uses: actions/upload-artifact@v4
     with:
       name: ${{ env.PLAN_FILE }}
