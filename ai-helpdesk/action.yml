@@ -150,11 +150,9 @@ runs:
         AGENT_RESPONSE=$(jq -r '.ai_response.content // empty' /tmp/duploctl_output.json 2>/dev/null || echo "")
 
         if [ -n "$AGENT_RESPONSE" ]; then
-          echo "# Agent Initial Analysis" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
           echo "$AGENT_RESPONSE" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "> **⚠️ Action Required:** Open the [HelpDesk ticket]($CHAT_URL) to review and approve any suggested commands." >> $GITHUB_STEP_SUMMARY
+          echo "> ⚠️ Open the [HelpDesk ticket]($CHAT_URL) to review and approve any suggested commands." >> $GITHUB_STEP_SUMMARY
         fi
       fi
 
