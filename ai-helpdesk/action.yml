@@ -151,6 +151,13 @@ runs:
 
         if [ -n "$AGENT_RESPONSE" ]; then
           echo "$AGENT_RESPONSE" >> $GITHUB_STEP_SUMMARY
+
+          TOOL_COUNT=$(jq '.ai_response.data.tool_calls // [] | length' /tmp/duploctl_output.json 2>/dev/null || echo "0")
+
+          if [ "$TOOL_COUNT" -gt 0 ]; then
+            jq -r '.ai_response.data.tool_calls[]? | "- **\(.name)**: \(.tool_description // "No description")"' /tmp/duploctl_output.json >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
+          fi
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "> ⚠️ Open the [HelpDesk ticket]($CHAT_URL) to review and approve any suggested commands." >> $GITHUB_STEP_SUMMARY
         fi
