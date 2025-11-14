@@ -10,7 +10,7 @@ inputs:
     description: Repository name, defaults to git repo name
     required: false
   registry:
-    description: Registry name, defaults to ecr if on aws.
+    description: Registry name, uses default ecr if on aws.
     required: false
   platforms:
     description: Build multi-arch image with BuildX
@@ -100,7 +100,7 @@ runs:
     if: env.AWS_ENABLED == 'true' && inputs.push == 'true'
     uses: aws-actions/amazon-ecr-login@v2
     with:
-      registries: ${{ inputs.registry || '' }}
+      registries: ${{ steps.login-info.outputs.REGISTRY_ACCOUNT_ID  }}
 
   # do the helper login for gcp only when gcp is enabled
   - name: Token Validity
