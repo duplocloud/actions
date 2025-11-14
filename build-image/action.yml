@@ -100,7 +100,7 @@ runs:
     if: env.AWS_ENABLED == 'true' && inputs.push == 'true'
     uses: aws-actions/amazon-ecr-login@v2
     with:
-      registries: ${{ steps.login-info.outputs.REGISTRY_ACCOUNT_ID  }}
+      registries: ${{ steps.login-info.outputs.REGISTRY_ACCOUNT_ID }}
 
   # do the helper login for gcp only when gcp is enabled
   - name: Token Validity
