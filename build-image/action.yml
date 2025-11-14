@@ -4,13 +4,13 @@ inputs:
   type:
     description: |
       choose one of: docker, buildx, compose, bake
-      This will effect what some of the other inputs mean.
+      This will effect what some of the other inputs mean. 
     default: docker
   repo:
     description: Repository name, defaults to git repo name
     required: false
   registry:
-    description: Registry name, uses default ecr if on aws.
+    description: Registry name, defaults to ecr if on aws. 
     required: false
   platforms:
     description: Build multi-arch image with BuildX
@@ -36,21 +36,21 @@ inputs:
     description: Dockerfile path
     required: false
   file:
-    description: Buildfile path. This if for compose or bake. Builder when using non default file or path.
+    description: Buildfile path. This if for compose or bake. Builder when using non default file or path. 
     required: false
-  output:
+  output: 
     description: The output arg for docker and buildx.
     required: false
   push:
     description: Push image to registry
     required: false
     default: "false"
-  cache:
-    description: Cache image layers if buildx enabled.
+  cache: 
+    description: Cache image layers if buildx enabled. 
     required: false
     default: "true"
-  cache-scope:
-    description: The scope key to identify the cache. Useful when this is used more than once in a workflow.
+  cache-scope: 
+    description: The scope key to identify the cache. Useful when this is used more than once in a workflow. 
     required: false
     default: buildkit
   extra-args:
@@ -75,8 +75,8 @@ outputs:
   uri:
     description: Image URI
     value: ${{ steps.setup.outputs.uri }}
-  tag:
-    description: The sha tag unique to this build.
+  tag: 
+    description: The sha tag unique to this build. 
     value: ${{ steps.setup.outputs.git_sha }}
 
 runs:
@@ -94,13 +94,11 @@ runs:
       DO_PUSH: ${{ inputs.push }}
     run: $GITHUB_ACTION_PATH/login-info.sh
 
-  # first login. Assume ECR for now.
+  # first login. Assume ECR for now. 
   - name: Login to Amazon ECR
     id: login-ecr
     if: env.AWS_ENABLED == 'true' && inputs.push == 'true'
     uses: aws-actions/amazon-ecr-login@v2
-    with:
-      registries: ${{ steps.login-info.outputs.REGISTRY_ACCOUNT_ID }}
 
   # do the helper login for gcp only when gcp is enabled
   - name: Token Validity
@@ -202,7 +200,7 @@ runs:
   - name: Expose GitHub Runtime
     if: steps.setup.outputs.buildx_enabled == 'true'
     uses: crazy-max/ghaction-github-runtime@v3
-
+  
   - name: Setup QEMU
     id: setup-qemu
     if: steps.setup.outputs.buildx_enabled == 'true'
@@ -226,7 +224,7 @@ runs:
       GIT_SHA: ${{ steps.setup.outputs.git_sha }}
       GIT_REF: ${{ steps.setup.outputs.git_ref }}
     run: ${{ steps.summary.outputs.command }} --print
-
+        
   - name: Docker Build
     id: build
     shell: bash
