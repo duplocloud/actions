@@ -37,21 +37,25 @@ elif [[ "$AZURE_ENABLED" == "true" ]]; then
   fi
 # else it's aws we need to check if push is false or else the registry won't get set
 elif [[ "$AWS_ENABLED" == "true" ]]; then
-  # If the registry is not set then default it to the default region
+  # If the registry is not set, use the default ECR registry
   if [[ -z "$REGISTRY" ]]; then
     REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
     echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
     echo "registry_account_id=${REGISTRY_ACCOUNT_ID}" >> $GITHUB_OUTPUT
   else #If user provides a registry, extract the account id to pass to aws ecr login
-    printf "\nParsing user provided registry\n$REGISTRY\n"
-    REGISTRY=${REGISTRY}
-    REGISTRY_ACCOUNT_ID=${REGISTRY:0:12}
-    echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
-    echo "registry_account_id=${REGISTRY_ACCOUNT_ID}" >> $GITHUB_OUTPUT
+    if [[ "$REGISTRY" =~ ^[0-9]{12}.dkr.ecr.[a-z0-9-]+.amazonaws.com$ ]]; then
+      REGISTRY=${REGISTRY}
+      REGISTRY_ACCOUNT_ID=${REGISTRY:0:12}
+      echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
+      echo "registry_account_id=${REGISTRY_ACCOUNT_ID}" >> $GITHUB_OUTPUT
+    else
+      printf "\nExpected registry to be a valid AWS ECR Registry in the form of 012345678912.dkr.ecr.us-east-1.amazonaws.com, but got ${REGISTRY}\n"
   fi
 fi
 
 # finally check one last time if the registry is set, if not then set it to public dockerhub
 if [[ -z "$REGISTRY" ]]; then
   echo "registry=docker.io" >> $GITHUB_OUTPUT
+else
+  echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
 fi
