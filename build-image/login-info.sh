@@ -49,7 +49,9 @@ elif [[ "$AWS_ENABLED" == "true" ]]; then
       echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
       echo "registry_account_id=${REGISTRY_ACCOUNT_ID}" >> $GITHUB_OUTPUT
     else
+      # We exit here because the rest of this action assumes ECR if you're on AWS
       printf "\nExpected registry to be a valid AWS ECR Registry in the form of 012345678912.dkr.ecr.us-east-1.amazonaws.com, but got ${REGISTRY}\n"
+      exit 1
     fi
   fi
 fi
