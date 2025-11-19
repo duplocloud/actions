@@ -10,8 +10,8 @@ inputs:
     description: Repository name, defaults to git repo name
     required: false
   registry:
-    description: Registry name, defaults to ecr if on aws.
-    required: false
+    description: Registry name, uses default ecr if on aws.
+    required: false 
   platforms:
     description: Build multi-arch image with BuildX
     required: false

@@ -41,7 +41,7 @@ elif [[ "$AWS_ENABLED" == "true" ]]; then
   if [[ -z "$REGISTRY" ]]; then
     REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
     echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
-    echo "registry_account_id=${REGISTRY_ACCOUNT_ID}" >> $GITHUB_OUTPUT
+    echo "registry_account_id=${AWS_ACCOUNT_ID}" >> $GITHUB_OUTPUT
   else #If user provides a registry, extract the account id to pass to aws ecr login
     if [[ "$REGISTRY" =~ ^[0-9]{12}.dkr.ecr.[a-z0-9-]+.amazonaws.com$ ]]; then
       REGISTRY=${REGISTRY}
