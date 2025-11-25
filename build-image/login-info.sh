@@ -47,4 +47,7 @@ fi
 # finally check one last time if the registry is set, if not then set it to public dockerhub
 if [[ -z "$REGISTRY" ]]; then
   echo "registry=docker.io" >> $GITHUB_OUTPUT
+else
+  # If the REGISTRY var was set, pass it through outputs so it's seen by downstream steps.
+  echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
 fi
