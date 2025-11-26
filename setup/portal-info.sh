@@ -1,6 +1,53 @@
 #!/usr/bin/env bash
 
-PORTAL_INFO="$(duploctl system info)"
+# Validate required environment variables
+if [ -z "$DUPLO_TOKEN" ]; then
+  echo "ERROR: DUPLO_TOKEN environment variable is not set"
+  echo "Please ensure DUPLO_TOKEN is set in your GitHub workflow before calling this action"
+  exit 1
+fi
+
+if [ -z "$DUPLO_HOST" ]; then
+  echo "ERROR: DUPLO_HOST environment variable is not set"
+  echo "Please ensure DUPLO_HOST is set in your GitHub workflow before calling this action"
+  exit 1
+fi
+
+# Fetch portal info with retry logic
+MAX_RETRIES=5
+RETRY_DELAY=2
+ATTEMPT=1
+
+while [ $ATTEMPT -le $MAX_RETRIES ]; do
+  echo "Fetching portal info (attempt $ATTEMPT/$MAX_RETRIES)..."
+  
+  if PORTAL_INFO="$(duploctl system info 2>&1)"; then
+    # Validate that we got valid JSON response
+    if echo "$PORTAL_INFO" | jq empty 2>/dev/null; then
+      echo "Successfully retrieved portal info"
+      break
+    else
+      echo "WARNING: Invalid JSON response from duploctl system info"
+      echo "Response: $PORTAL_INFO"
+    fi
+  else
+    echo "WARNING: Failed to get portal info from duploctl"
+    echo "Output: $PORTAL_INFO"
+  fi
+  
+  # If this was the last attempt, exit with error
+  if [ $ATTEMPT -eq $MAX_RETRIES ]; then
+    echo "ERROR: Failed to get valid portal info after $MAX_RETRIES attempts"
+    exit 1
+  fi
+  
+  # Wait before retrying with linear backoff
+  WAIT_TIME=$((RETRY_DELAY * ATTEMPT))
+  echo "Retrying in $WAIT_TIME seconds..."
+  sleep $WAIT_TIME
+  
+  ATTEMPT=$((ATTEMPT + 1))
+done
 
 AWS_ENABLED="$(echo "$PORTAL_INFO" | jq -r '.IsAwsCloudEnabled')"
 GCP_ENABLED="$(echo "$PORTAL_INFO" | jq -r '.IsGoogleCloudEnabled')"
