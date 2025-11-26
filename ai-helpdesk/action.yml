@@ -21,6 +21,10 @@ inputs:
     description: Whether to include sensitive data (repository, actor, branch, commit) in ticket context
     required: false
     default: 'true'
+  hide_response:
+    description: 'Hide the agent response in the summary. Response is shown by default.'
+    required: false
+    default: 'false'
   agent_name:
     description: 'Name of the AI agent to handle the ticket'
     required: true
@@ -129,16 +133,38 @@ runs:
     env:
       AGENT_NAME: ${{ inputs.agent_name }}
       AGENT_INSTANCE: ${{ inputs.agent_instance }}
+      HIDE_RESPONSE: ${{ inputs.hide_response }}
     run: |
       TICKET_NAME=$(grep -o '"ticketname": "[^"]*"' /tmp/duploctl_output.json | cut -d'"' -f4 || echo "")
       CHAT_URL=$(grep -o '"chat_url": "[^"]*"' /tmp/duploctl_output.json | cut -d'"' -f4 || echo "")
 
-      echo "## AI HelpDesk Ticket Created" > $GITHUB_STEP_SUMMARY
+      echo "# AI HelpDesk Ticket Created" > $GITHUB_STEP_SUMMARY
       [ -n "$CHAT_URL" ] && echo "**Chat URL:** [$CHAT_URL]($CHAT_URL)" >> $GITHUB_STEP_SUMMARY
       [ -n "$TICKET_NAME" ] && echo "**Ticket:** \`$TICKET_NAME\`" >> $GITHUB_STEP_SUMMARY
       echo "**Agent:** \`$AGENT_NAME\`" >> $GITHUB_STEP_SUMMARY
       echo "**Instance:** \`$AGENT_INSTANCE\`" >> $GITHUB_STEP_SUMMARY
       echo "**Tenant:** \`$DUPLO_TENANT\`" >> $GITHUB_STEP_SUMMARY
+      echo "" >> $GITHUB_STEP_SUMMARY
+
+      if [ "$HIDE_RESPONSE" != "true" ]; then
+        AGENT_RESPONSE=$(jq -r '.ai_response.content // empty' /tmp/duploctl_output.json 2>/dev/null || echo "")
+
+        if [ -n "$AGENT_RESPONSE" ]; then
+          echo "$AGENT_RESPONSE" >> $GITHUB_STEP_SUMMARY
+
+          TOOL_COUNT=$(jq '.ai_response.data.tool_calls // [] | length' /tmp/duploctl_output.json 2>/dev/null || echo "0")
+
+          if [ "$TOOL_COUNT" -gt 0 ]; then
+            jq -r '.ai_response.data.tool_calls[]? | "- \(.name): \(.tool_description // "No description")"' /tmp/duploctl_output.json >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
+            MESSAGE="review and approve the suggested commands"
+          else
+            MESSAGE="continue the conversation"
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Open the [HelpDesk ticket]($CHAT_URL) to $MESSAGE.**" >> $GITHUB_STEP_SUMMARY
+        fi
+      fi
 
       echo "AI HelpDesk ticket created successfully"
       cat /tmp/duploctl_output.json
