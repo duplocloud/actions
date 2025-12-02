@@ -8,7 +8,11 @@ and this project adheres to
 
 ## [Unreleased]
 
-Added var-files for terraform-exec action, to allow custom tfvars.json files to be used
+### Added
+- Added var-files for terraform-exec action, to allow custom tfvars.json files to be used
+
+### Changed
+- Updated ai-helpdesk action to display the first agent response in the summary by default with optional `hide_response` parameter
 
 ## [0.0.13] - 2025-09-23
 
