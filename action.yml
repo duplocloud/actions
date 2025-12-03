@@ -34,6 +34,14 @@ inputs:
     required: false
     description: Install from source using the version as the git ref.
     default: "false"
+  jit:
+    required: false
+    description: Enable JIT (Just-In-Time) authentication for cloud providers.
+    default: "true"
+  cloud-cli:
+    required: false
+    description: Enable cloud CLI installation and configuration (AWS CLI, gcloud, Azure CLI).
+    default: "true"
 runs:
   using: composite
   steps:
@@ -108,13 +116,13 @@ runs:
 
   - name: Install AWS CLI
     id: setup-aws-cli
-    if: env.AWS_ENABLED == 'true'
+    if: env.AWS_ENABLED == 'true' && inputs.cloud-cli == 'true'
     uses: unfor19/install-aws-cli-action@v1
 
   - name: Duplo JIT for AWS
     id: duplo-jit-aws
     shell: bash
-    if: env.AWS_ENABLED == 'true'
+    if: env.AWS_ENABLED == 'true' && inputs.jit == 'true'
     env:
       AWS_REGION: ${{ inputs.region }}
       ADMIN_FLAG: ${{ steps.portal-info.outputs.ADMIN_FLAG }}
@@ -129,7 +137,7 @@ runs:
   - name: Configure AWS IAM Credentials
     id: aws-iam
     uses: aws-actions/configure-aws-credentials@v4
-    if: env.AWS_ENABLED == 'true'
+    if: env.AWS_ENABLED == 'true' && inputs.jit == 'true'
     with:
       aws-access-key-id: ${{ steps.duplo-jit-aws.outputs.AWS_ACCESS_KEY_ID }}
       aws-secret-access-key: ${{ steps.duplo-jit-aws.outputs.AWS_SECRET_ACCESS_KEY }}
@@ -145,7 +153,7 @@ runs:
   - name: Duplo JIT for GCP
     id: duplo-jit-gcp
     shell: bash
-    if: env.GCP_ENABLED == 'true' && !inputs.credentials
+    if: env.GCP_ENABLED == 'true' && inputs.jit == 'true' && !inputs.credentials
     env:
       CLOUDSDK_COMPUTE_REGION: ${{ inputs.region || env.DUPLO_DEFAULT_REGION }}
     run: |
@@ -166,7 +174,7 @@ runs:
   - name: Authenticate to Google Cloud
     id: login-gcp
     uses: google-github-actions/auth@v2
-    if: env.GCP_ENABLED == 'true' && inputs.credentials
+    if: env.GCP_ENABLED == 'true' && inputs.jit == 'true' && inputs.credentials
     with:
       credentials_json: ${{ inputs.credentials }}
       export_environment_variables: true
@@ -174,14 +182,14 @@ runs:
   - name: Set up Cloud SDK
     id: setup-gcloud
     uses: google-github-actions/setup-gcloud@v2
-    if: env.GCP_ENABLED == 'true'
+    if: env.GCP_ENABLED == 'true' && inputs.cloud-cli == 'true'
     with:
       version: '>= 363.0.0'
 
   - name: GCloud Info
     id: gcloud-info
     shell: bash
-    if: env.GCP_ENABLED == 'true'
+    if: env.GCP_ENABLED == 'true' && inputs.cloud-cli == 'true'
     run: |
       gcloud info
 
@@ -192,14 +200,14 @@ runs:
   - name: Azure Login
     id: login-azure
     uses: azure/login@v2
-    if: env.AZURE_ENABLED == 'true' && inputs.credentials
+    if: env.AZURE_ENABLED == 'true' && inputs.jit == 'true' && inputs.credentials
     with:
       creds: ${{ inputs.credentials }}
 
   - name: Azure CLI script
     id: setup-azure-cli
     uses: azure/CLI@v2
-    if: env.AZURE_ENABLED == 'true' && inputs.credentials
+    if: env.AZURE_ENABLED == 'true' && inputs.cloud-cli == 'true' && inputs.credentials
     with:
       azcliversion: 2.57.0
       inlineScript: |
