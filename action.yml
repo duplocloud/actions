@@ -200,7 +200,7 @@ runs:
   - name: Azure Login
     id: login-azure
     uses: azure/login@v2
-    if: env.AZURE_ENABLED == 'true' && inputs.cloud-cli == 'true' && inputs.credentials
+    if: env.AZURE_ENABLED == 'true' && inputs.jit == 'true' && inputs.credentials
     with:
       creds: ${{ inputs.credentials }}
 
