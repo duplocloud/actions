@@ -8,12 +8,12 @@ if [[ -n "$DOCKER_USERNAME" ]]; then
   echo "password=${DOCKER_PASSWORD}" >> $GITHUB_OUTPUT
 # else if there is no username and GCP_ENABLED is true then use the gcloud auth
 elif [[ "$GCP_ENABLED" == "true" ]]; then
-  if [[ -z $CLOUDSDK_AUTH_ACCESS_TOKEN ]]; then 
+  if [[ -z $CLOUDSDK_AUTH_ACCESS_TOKEN ]]; then
     CLOUDSDK_AUTH_ACCESS_TOKEN="$(gcloud auth print-access-token)"
-  fi 
+  fi
   echo "username=oauth2accesstoken" >> $GITHUB_OUTPUT
   echo "password=${CLOUDSDK_AUTH_ACCESS_TOKEN}" >> $GITHUB_OUTPUT
-  # if the registry variable is not set then guess it 
+  # if the registry variable is not set then guess it
   if [[ -z "$REGISTRY" ]]; then
     REGISTRY="${DUPLO_DEFAULT_REGION}-docker.pkg.dev"
     echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
@@ -37,10 +37,22 @@ elif [[ "$AZURE_ENABLED" == "true" ]]; then
   fi
 # else it's aws we need to check if push is false or else the registry won't get set
 elif [[ "$AWS_ENABLED" == "true" ]]; then
-  # If the registry is not set then default it to the default region
+  # If the registry is not set, use the default ECR registry
   if [[ -z "$REGISTRY" ]]; then
     REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
     echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
+    echo "registry_account_id=${AWS_ACCOUNT_ID}" >> $GITHUB_OUTPUT
+  else #If user provides a registry, extract the account id to pass to aws ecr login
+    if [[ "$REGISTRY" =~ ^[0-9]{12}.dkr.ecr.[a-z0-9-]+.amazonaws.com$ ]]; then
+      REGISTRY=${REGISTRY}
+      REGISTRY_ACCOUNT_ID=${REGISTRY:0:12}
+      echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
+      echo "registry_account_id=${REGISTRY_ACCOUNT_ID}" >> $GITHUB_OUTPUT
+    else
+      # We exit here because the rest of this action assumes ECR if you're on AWS
+      printf "\nExpected registry to be a valid AWS ECR Registry in the form of 012345678912.dkr.ecr.us-east-1.amazonaws.com, but got ${REGISTRY}\n"
+      exit 1
+    fi
   fi
 fi
 
