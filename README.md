@@ -28,6 +28,8 @@ The following input variables can be configured:
 | `account-id`      | Overide the cloud account id from the default. Required when on gcp/azure where this would be the project name or directory name. | `false`  |               |
 | `credentials`     | Cloud credentials for Azure or GCP. Leave this null for gcp jit                                        | `false`  |               |
 | `version`        | Duplo version to install.                                                    | `false`  | `latest`      |
+| `jit`             | Enable JIT (Just-In-Time) authentication for cloud providers.               | `false`  | `true`        |
+| `cloud-cli`       | Enable cloud CLI installation and configuration (AWS CLI, gcloud, Azure CLI). | `false`  | `true`        |
 
 
 ## Usage

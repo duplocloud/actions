@@ -11,6 +11,10 @@ and this project adheres to
 ### Added 
 
 - New run-job action for running Kubernetes jobs via duploctl which deprecates the k8s-job action
+- Added var-files for terraform-exec action, to allow custom tfvars.json files to be used
+
+### Changed
+- Updated ai-helpdesk action to display the first agent response in the summary by default with optional `hide_response` parameter
 
 ## [0.0.13] - 2025-09-23
 
@@ -23,6 +27,10 @@ and this project adheres to
 - Added target input to terraform-exec action
 - Added `ai-helpdesk` action for creating HelpDesk tickets from workflows
 - Added `update-images` action for bulk updating multiple service images
+
+### Changed
+
+- Removed the step that checks if the plan artifact exists in Terraform workflow
 
 ## [0.0.12] - 2025-04-15
 
