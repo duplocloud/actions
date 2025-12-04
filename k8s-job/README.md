@@ -1,5 +1,7 @@
 # Kubernetes Job Runner  
 
+> ⚠️ **DEPRECATED**: This action is deprecated and will be removed in a future release. Please use [duplocloud/actions/run-job](../run-job) instead, which offers improved integration with DuploCloud through the `duploctl` CLI.
+
 An action to run an arbitrary Kubernetes job and watch it until it completes or fails. This action reports back the final status as well as the logs from the job. It also provides an optional delay before the job is cleaned up, useful for debugging.
 
 ## Inputs
@@ -72,3 +74,33 @@ jobs:
         timeout: 300s
         cleanup_delay: 3600  # Optional delay for debugging purposes
 ```
+
+## Migration to run-job
+
+To migrate to the new `run-job` action, update your workflow as follows:
+
+```yaml
+name: DuploCloud Job
+on:
+- push
+jobs:
+  run-duplo-job:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    # Setup DuploCloud authentication
+    - name: DuploCloud Setup
+      uses: duplocloud/actions@main
+      
+    # Run the job using the new action
+    - name: Run Job
+      uses: duplocloud/actions/run-job@main
+      with:
+        file: job.yaml
+        wait: true
+        loglevel: INFO
+```
+
+The `run-job` action uses `duploctl` directly, providing better integration with DuploCloud. Note that the job format for `duploctl` is slightly different - see the [run-job documentation](../run-job) for examples.

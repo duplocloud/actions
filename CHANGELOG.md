@@ -8,7 +8,9 @@ and this project adheres to
 
 ## [Unreleased]
 
-### Added
+### Added 
+
+- New run-job action for running Kubernetes jobs via duploctl which deprecates the k8s-job action
 - Added var-files for terraform-exec action, to allow custom tfvars.json files to be used
 
 ### Changed
