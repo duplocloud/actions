@@ -34,6 +34,9 @@ if [[ -n "$OUTPUT" ]]; then
   ARGS+=(--output "${OUTPUT}")
 fi
 
+
+
+
 # if push is true then add the arg
 if [[ "$PUSH" == "true" ]]; then
   ARGS+=(--push)
@@ -43,6 +46,12 @@ fi
 build_args=($BUILD_ARGS)
 for arg in ${build_args[*]}; do
   ARGS+=(--build-arg "${arg}")
+done
+
+# Add any secrets
+secrets=($SECRETS)
+for arg in ${secrets[*]}; do
+  ARGS+=(--secret "${arg}")
 done
 
 # Add the fancy tags
@@ -61,6 +70,7 @@ TAGS=(
 for tag in ${TAGS[*]}; do
   ARGS+=(--tag "${IMAGE}:${tag}")
 done
+
 
 # finally add the context
 ARGS+=("${CONTEXT}")

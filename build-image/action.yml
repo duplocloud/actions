@@ -45,6 +45,9 @@ inputs:
     description: Push image to registry
     required: false
     default: "false"
+  secrets: 
+    description: Docker build secrets values e.g.  
+    required: false
   cache:
     description: Cache image layers if buildx enabled.
     required: false
@@ -170,6 +173,7 @@ runs:
       GIT_SHA: ${{ steps.setup.outputs.git_sha }}
       GIT_REF: ${{ steps.setup.outputs.git_ref }}
       DATE: ${{ steps.setup.outputs.date }}
+      SECRETS: ${{ inputs.secrets }}
     run: $GITHUB_ACTION_PATH/cli-args.sh
 
   - name: Setup Buildfile Args
