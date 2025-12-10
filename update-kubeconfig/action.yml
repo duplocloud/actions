@@ -1,0 +1,24 @@
+name: Duplocloud
+description: Get a kubeconfig for the existing duplo environment
+author: duplocloud
+branding:
+  icon: cloud
+  color: orange
+inputs:
+  duplo_infrastructure_name:
+    description: 'The name of the Duplo infrastructure'
+    required: true
+runs:
+  using: composite
+  steps:
+  - name: Check if Duploctl is installed
+    id: duplo-version
+    shell: bash
+    run: |
+      duploctl version
+      echo "duploctl is installed, can proceed"
+  - name: Update kubeconfig
+    id: duplo-jit-aws
+    shell: bash
+    run: >-
+      duploctl jit update_kubeconfig --plan ${inputs.duplo_infrastructure_name} --admin
