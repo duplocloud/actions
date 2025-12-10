@@ -21,4 +21,4 @@ runs:
     id: duplo-jit-aws
     shell: bash
     run: >-
-      duploctl jit update_kubeconfig --plan ${inputs.duplo_infrastructure_name} --admin
+      duploctl jit update_kubeconfig --plan ${{inputs.duplo_infrastructure_name}} --admin
