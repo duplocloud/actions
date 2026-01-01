@@ -78,7 +78,7 @@ runs:
   
   - name: Archive Plan
     id: archive-plan
-    uses: actions/upload-artifact@v5
+    uses: actions/upload-artifact@v6
     with:
       name: ${{ env.PLAN_FILE }}
       path: ${{ inputs.module }}/${{ env.PLAN_FILE }}
