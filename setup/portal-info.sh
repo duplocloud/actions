@@ -15,37 +15,52 @@ fi
 
 # Fetch portal info with retry logic
 MAX_RETRIES=5
-RETRY_DELAY=2
+BASE_DELAY=2
 ATTEMPT=1
 
 while [ $ATTEMPT -le $MAX_RETRIES ]; do
   echo "Fetching portal info (attempt $ATTEMPT/$MAX_RETRIES)..."
-  
+
   if PORTAL_INFO="$(duploctl system info 2>&1)"; then
     # Validate that we got valid JSON response
     if echo "$PORTAL_INFO" | jq empty 2>/dev/null; then
-      echo "Successfully retrieved portal info"
-      break
+      # Additional validation: check if response contains error indicators
+      if echo "$PORTAL_INFO" | jq -e 'type == "object"' > /dev/null 2>&1; then
+        echo "Successfully retrieved portal info"
+        break
+      else
+        echo "WARNING: Response is not a valid JSON object"
+        echo "Response: $PORTAL_INFO"
+      fi
     else
       echo "WARNING: Invalid JSON response from duploctl system info"
       echo "Response: $PORTAL_INFO"
     fi
   else
-    echo "WARNING: Failed to get portal info from duploctl"
+    EXIT_CODE=$?
+    echo "WARNING: Failed to get portal info from duploctl (exit code: $EXIT_CODE)"
     echo "Output: $PORTAL_INFO"
   fi
-  
+
   # If this was the last attempt, exit with error
   if [ $ATTEMPT -eq $MAX_RETRIES ]; then
     echo "ERROR: Failed to get valid portal info after $MAX_RETRIES attempts"
+    echo "This may indicate intermittent connectivity issues or API rate limiting"
+    echo "Last response received: $PORTAL_INFO"
     exit 1
   fi
-  
-  # Wait before retrying with linear backoff
-  WAIT_TIME=$((RETRY_DELAY * ATTEMPT))
-  echo "Retrying in $WAIT_TIME seconds..."
+
+  # Wait before retrying with exponential backoff + jitter
+  # Exponential: 2^(attempt-1) * BASE_DELAY
+  # Jitter: random value between 0-1 seconds
+  EXPONENTIAL_DELAY=$((BASE_DELAY * (2 ** (ATTEMPT - 1))))
+  JITTER=$((RANDOM % 1000))  # 0-999 milliseconds
+  WAIT_TIME=$((EXPONENTIAL_DELAY))
+
+  echo "Retrying in $WAIT_TIME seconds (with jitter)..."
   sleep $WAIT_TIME
-  
+  sleep 0.$JITTER
+
   ATTEMPT=$((ATTEMPT + 1))
 done
 
