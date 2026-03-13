@@ -75,7 +75,7 @@ runs:
       terraform_version: ${{ env.TF_VERSION }}
       
   - name: Setup TFLint
-    uses: terraform-linters/setup-tflint@v4
+    uses: terraform-linters/setup-tflint@v6
     if: env.LINT_ENABLED == 'true'
     with:
       tflint_version: ${{ inputs.tflint_version }}

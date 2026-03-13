@@ -53,11 +53,12 @@ jobs:
         registry: my-registry
         platforms: linux/amd64,linux/arm64
         build-args: >
-          --build-arg MY_VAR=value
+          MY_VAR=value
         context: ./app
         dockerfile: Dockerfile.dev
         push: true
         cache: true
+        extra-args: --ssh=default=$SSH_AUTH_SOCK
 ```
 
 ## References 
