@@ -8,8 +8,6 @@ and this project adheres to
 
 ## [Unreleased]
 
-## [0.0.14] - 2026-03-19
-
 ### Added
 
 - Added logging support to bulk-image-update
