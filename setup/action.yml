@@ -8,7 +8,7 @@ inputs:
   mask-account-id:
     description: Mask AWS Account ID in logs
     required: false
-    default: 'yes'
+    default: 'true'
   region: 
     required: false
     description: Overide the cloud region from the default. For gcp this is required.  
@@ -148,14 +148,14 @@ runs:
 
   - name: Configure AWS IAM Credentials
     id: aws-iam
-    uses: aws-actions/configure-aws-credentials@v5
+    uses: aws-actions/configure-aws-credentials@v6
     if: env.AWS_ENABLED == 'true'
     with:
       aws-access-key-id: ${{ steps.duplo-jit-aws.outputs.AWS_ACCESS_KEY_ID }}
       aws-secret-access-key: ${{ steps.duplo-jit-aws.outputs.AWS_SECRET_ACCESS_KEY }}
       aws-session-token: ${{ steps.duplo-jit-aws.outputs.AWS_SESSION_TOKEN }}
       aws-region: ${{ env.AWS_REGION || steps.duplo-jit-aws.outputs.AWS_REGION }}
-      mask-aws-account-id: ${{ inputs.mask-account-id }}
+      mask-aws-account-id: ${{ contains(fromJSON('["true","True","TRUE","yes","Yes","YES"]'), inputs.mask-account-id) && 'true' || 'false' }}
 
   ###
   # GCP Configuration Flow
