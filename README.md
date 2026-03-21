@@ -23,7 +23,7 @@ The following input variables can be configured:
 
 | Name              | Description                                                                 | Required | Default Value |
 |-------------------|-----------------------------------------------------------------------------|----------|---------------|
-| `mask-account-id` | Mask AWS Account ID in logs                                                 | `false`  | `true`        |
+| `mask-account-id` | Mask AWS Account ID in logs                                                 | `false`  | `false`       |
 | `region`          | Overide the cloud region from the default. For gcp this is required.        | `false`  |               |
 | `account-id`      | Overide the cloud account id from the default. Required when on gcp/azure where this would be the project name or directory name. | `false`  |               |
 | `credentials`     | Cloud credentials for Azure or GCP. Leave this null for gcp jit                                        | `false`  |               |
