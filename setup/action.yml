@@ -8,7 +8,7 @@ inputs:
   mask-account-id:
     description: Mask AWS Account ID in logs
     required: false
-    default: 'true'
+    default: 'false'
   region: 
     required: false
     description: Overide the cloud region from the default. For gcp this is required.  
