@@ -11,7 +11,7 @@ inputs:
     default: 'false'
   region: 
     required: false
-    description: Overide the cloud region from the default. For gcp this is required.
+    description: Overide the cloud region from the default. For gcp this is required.  
   account-id: 
     required: false
     description: Overide the cloud account id from the default. Required when on gcp where this would be the project name. 
