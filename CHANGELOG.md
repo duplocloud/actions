@@ -12,6 +12,10 @@ and this project adheres to
 
 - Restored `mask-account-id` default to `false`, matching the historical effective behavior where the previous default of `'yes'` was silently evaluated as `false` by `aws-actions/configure-aws-credentials@v4`
 
+### Added
+
+- Added support for --wait-timeout for bulk and standard image updates
+
 ## [0.0.14] - 2026-03-19
 
 ### Added
