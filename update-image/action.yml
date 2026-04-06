@@ -15,6 +15,9 @@ inputs:
     description: Wait for deployment
     required: false
     default: "false"
+  wait_timeout:
+    description: Timeout in seconds for the wait operation
+    required: false
 
 runs:
   using: composite
@@ -38,7 +41,11 @@ runs:
       IMAGE: ${{ inputs.image }}
     run: |
       if [[ "${{ inputs.wait }}" == "true" ]]; then
-        duploctl $RESOURCE update_image $NAME $IMAGE --wait
+        WAIT_ARGS="--wait"
+        if [[ -n "${{ inputs.wait_timeout }}" ]]; then
+          WAIT_ARGS="$WAIT_ARGS --wait-timeout ${{ inputs.wait_timeout }}"
+        fi
+        duploctl $RESOURCE update_image $NAME $IMAGE $WAIT_ARGS
       else
         duploctl $RESOURCE update_image $NAME $IMAGE
       fi

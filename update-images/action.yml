@@ -14,6 +14,9 @@ inputs:
     description: Wait for all deployments to complete
     required: false
     default: "false"
+  wait_timeout:
+    description: Timeout in seconds for the wait operation
+    required: false
   loglevel:
     description: Log level for duploctl output
     required: false
@@ -29,6 +32,7 @@ runs:
     env:
       SERVICES: ${{ inputs.services }}
       WAIT: ${{ inputs.wait }}
+      WAIT_TIMEOUT: ${{ inputs.wait_timeout }}
       LOGLEVEL: ${{ inputs.loglevel }}
     run: |
       set -euo pipefail
@@ -43,6 +47,9 @@ runs:
       # Add wait flag if requested
       if [ "$WAIT" = "true" ]; then
         DUPLOCTL_ARGS+=("--wait")
+        if [ -n "$WAIT_TIMEOUT" ]; then
+          DUPLOCTL_ARGS+=("--wait-timeout" "$WAIT_TIMEOUT")
+        fi
       fi
 
       # Add service-image pairs
