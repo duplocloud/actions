@@ -21,7 +21,7 @@ on:
 jobs:
   info:
     runs-on: ubuntu-latest
-    environment:
+    environment: 
       name: ${{ inputs.environment }}
     steps:
 
@@ -29,7 +29,7 @@ jobs:
       env:
         GITHUB_CONTEXT: ${{ toJson(github) }}
       run: echo "$GITHUB_CONTEXT"
-
+    
     - name: Print ENV
       env:
         GITHUB_CONTEXT: ${{ toJson(github) }}
@@ -39,7 +39,7 @@ jobs:
       env:
         NAME: ${{ inputs.name }}
       run: |
-
+        
         if [ -z "$NAME" ]; then
           echo "-z is true"
         else
@@ -51,12 +51,12 @@ jobs:
         else
           echo "The name is empty"
         fi
-
+        
     - name: Print list of things
       env:
         LIST_OF_THINGS: ${{ inputs.list_of_things }}
       run: |
-
+        
         # loop each item in the space delimited list
         for item in $LIST_OF_THINGS; do
           echo "item: $item"
@@ -65,70 +65,4 @@ jobs:
     - name: The Job
       run: |
         echo '${{ toJSON(env) }}'
-
-  test-rules:
-    name: Test Rules Action (Node24)
-    runs-on: ubuntu-latest
-    steps:
-
-    - uses: actions/checkout@v6
-
-    - name: Run rules action
-      uses: ./rules
-      with:
-        current_environment: dev
-        protected_environment: prod
-        team: engineering
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-
-  test-release:
-    name: Test Release Script (Node24)
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-
-    - uses: actions/checkout@v6
-
-    - name: Create test release
-      id: release
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        BADGE_LINE: "Test badge line"
-        RELEASE_NOTES: "Test release notes for Node24 upgrade verification."
-      shell: bash
-      run: |
-        TEST_TAG="v0.0.0-test-node24-$(date +%s)"
-        git tag "$TEST_TAG"
-        git push origin "$TEST_TAG"
-        printf '%s\n\n%s\n' "$BADGE_LINE" "$RELEASE_NOTES" > /tmp/release-body.md
-        RELEASE_URL=$(gh release create "$TEST_TAG" \
-          --title "$TEST_TAG" \
-          --notes-file /tmp/release-body.md \
-          --prerelease)
-        echo "url=$RELEASE_URL" >> $GITHUB_OUTPUT
-        echo "tag=$TEST_TAG" >> $GITHUB_OUTPUT
-        echo "Release URL: $RELEASE_URL"
-
-    - name: Verify output
-      shell: bash
-      run: |
-        echo "Release URL output: ${{ steps.release.outputs.url }}"
-        if [ -z "${{ steps.release.outputs.url }}" ]; then
-          echo "ERROR: url output was not set"
-          exit 1
-        fi
-        echo "URL output is set correctly."
-
-    - name: Cleanup test release
-      if: always()
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      shell: bash
-      run: |
-        TAG="${{ steps.release.outputs.tag }}"
-        if [ -n "$TAG" ]; then
-          gh release delete "$TAG" --yes 2>/dev/null || true
-          git push origin ":refs/tags/$TAG" 2>/dev/null || true
-          echo "Cleaned up test release and tag: $TAG"
-        fi
+        
