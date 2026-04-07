@@ -18,7 +18,7 @@ runs:
   steps:
   
   - name: Get User Group
-    uses: octokit/request-action@v3
+    uses: octokit/request-action@v3.0.0
     id: get_user_groups
     env:
       GITHUB_TOKEN: ${{ inputs.github-token }}
