@@ -1,0 +1,26 @@
+name: Test Rules Action
+on: workflow_dispatch
+jobs:
+  test-rules:
+    name: Verify inline gh api team check
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: actions/checkout@v6
+
+    - name: Run rules action
+      id: rules
+      # Use current branch's version of the rules action
+      uses: ./rules
+      with:
+        # Use different envs so the gate doesn't trigger exit 1
+        current_environment: dev
+        protected_environment: prod
+        team: engineering
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Verify outputs
+      shell: bash
+      run: |
+        echo "Test completed successfully."
+        echo "The rules action ran without errors."

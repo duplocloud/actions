@@ -180,7 +180,7 @@ runs:
 
   - name: Authenticate to Google Cloud
     id: login-gcp
-    uses: google-github-actions/auth@v2
+    uses: google-github-actions/auth@v3
     if: env.GCP_ENABLED == 'true' && inputs.credentials
     with:
       credentials_json: ${{ inputs.credentials }}
@@ -188,7 +188,7 @@ runs:
 
   - name: Set up Cloud SDK
     id: setup-gcloud
-    uses: google-github-actions/setup-gcloud@v2
+    uses: google-github-actions/setup-gcloud@v3
     if: env.GCP_ENABLED == 'true'
     with:
       version: '>= 363.0.0'
@@ -206,14 +206,14 @@ runs:
 
   - name: Azure Login
     id: login-azure
-    uses: azure/login@v2
+    uses: azure/login@v3
     if: env.AZURE_ENABLED == 'true' && inputs.credentials
     with:
       creds: ${{ inputs.credentials }}
 
   - name: Azure CLI script
     id: setup-azure-cli
-    uses: azure/CLI@v2
+    uses: azure/CLI@v3
     if: env.AZURE_ENABLED == 'true' && inputs.credentials
     with:
       azcliversion: 2.57.0

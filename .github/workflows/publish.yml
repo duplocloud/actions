@@ -60,16 +60,17 @@ jobs:
     - name: Create Release
       id: release
       if: inputs.push
-      uses: softprops/action-gh-release@v2
-      with:
-        token: ${{ steps.app-token.outputs.token }}
-        name: ${{ steps.bump.outputs.tag }}
-        tag_name: ${{ steps.bump.outputs.tag }}
-        prerelease: false
-        body: |
-          [![Publish](${{ github.server_url }}/${{ github.repository }}/actions/workflows/publish.yml/badge.svg)](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) ${{ steps.registry.outputs.badge }}
-
-          ${{ steps.bump.outputs.release-notes }}
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        BADGE_LINE: "[![Publish](${{ github.server_url }}/${{ github.repository }}/actions/workflows/publish.yml/badge.svg)](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) ${{ steps.registry.outputs.badge }}"
+        RELEASE_NOTES: ${{ steps.bump.outputs.release-notes }}
+      shell: bash
+      run: |
+        printf '%s\n\n%s\n' "$BADGE_LINE" "$RELEASE_NOTES" > /tmp/release-body.md
+        RELEASE_URL=$(gh release create "${{ steps.bump.outputs.tag }}" \
+          --title "${{ steps.bump.outputs.tag }}" \
+          --notes-file /tmp/release-body.md)
+        echo "url=$RELEASE_URL" >> $GITHUB_OUTPUT
 
     - name: Summary 
       id: summary

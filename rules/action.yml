@@ -18,7 +18,7 @@ runs:
   steps:
   
   - name: Get User Group
-    uses: octokit/request-action@v2.x
+    uses: octokit/request-action@v3
     id: get_user_groups
     env:
       GITHUB_TOKEN: ${{ inputs.github-token }}
@@ -27,12 +27,25 @@ runs:
       owner: ${{ github.repository_owner }}
       username: ${{ github.event.sender.login }}
 
-  - uses: tspascoal/get-user-teams-membership@v3
+  - name: Get User Teams Membership
     id: actorTeams
-    with:
-      username: ${{ github.actor }}
-      team: ${{ inputs.team }}
-      GITHUB_TOKEN: ${{ inputs.github-token }}
+    shell: bash
+    env:
+      GH_TOKEN: ${{ inputs.github-token }}
+    run: |
+      IS_MEMBER="false"
+      MATCHED=""
+      IFS=',' read -ra TEAMS <<< "${{ inputs.team }}"
+      for TEAM in "${TEAMS[@]}"; do
+        TEAM=$(echo "$TEAM" | xargs)
+        STATE=$(gh api "/orgs/${{ github.repository_owner }}/teams/$TEAM/memberships/${{ github.actor }}" --jq '.state' 2>/dev/null) || STATE=""
+        if [ "$STATE" = "active" ]; then
+          IS_MEMBER="true"
+          MATCHED="${MATCHED:+$MATCHED,}$TEAM"
+        fi
+      done
+      echo "teams=$MATCHED" >> $GITHUB_OUTPUT
+      echo "isTeamMember=$IS_MEMBER" >> $GITHUB_OUTPUT
 
   - name: Display User Group
     shell: bash
