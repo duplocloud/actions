@@ -1,2 +1,3 @@
 *.env
 .qodo
+.DS_Store
