@@ -213,7 +213,7 @@ runs:
 
   - name: Azure CLI script
     id: setup-azure-cli
-    uses: azure/CLI@v2
+    uses: azure/CLI@v3
     if: env.AZURE_ENABLED == 'true' && inputs.credentials
     with:
       azcliversion: 2.57.0
