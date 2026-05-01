@@ -1,16 +1,31 @@
 name: Update Service
-description: Updates an image for a number of container types. 
+description: Updates an image for a number of container types.
 inputs:
   type:
     description: Service type
-    required: false 
+    required: false
     default: service
   name:
     description: Service name
     required: true
   image:
-    description: Image URI
-    required: true
+    description: Image URI for the main container. Optional when only updating sidecar or init container images.
+    required: false
+    default: ""
+  container_images:
+    description: |
+      JSON array of sidecar (additional) container name/image pairs.
+      Format: [{"name": "sidecar1", "image": "image1:tag"}]
+      Only supported when type=service.
+    required: false
+    default: ""
+  init_container_images:
+    description: |
+      JSON array of init container name/image pairs.
+      Format: [{"name": "init1", "image": "image1:tag"}]
+      Only supported when type=service.
+    required: false
+    default: ""
   wait:
     description: Wait for deployment
     required: false
@@ -36,9 +51,49 @@ runs:
       RESOURCE: ${{ inputs.type }}
       NAME: ${{ inputs.name }}
       IMAGE: ${{ inputs.image }}
+      CONTAINER_IMAGES: ${{ inputs.container_images }}
+      INIT_CONTAINER_IMAGES: ${{ inputs.init_container_images }}
+      WAIT: ${{ inputs.wait }}
     run: |
-      if [[ "${{ inputs.wait }}" == "true" ]]; then
-        duploctl $RESOURCE update_image $NAME $IMAGE --wait
-      else
-        duploctl $RESOURCE update_image $NAME $IMAGE
+      set -euo pipefail
+
+      if [ -z "$IMAGE" ] && [ -z "$CONTAINER_IMAGES" ] && [ -z "$INIT_CONTAINER_IMAGES" ]; then
+        echo "::error::Provide at least one of: image, container_images, or init_container_images"
+        exit 1
       fi
+
+      if { [ -n "$CONTAINER_IMAGES" ] || [ -n "$INIT_CONTAINER_IMAGES" ]; } && [ "$RESOURCE" != "service" ]; then
+        echo "::error::container_images and init_container_images are only supported when type=service"
+        exit 1
+      fi
+
+      if [ -n "$CONTAINER_IMAGES" ] || [ -n "$INIT_CONTAINER_IMAGES" ]; then
+        command -v jq >/dev/null || { echo "::error::jq is required to parse container_images / init_container_images"; exit 1; }
+      fi
+
+      ARGS=("duploctl" "$RESOURCE" "update_image" "$NAME")
+      if [ -n "$IMAGE" ]; then
+        ARGS+=("$IMAGE")
+      fi
+
+      if [ -n "$CONTAINER_IMAGES" ]; then
+        while IFS= read -r line; do
+          CNAME=$(echo "$line" | jq -r '.name')
+          CIMG=$(echo "$line" | jq -r '.image')
+          ARGS+=("--container-image" "$CNAME" "$CIMG")
+        done < <(echo "$CONTAINER_IMAGES" | jq -c '.[]')
+      fi
+
+      if [ -n "$INIT_CONTAINER_IMAGES" ]; then
+        while IFS= read -r line; do
+          CNAME=$(echo "$line" | jq -r '.name')
+          CIMG=$(echo "$line" | jq -r '.image')
+          ARGS+=("--init-container-image" "$CNAME" "$CIMG")
+        done < <(echo "$INIT_CONTAINER_IMAGES" | jq -c '.[]')
+      fi
+
+      if [ "$WAIT" = "true" ]; then
+        ARGS+=("--wait")
+      fi
+
+      "${ARGS[@]}"

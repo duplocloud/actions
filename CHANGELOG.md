@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- `update-image` action now supports updating sidecar (additional) and init container images for Kubernetes services via new `container_images` and `init_container_images` JSON inputs. Main `image` is now optional when one of these is provided. Only applicable when `type=service`.
+
 ### Fixed
 
 - Restored `mask-account-id` default to `false`, matching the historical effective behavior where the previous default of `'yes'` was silently evaluated as `false` by `aws-actions/configure-aws-credentials@v4`
