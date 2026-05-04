@@ -25,25 +25,12 @@ runs:
     with:
       route: GET /orgs/${{ github.repository_owner }}/memberships/${{ github.event.sender.login }}
 
-  - name: Get User Teams Membership
+  - uses: tspascoal/get-user-teams-membership@v4
     id: actorTeams
-    shell: bash
-    env:
-      GH_TOKEN: ${{ inputs.github-token }}
-    run: |
-      IS_MEMBER="false"
-      MATCHED=""
-      IFS=',' read -ra TEAMS <<< "${{ inputs.team }}"
-      for TEAM in "${TEAMS[@]}"; do
-        TEAM=$(echo "$TEAM" | xargs)
-        STATE=$(gh api "/orgs/${{ github.repository_owner }}/teams/$TEAM/memberships/${{ github.actor }}" --jq '.state' 2>/dev/null) || STATE=""
-        if [ "$STATE" = "active" ]; then
-          IS_MEMBER="true"
-          MATCHED="${MATCHED:+$MATCHED,}$TEAM"
-        fi
-      done
-      echo "teams=$MATCHED" >> $GITHUB_OUTPUT
-      echo "isTeamMember=$IS_MEMBER" >> $GITHUB_OUTPUT
+    with:
+      username: ${{ github.actor }}
+      team: ${{ inputs.team }}
+      GITHUB_TOKEN: ${{ inputs.github-token }}
 
   - name: Display User Group
     shell: bash
