@@ -206,14 +206,14 @@ runs:
 
   - name: Azure Login
     id: login-azure
-    uses: azure/login@v2
+    uses: azure/login@v3
     if: env.AZURE_ENABLED == 'true' && inputs.credentials
     with:
       creds: ${{ inputs.credentials }}
 
   - name: Azure CLI script
     id: setup-azure-cli
-    uses: azure/CLI@v2
+    uses: azure/CLI@v3
     if: env.AZURE_ENABLED == 'true' && inputs.credentials
     with:
       azcliversion: 2.57.0
