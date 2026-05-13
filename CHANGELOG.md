@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-05-13
+
 ### Fixed
 
 - Restored `mask-account-id` default to `false`, matching the historical effective behavior where the previous default of `'yes'` was silently evaluated as `false` by `aws-actions/configure-aws-credentials@v4`
