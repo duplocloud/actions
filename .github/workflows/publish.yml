@@ -71,15 +71,21 @@ jobs:
 
           ${{ steps.bump.outputs.release-notes }}
 
-    - name: Summary 
+    - name: Summary
       id: summary
+      env:
+        BADGE: ${{ steps.registry.outputs.badge }}
+        RELEASE_URL: ${{ steps.release.outputs.url || '' }}
+        NEW_VERSION: ${{ steps.bump.outputs.version }}
+        PREV_VERSION: ${{ steps.bump.outputs.previous-version }}
+        RELEASE_NOTES: ${{ steps.bump.outputs.release-notes }}
       run: |
         cat <<EOF > $GITHUB_STEP_SUMMARY
-        ${{ steps.registry.outputs.badge }} [![Release](https://img.shields.io/badge/Github-Release-blue?style=flat-square&logo=github)](${{ steps.release.outputs.url || '' }})
-        New Version: ${{ steps.bump.outputs.version }}
-        Previous Version: ${{ steps.bump.outputs.previous-version }}
+        ${BADGE} [![Release](https://img.shields.io/badge/Github-Release-blue?style=flat-square&logo=github)](${RELEASE_URL})
+        New Version: ${NEW_VERSION}
+        Previous Version: ${PREV_VERSION}
 
-        ## Release Notes: 
+        ## Release Notes:
         --------------
-        ${{ steps.bump.outputs.release-notes }}
+        ${RELEASE_NOTES}
         EOF

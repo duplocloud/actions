@@ -1,3 +1,6 @@
 *.env
 .qodo
 .DS_Store
+foo.*
+.vscode/settings.json
+
