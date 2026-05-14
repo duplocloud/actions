@@ -65,4 +65,25 @@ jobs:
     - name: The Job
       run: |
         echo '${{ toJSON(env) }}'
-        
+
+  verify-jit-mask-fix:
+    name: Verify jit ::add-mask:: fix
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    steps:
+
+    - name: Setup Duplocloud (duploctl fix branch from source)
+      uses: duplocloud/actions@main
+      with:
+        version: 'fix/jit-mask-secrets-in-github-actions'
+        from-source: 'true'
+
+    - name: Echo AWS env vars (values should appear as *** if masking works)
+      run: |
+        echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID"
+        echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY"
+        echo "AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN"
+
+    - name: Confirm creds still work
+      run: aws sts get-caller-identity
