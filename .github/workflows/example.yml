@@ -71,6 +71,10 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
+    env:
+      DUPLO_HOST: ${{ vars.DUPLO_HOST }}
+      DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
+      DUPLO_TENANT: ${{ vars.DUPLO_TENANT }}
     steps:
 
     - name: Setup Duplocloud (duploctl fix branch from source)
