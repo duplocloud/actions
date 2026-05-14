@@ -67,7 +67,7 @@ jobs:
         echo '${{ toJSON(env) }}'
 
   verify-jit-mask-fix:
-    name: Verify jit ::add-mask:: fix
+    name: "Verify jit ::add-mask:: fix"
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
