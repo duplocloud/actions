@@ -37,7 +37,7 @@ runs:
     env:
       GH_ROLE: ${{ fromJson(steps.get_user_groups.outputs.data).role }}
       GH_TEAMS: ${{ steps.actorTeams.outputs.teams }}
-      GHA_ENV: ${{ inputs.environment }}
+      GHA_ENV: ${{ inputs.current_environment }}
       ISMEMBER: ${{ steps.actorTeams.outputs.isTeamMember }}
     run: |
       cat <<EOF
@@ -54,7 +54,7 @@ runs:
     shell: bash
     if: >
       steps.actorTeams.outputs.isTeamMember == 'false' &&
-      inputs.environment == inputs.protected_environment
+      inputs.current_environment == inputs.protected_environment
     run: |
       echo "User is not a member of the deployment team, and therefore cannot deploy to production."
       exit 1
