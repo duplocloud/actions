@@ -54,7 +54,7 @@ runs:
 
   - name: Pip Upgrade
     shell: bash
-    run: pip install --upgrade pip
+    run: python -m pip install --upgrade pip
 
   - name: Install duploctl
     id: install-duploctl

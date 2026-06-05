@@ -55,7 +55,7 @@ runs:
   - name: Pip Upgrade
     if: inputs.python-version != 'none'
     shell: bash
-    run: pip install --upgrade pip
+    run: python -m pip install --upgrade pip
 
   - name: Check duploctl
     id: check-duploctl
