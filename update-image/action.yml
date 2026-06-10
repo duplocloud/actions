@@ -39,13 +39,16 @@ runs:
       RESOURCE: ${{ inputs.type }}
       NAME: ${{ inputs.name }}
       IMAGE: ${{ inputs.image }}
+      WAIT: ${{ inputs.wait }}
+      WAIT_TIMEOUT: ${{ inputs.wait_timeout }}
     run: |
-      if [[ "${{ inputs.wait }}" == "true" ]]; then
-        WAIT_ARGS="--wait"
-        if [[ -n "${{ inputs.wait_timeout }}" ]]; then
-          WAIT_ARGS="$WAIT_ARGS --wait-timeout ${{ inputs.wait_timeout }}"
+      DUPLOCTL_ARGS=("duploctl" "$RESOURCE" "update_image" "$NAME" "$IMAGE")
+
+      if [ "$WAIT" = "true" ]; then
+        DUPLOCTL_ARGS+=("--wait")
+        if [ -n "$WAIT_TIMEOUT" ]; then
+          DUPLOCTL_ARGS+=("--wait-timeout" "$WAIT_TIMEOUT")
         fi
-        duploctl $RESOURCE update_image $NAME $IMAGE $WAIT_ARGS
-      else
-        duploctl $RESOURCE update_image $NAME $IMAGE
       fi
+
+      "${DUPLOCTL_ARGS[@]}"
