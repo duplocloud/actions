@@ -141,7 +141,7 @@ The scripts and documentation in this project are released under the [MIT Licens
    - [actions/upload-artifact@v7](https://github.com/actions/upload-artifact)
    - [aws-actions/amazon-ecr-login@v2](https://github.com/aws-actions/amazon-ecr-login)
    - [aws-actions/configure-aws-credentials@v6](https://github.com/aws-actions/configure-aws-credentials)
-   - [azure/CLI@v2](https://github.com/marketplace/actions/azure-cli-action)
+   - [azure/CLI@v3](https://github.com/marketplace/actions/azure-cli-action)
    - [azure/login@v3](https://github.com/azure/login)
    - [crazy-max/ghaction-github-runtime@v4](https://github.com/crazy-max/ghaction-github-runtime)
    - [docker/login-action@v4](https://github.com/docker/login-action)
