@@ -61,18 +61,35 @@ runs:
     run: |
       set -euo pipefail
 
-      if [ -z "$IMAGE" ] && [ -z "$CONTAINER_IMAGES" ] && [ -z "$INIT_CONTAINER_IMAGES" ]; then
-        echo "::error::Provide at least one of: image, container_images, or init_container_images"
-        exit 1
-      fi
-
-      if { [ -n "$CONTAINER_IMAGES" ] || [ -n "$INIT_CONTAINER_IMAGES" ]; } && [ "$RESOURCE" != "service" ]; then
-        echo "::error::container_images and init_container_images are only supported when type=service"
-        exit 1
-      fi
+      CONTAINER_COUNT=0
+      INIT_CONTAINER_COUNT=0
 
       if [ -n "$CONTAINER_IMAGES" ] || [ -n "$INIT_CONTAINER_IMAGES" ]; then
         command -v jq >/dev/null || { echo "::error::jq is required to parse container_images / init_container_images"; exit 1; }
+
+        if [ -n "$CONTAINER_IMAGES" ]; then
+          if ! CONTAINER_COUNT=$(echo "$CONTAINER_IMAGES" | jq -e 'if type == "array" then length else error("not an array") end' 2>/dev/null); then
+            echo "::error::container_images must be a valid JSON array"
+            exit 1
+          fi
+        fi
+
+        if [ -n "$INIT_CONTAINER_IMAGES" ]; then
+          if ! INIT_CONTAINER_COUNT=$(echo "$INIT_CONTAINER_IMAGES" | jq -e 'if type == "array" then length else error("not an array") end' 2>/dev/null); then
+            echo "::error::init_container_images must be a valid JSON array"
+            exit 1
+          fi
+        fi
+      fi
+
+      if [ -z "$IMAGE" ] && [ "$CONTAINER_COUNT" -eq 0 ] && [ "$INIT_CONTAINER_COUNT" -eq 0 ]; then
+        echo "::error::Provide at least one of: image, container_images (non-empty), or init_container_images (non-empty)"
+        exit 1
+      fi
+
+      if { [ "$CONTAINER_COUNT" -gt 0 ] || [ "$INIT_CONTAINER_COUNT" -gt 0 ]; } && [ "$RESOURCE" != "service" ]; then
+        echo "::error::container_images and init_container_images are only supported when type=service"
+        exit 1
       fi
 
       ARGS=("duploctl" "$RESOURCE" "update_image" "$NAME")
@@ -80,7 +97,7 @@ runs:
         ARGS+=("$IMAGE")
       fi
 
-      if [ -n "$CONTAINER_IMAGES" ]; then
+      if [ "$CONTAINER_COUNT" -gt 0 ]; then
         while IFS= read -r line; do
           CNAME=$(echo "$line" | jq -r '.name')
           CIMG=$(echo "$line" | jq -r '.image')
@@ -88,7 +105,7 @@ runs:
         done < <(echo "$CONTAINER_IMAGES" | jq -c '.[]')
       fi
 
-      if [ -n "$INIT_CONTAINER_IMAGES" ]; then
+      if [ "$INIT_CONTAINER_COUNT" -gt 0 ]; then
         while IFS= read -r line; do
           CNAME=$(echo "$line" | jq -r '.name')
           CIMG=$(echo "$line" | jq -r '.image')
