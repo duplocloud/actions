@@ -30,6 +30,9 @@ inputs:
     description: Wait for deployment
     required: false
     default: "false"
+  wait_timeout:
+    description: Timeout in seconds for the wait operation
+    required: false
 
 runs:
   using: composite
@@ -54,6 +57,7 @@ runs:
       CONTAINER_IMAGES: ${{ inputs.container_images }}
       INIT_CONTAINER_IMAGES: ${{ inputs.init_container_images }}
       WAIT: ${{ inputs.wait }}
+      WAIT_TIMEOUT: ${{ inputs.wait_timeout }}
     run: |
       set -euo pipefail
 
@@ -94,6 +98,9 @@ runs:
 
       if [ "$WAIT" = "true" ]; then
         ARGS+=("--wait")
+        if [ -n "$WAIT_TIMEOUT" ]; then
+          ARGS+=("--wait-timeout" "$WAIT_TIMEOUT")
+        fi
       fi
 
       "${ARGS[@]}"
