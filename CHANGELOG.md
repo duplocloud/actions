@@ -10,6 +10,7 @@ and this project adheres to
 
 ### Added
 
+- New `update-image-hdv2` action — the AI HelpDesk V2 (HDV2) counterpart to `update-image`. Updates a container image for an HDV2 workload within a workspace via duploctl: `type=service` (alias `eks`) targets `appservice` and `type=lambda` targets `hd_lambda`. Takes `name`, `image`, and one of `workspace`/`workspace_id`. ECS is not yet supported (no HDV2 backend endpoint; tracked in DUPLO-43548).
 - `update-image` action now supports updating sidecar (additional) and init container images for Kubernetes services via new `container_images` and `init_container_images` JSON inputs. Main `image` is now optional when one of these is provided. Only applicable when `type=service`.
 
 ## [0.1.0] - 2026-05-13
