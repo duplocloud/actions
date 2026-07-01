@@ -40,7 +40,9 @@ runs:
     run: |
       set -euo pipefail
 
-      if [ -z "$DUPLO_HOST" ] || [ -z "$DUPLO_TOKEN" ] || [ -z "$DUPLO_TENANT" ]; then
+      # Use :- defaults so `set -u` doesn't abort with a cryptic "unbound
+      # variable" when the Duplo Setup step was skipped and these are unset.
+      if [ -z "${DUPLO_HOST:-}" ] || [ -z "${DUPLO_TOKEN:-}" ] || [ -z "${DUPLO_TENANT:-}" ]; then
         echo "::error::DUPLO_HOST, DUPLO_TOKEN, and DUPLO_TENANT must be set. Run the Duplo Setup action first."
         exit 1
       fi
