@@ -1,0 +1,81 @@
+name: Update Image (HelpDesk V2)
+description: >
+  Updates a container image for a HelpDesk V2 (HDV2) workload. Supports
+  EKS AppServices and AWS Lambdas within an AI HelpDesk workspace.
+inputs:
+  type:
+    description: Workload type. One of "service" (alias "eks") or "lambda".
+    required: false
+    default: service
+  name:
+    description: Workload name as shown in the HelpDesk workspace.
+    required: true
+  image:
+    description: New container image URI (e.g. an ECR image reference).
+    required: true
+  workspace:
+    description: AI HelpDesk workspace name the workload belongs to.
+    required: false
+    default: ""
+  workspace_id:
+    description: >
+      AI HelpDesk workspace id. Skips the workspace name lookup when
+      provided. One of workspace or workspace_id is required.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+
+  - name: Update Image
+    id: duploctl
+    shell: bash
+    env:
+      TYPE: ${{ inputs.type }}
+      NAME: ${{ inputs.name }}
+      IMAGE: ${{ inputs.image }}
+      WORKSPACE: ${{ inputs.workspace }}
+      WORKSPACE_ID: ${{ inputs.workspace_id }}
+    run: |
+      set -euo pipefail
+
+      if [ -z "$DUPLO_HOST" ] || [ -z "$DUPLO_TOKEN" ] || [ -z "$DUPLO_TENANT" ]; then
+        echo "::error::DUPLO_HOST, DUPLO_TOKEN, and DUPLO_TENANT must be set. Run the Duplo Setup action first."
+        exit 1
+      fi
+      command -v duploctl >/dev/null || { echo "::error::duploctl not found. Run the Duplo Setup action first."; exit 1; }
+
+      if [ -z "$IMAGE" ]; then
+        echo "::error::image is required"
+        exit 1
+      fi
+      if [ -z "$WORKSPACE" ] && [ -z "$WORKSPACE_ID" ]; then
+        echo "::error::one of workspace or workspace_id is required"
+        exit 1
+      fi
+
+      # Map the workload type to the HDV2 duploctl resource. ECS has no
+      # HelpDesk V2 update-image endpoint yet (tracked in DUPLO-43548), so it
+      # is rejected with a clear message rather than silently ignored.
+      case "$TYPE" in
+        service|eks) RESOURCE="appservice" ;;
+        lambda)      RESOURCE="hd_lambda" ;;
+        ecs)
+          echo "::error::type=ecs is not yet supported by HelpDesk V2 (no backend update-image endpoint). Tracked in DUPLO-43548."
+          exit 1
+          ;;
+        *)
+          echo "::error::Invalid type: $TYPE. Valid types: service (eks), lambda"
+          exit 1
+          ;;
+      esac
+
+      ARGS=("duploctl" "$RESOURCE" "update_image" "$NAME" "$IMAGE")
+      if [ -n "$WORKSPACE" ]; then
+        ARGS+=("--workspace" "$WORKSPACE")
+      else
+        ARGS+=("--workspace-id" "$WORKSPACE_ID")
+      fi
+
+      "${ARGS[@]}"
