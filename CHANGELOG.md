@@ -12,6 +12,10 @@ and this project adheres to
 
 - `update-image` action now supports updating sidecar (additional) and init container images for Kubernetes services via new `container_images` and `init_container_images` JSON inputs. Main `image` is now optional when one of these is provided. Only applicable when `type=service`.
 
+### Changed
+
+- Bumped the default duploctl version from 0.4.3 to 0.4.5, which includes the fix for the `'ReplicasActive'` KeyError during service wait polling
+
 ## [0.1.0] - 2026-05-13
 
 ### Fixed
