@@ -42,6 +42,14 @@ inputs:
     required: false
     description: Enable cloud CLI installation and configuration (AWS CLI, gcloud, Azure CLI).
     default: "true"
+  mode:
+    required: false
+    description: >-
+      Deployment mode. "portal" targets a DuploCloud portal, "helpdesk" targets
+      a standalone AI HelpDesk, and "auto" detects the mode from the token
+      (dahp_ tokens are helpdesk API tokens). In helpdesk mode the portal
+      discovery, cloud JIT, and cloud CLI steps are skipped.
+    default: auto
 runs:
   using: composite
   steps:
@@ -101,8 +109,35 @@ runs:
       echo "Successfully installed duploctl"
       duploctl version
 
+  - name: Detect Deployment Mode
+    id: detect-mode
+    shell: bash
+    env:
+      MODE: ${{ inputs.mode }}
+    run: |
+      case "$MODE" in
+        auto)
+          case "${DUPLO_TOKEN:-}" in
+            dahp_*) MODE=helpdesk ;;
+            *) MODE=portal ;;
+          esac
+          ;;
+        portal|helpdesk) ;;
+        *)
+          echo "::error::Invalid mode '$MODE'. Use portal, helpdesk, or auto."
+          exit 1
+          ;;
+      esac
+      if [ "$MODE" = "helpdesk" ] && { [ -z "${DUPLO_HOST:-}" ] || [ -z "${DUPLO_TOKEN:-}" ]; }; then
+        echo "::error::In helpdesk mode DUPLO_HOST must be the standalone AI HelpDesk URL and DUPLO_TOKEN a dahp_ API token."
+        exit 1
+      fi
+      echo "Configuring for $MODE mode"
+      echo "DUPLO_MODE=$MODE" >> "$GITHUB_ENV"
+
   - name: Portal Info
     id: portal-info
+    if: env.DUPLO_MODE == 'portal'
     shell: bash
     env:
       DUPLO_ACCOUNT_ID: ${{ inputs.account-id }}

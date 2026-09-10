@@ -10,10 +10,14 @@ and this project adheres to
 
 ### Added
 
+- Setup action: new `mode` input (`auto`/`portal`/`helpdesk`). In `helpdesk` mode the action targets a standalone AI HelpDesk (`DUPLO_HOST` = helpdesk URL, `DUPLO_TOKEN` = `dahp_` API token) and skips the portal discovery, cloud JIT, and cloud CLI steps. The default `auto` detects the mode from the `dahp_` token prefix; the resolved mode is exported as `DUPLO_MODE`.
+- `ai-helpdesk` action: new `agent_id`, `workspace`, and `workspace_id` inputs. Workspace selectors fall back to `DUPLO_WORKSPACE` / `DUPLO_WORKSPACE_ID` environment variables.
 - `update-image` action now supports updating sidecar (additional) and init container images for Kubernetes services via new `container_images` and `init_container_images` JSON inputs. Main `image` is now optional when one of these is provided. Only applicable when `type=service`.
 
 ### Changed
 
+- **Breaking:** `ai-helpdesk` action migrated from the removed `duploctl ai create_ticket` command to `duploctl ticket create_ticket` (duploctl >= 0.4.5). Tickets are workspace-scoped: a workspace selector replaces the `DUPLO_TENANT` requirement, `agent_name` is now one-of with the new `agent_id`, and the `agent_instance` input is removed (the instance concept no longer exists in the ticket API). Works against both integrated portals and standalone AI HelpDesks.
+- `ai-helpdesk` action parses the duploctl JSON result with `jq` instead of grep, keeping duploctl log output (stderr) out of the parsed file.
 - Bumped the default duploctl version from 0.4.3 to 0.4.5, which includes the fix for the `'ReplicasActive'` KeyError during service wait polling
 
 ## [0.1.0] - 2026-05-13
