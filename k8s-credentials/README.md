@@ -29,8 +29,19 @@ is not used.
 | `kubeconfig_path` | Where to write the kubeconfig. | No | a file under `RUNNER_TEMP` |
 | `context_name` | Kubeconfig context name. | No | the cluster name |
 | `export_kubeconfig` | Export `KUBECONFIG` pointing at the written file for the rest of the job. | No | `true` |
+| `insecure_skip_tls_verify` | Skip TLS verification of the API server instead of pinning its certificate authority. Only for clusters where the platform cannot supply a complete CA; the bearer token is still required and verified. | No | `false` |
 
 One of `workspace` or `workspace_id` is required (via input or environment).
+
+### Certificate authority
+
+The action pins the cluster CA from the jitAccess response, falling back to
+the cluster record when jitAccess returns none (a known gap on
+AWS-provisioned clusters). A CA that does not decode to a complete
+certificate is rejected with a clear error rather than surfacing later as a
+cryptic kubectl TLS failure; for clusters where the platform cannot supply
+a complete CA, set `insecure_skip_tls_verify: true` to proceed without
+pinning (the bearer token is still verified by the API server).
 
 ## Outputs
 

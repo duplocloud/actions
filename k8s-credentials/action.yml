@@ -47,6 +47,14 @@ inputs:
       job. Set to false to only expose the path as an output.
     required: false
     default: "true"
+  insecure_skip_tls_verify:
+    description: >-
+      Skip TLS verification of the API server instead of pinning its
+      certificate authority. Only for clusters where the platform cannot
+      supply a complete CA (a known gap on some AWS-provisioned
+      clusters); the bearer token is still required and verified.
+    required: false
+    default: "false"
 outputs:
   kubeconfig:
     description: Path of the written kubeconfig file.
@@ -76,6 +84,7 @@ runs:
       KUBECONFIG_PATH: ${{ inputs.kubeconfig_path }}
       CONTEXT_NAME: ${{ inputs.context_name }}
       EXPORT_KUBECONFIG: ${{ inputs.export_kubeconfig }}
+      INSECURE_SKIP_TLS_VERIFY: ${{ inputs.insecure_skip_tls_verify }}
     run: |
       set -euo pipefail
 
@@ -139,9 +148,23 @@ runs:
       if [ -z "$CA" ]; then
         CA=$(jq -r '.result.certificateAuthority // empty' <<< "$RECORD")
       fi
-      if [ -z "$CA" ]; then
-        echo "::error::No certificate authority available for cluster '$CLUSTER_NAME' (neither jitAccess nor the cluster record carries one)."
-        exit 1
+      # TLS trust for the cluster: pin the CA, or skip verification when
+      # explicitly requested. The CA must decode to a complete PEM
+      # certificate — some backends return it empty on jitAccess or
+      # truncated on the cluster record, and a broken CA would otherwise
+      # only surface later as a cryptic kubectl TLS error.
+      if [ "$INSECURE_SKIP_TLS_VERIFY" = "true" ]; then
+        TLS_LINE="insecure-skip-tls-verify: true"
+      else
+        if [ -z "$CA" ]; then
+          echo "::error::No certificate authority available for cluster '$CLUSTER_NAME' (neither jitAccess nor the cluster record carries one). Set insecure_skip_tls_verify: true to proceed without one."
+          exit 1
+        fi
+        if ! printf '%s' "$CA" | base64 -d 2>/dev/null | grep -q "END CERTIFICATE"; then
+          echo "::error::The certificate authority the AI HelpDesk returned for cluster '$CLUSTER_NAME' is not a complete certificate (a known backend gap). Set insecure_skip_tls_verify: true to proceed without it."
+          exit 1
+        fi
+        TLS_LINE="certificate-authority-data: $CA"
       fi
 
       CONTEXT="${CONTEXT_NAME:-$CLUSTER_NAME}"
@@ -155,7 +178,7 @@ runs:
       - name: $CONTEXT
         cluster:
           server: $SERVER
-          certificate-authority-data: $CA
+          $TLS_LINE
       users:
       - name: $CONTEXT
         user:

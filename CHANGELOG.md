@@ -10,7 +10,7 @@ and this project adheres to
 
 ### Added
 
-- New `k8s-credentials` action — fetches just-in-time Kubernetes credentials for an AI HelpDesk cluster (`duploctl k8s_credentials`) and writes a kubeconfig, exporting `KUBECONFIG` for later kubectl/helm steps. Selects the cluster by name or id (defaulting to the workspace's only cluster), falls back to the cluster record's certificate authority when jitAccess returns none (current AWS gap), and works against integrated portals and standalone AI HelpDesks.
+- New `k8s-credentials` action — fetches just-in-time Kubernetes credentials for an AI HelpDesk cluster (`duploctl k8s_credentials`) and writes a kubeconfig, exporting `KUBECONFIG` for later kubectl/helm steps. Selects the cluster by name or id (defaulting to the workspace's only cluster), falls back to the cluster record's certificate authority when jitAccess returns none (current AWS gap), rejects incomplete CAs with a clear error (opt-out via `insecure_skip_tls_verify`), and works against integrated portals and standalone AI HelpDesks.
 - `update-image` action now supports updating sidecar (additional) and init container images for Kubernetes services via new `container_images` and `init_container_images` JSON inputs. Main `image` is now optional when one of these is provided. Only applicable when `type=service`.
 
 ## [0.1.0] - 2026-05-13
