@@ -70,7 +70,7 @@ runs:
     shell: bash
     run: |
       if which duploctl > /dev/null 2>&1; then
-        echo "duploctl is already installed at: $(which duploctl)"
+        echo "duploctl is already installed at: $(which duploctl) ($(duploctl version -q cli.tag -o string 2>/dev/null || echo 'unknown version'))"
         echo "duploctl_exists=true" >> $GITHUB_OUTPUT
       else
         echo "duploctl is not installed"
@@ -134,6 +134,16 @@ runs:
       fi
       echo "Configuring for $MODE mode"
       echo "DUPLO_MODE=$MODE" >> "$GITHUB_ENV"
+      # GITHUB_ENV values are job-global, so an earlier portal-mode setup (or
+      # workflow-level env) may have left the cloud-enable flags set. Clear
+      # them in helpdesk mode so the cloud JIT/CLI steps below cannot fire.
+      if [ "$MODE" = "helpdesk" ]; then
+        {
+          echo "AWS_ENABLED=false"
+          echo "GCP_ENABLED=false"
+          echo "AZURE_ENABLED=false"
+        } >> "$GITHUB_ENV"
+      fi
 
   - name: Portal Info
     id: portal-info
