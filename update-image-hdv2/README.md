@@ -17,10 +17,21 @@ The following input variables can be configured:
 | name         | Workload name as shown in the HelpDesk workspace                            | Yes      |               |
 | image        | New container image URI (e.g. an ECR image reference)                       | Yes      |               |
 | type         | Workload type. Options: `service` (alias `eks`), `lambda`                   | No       | `service`     |
-| workspace    | AI HelpDesk workspace name the workload belongs to                          | No       | `""`          |
-| workspace_id | AI HelpDesk workspace id. Skips the workspace name lookup when provided.    | No       | `""`          |
+| workspace    | AI HelpDesk workspace name the workload belongs to. Falls back to `DUPLO_WORKSPACE`. | No       | `""`          |
+| workspace_id | AI HelpDesk workspace id. Skips the workspace name lookup when provided. Falls back to `DUPLO_WORKSPACE_ID`. | No       | `""`          |
 
-One of `workspace` or `workspace_id` is required.
+One of `workspace` or `workspace_id` is required (via input or environment).
+
+## Deployment modes
+
+Only `DUPLO_HOST` and `DUPLO_TOKEN` are needed — HDV2 workloads are
+workspace-scoped, so `DUPLO_TENANT` is not used. The action works against
+both an integrated portal and a standalone AI HelpDesk (`DUPLO_HOST` set to
+the helpdesk URL, `DUPLO_TOKEN` a `dahp_` API token).
+
+> **Note:** the `appservice` and `hd_lambda` duploctl commands are newer than
+> the 0.4.5 release. Until the next duploctl release, install from source in
+> the setup action: `with: { version: main, from-source: true }`.
 
 ## Example Usage
 

@@ -14,13 +14,17 @@ inputs:
     description: New container image URI (e.g. an ECR image reference).
     required: true
   workspace:
-    description: AI HelpDesk workspace name the workload belongs to.
+    description: >-
+      AI HelpDesk workspace name the workload belongs to. Falls back to the
+      DUPLO_WORKSPACE environment variable.
     required: false
     default: ""
   workspace_id:
-    description: >
+    description: >-
       AI HelpDesk workspace id. Skips the workspace name lookup when
-      provided. One of workspace or workspace_id is required.
+      provided. Falls back to the DUPLO_WORKSPACE_ID environment variable.
+      One of workspace or workspace_id is required (via input or
+      environment).
     required: false
     default: ""
 
@@ -42,8 +46,8 @@ runs:
 
       # Use :- defaults so `set -u` doesn't abort with a cryptic "unbound
       # variable" when the Duplo Setup step was skipped and these are unset.
-      if [ -z "${DUPLO_HOST:-}" ] || [ -z "${DUPLO_TOKEN:-}" ] || [ -z "${DUPLO_TENANT:-}" ]; then
-        echo "::error::DUPLO_HOST, DUPLO_TOKEN, and DUPLO_TENANT must be set. Run the Duplo Setup action first."
+      if [ -z "${DUPLO_HOST:-}" ] || [ -z "${DUPLO_TOKEN:-}" ]; then
+        echo "::error::DUPLO_HOST and DUPLO_TOKEN must be set. Run the Duplo Setup action first."
         exit 1
       fi
       command -v duploctl >/dev/null || { echo "::error::duploctl not found. Run the Duplo Setup action first."; exit 1; }
@@ -52,8 +56,11 @@ runs:
         echo "::error::image is required"
         exit 1
       fi
+      # Resolve the workspace selector from inputs or the environment
+      WORKSPACE="${WORKSPACE:-${DUPLO_WORKSPACE:-}}"
+      WORKSPACE_ID="${WORKSPACE_ID:-${DUPLO_WORKSPACE_ID:-}}"
       if [ -z "$WORKSPACE" ] && [ -z "$WORKSPACE_ID" ]; then
-        echo "::error::one of workspace or workspace_id is required"
+        echo "::error::one of workspace or workspace_id is required (input or DUPLO_WORKSPACE / DUPLO_WORKSPACE_ID environment variable)"
         exit 1
       fi
 
