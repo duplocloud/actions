@@ -1,0 +1,118 @@
+name: Run DuploCloud Job (HelpDesk V2)
+description: >-
+  Runs a Kubernetes job in an AI HelpDesk workspace using duploctl and
+  waits for it to run to completion. Works against both integrated
+  portals and standalone AI HelpDesks.
+author: duplocloud
+branding:
+  icon: play
+  color: blue
+inputs:
+  file:
+    description: The file with the job definition to run.
+    required: false
+    default: job.yaml
+  wait:
+    description: Wait for the job to run to completion.
+    required: false
+    default: "true"
+  replace:
+    description: >-
+      Delete an existing job with the same name before creating this
+      one. HelpDesk jobs are immutable, so a re-run with an unchanged
+      name fails without this. The previous job's record and history
+      are removed.
+    required: false
+    default: "false"
+  name:
+    description: >-
+      The job name, only needed with replace=true. Defaults to the
+      top-level "name" key of the job definition file.
+    required: false
+    default: ""
+  workspace:
+    description: >-
+      AI HelpDesk workspace name to run the job in. Falls back to the
+      DUPLO_WORKSPACE environment variable.
+    required: false
+    default: ""
+  workspace_id:
+    description: >-
+      AI HelpDesk workspace id. Skips the workspace name lookup when
+      provided. Falls back to the DUPLO_WORKSPACE_ID environment
+      variable. One of workspace or workspace_id is required (via
+      input or environment).
+    required: false
+    default: ""
+  loglevel:
+    description: Log level for duploctl (INFO, WARN, ERROR, DEBUG).
+    required: false
+    default: INFO
+
+runs:
+  using: composite
+  steps:
+
+  - name: Run Job
+    id: duploctl-job
+    shell: bash
+    env:
+      JOB_FILE: ${{ inputs.file }}
+      WAIT: ${{ inputs.wait }}
+      REPLACE: ${{ inputs.replace }}
+      JOB_NAME: ${{ inputs.name }}
+      WORKSPACE: ${{ inputs.workspace }}
+      WORKSPACE_ID: ${{ inputs.workspace_id }}
+      LOGLEVEL: ${{ inputs.loglevel }}
+    run: |
+      set -euo pipefail
+
+      if [ -z "${DUPLO_HOST:-}" ] || [ -z "${DUPLO_TOKEN:-}" ]; then
+        echo "::error::DUPLO_HOST and DUPLO_TOKEN must be set. Run the Duplo Setup action first."
+        exit 1
+      fi
+      command -v duploctl >/dev/null || { echo "::error::duploctl not found. Run the Duplo Setup action first."; exit 1; }
+      if [ ! -f "$JOB_FILE" ]; then
+        echo "::error::Job definition file '$JOB_FILE' not found."
+        exit 1
+      fi
+
+      # Resolve the workspace selector from inputs or the environment
+      WORKSPACE="${WORKSPACE:-${DUPLO_WORKSPACE:-}}"
+      WORKSPACE_ID="${WORKSPACE_ID:-${DUPLO_WORKSPACE_ID:-}}"
+      if [ -z "$WORKSPACE" ] && [ -z "$WORKSPACE_ID" ]; then
+        echo "::error::one of workspace or workspace_id is required (input or DUPLO_WORKSPACE / DUPLO_WORKSPACE_ID environment variable)"
+        exit 1
+      fi
+      WS_ARGS=()
+      if [ -n "$WORKSPACE_ID" ]; then
+        WS_ARGS+=(--workspace-id "$WORKSPACE_ID")
+      else
+        WS_ARGS+=(--workspace "$WORKSPACE")
+      fi
+
+      # HelpDesk jobs are immutable: a re-run with the same name fails on
+      # create. With replace=true, delete the previous job (deprovision +
+      # wait) before creating the new one.
+      if [ "$REPLACE" = "true" ]; then
+        if [ -z "$JOB_NAME" ]; then
+          # Top-level scalar "name:" sits at column 0 in the YAML file.
+          JOB_NAME=$(sed -n 's/^name:[[:space:]]*//p' "$JOB_FILE" | head -1 | tr -d '"'"'"'')
+        fi
+        if [ -z "$JOB_NAME" ]; then
+          echo "::error::replace=true needs the job name: pass the name input or put a top-level 'name' key in the job definition."
+          exit 1
+        fi
+        if duploctl hd_job find "$JOB_NAME" "${WS_ARGS[@]}" -o json >/dev/null 2>&1; then
+          echo "Replacing existing job '$JOB_NAME'"
+          duploctl hd_job delete "$JOB_NAME" --wait "${WS_ARGS[@]}" --loglevel "$LOGLEVEL"
+        fi
+      fi
+
+      cmd_args=("duploctl" "hd_job" "create" "-f" "$JOB_FILE" "${WS_ARGS[@]}" "--loglevel" "$LOGLEVEL")
+      if [ "$WAIT" = "true" ]; then
+        cmd_args+=("--wait")
+      fi
+
+      echo "Running command: ${cmd_args[*]}"
+      "${cmd_args[@]}"
