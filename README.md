@@ -128,6 +128,9 @@ Import a list resources into a Terraform state file.
 ### [duplocloud/actions/k8s-job](./k8s-job)  
 Import a list resources into a Terraform state file.
 
+### [duplocloud/actions/update-images-hdv2](./update-images-hdv2)  
+Bulk-updates container images for multiple HelpDesk V2 workloads in an AI HelpDesk workspace.
+
 ## License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE).
