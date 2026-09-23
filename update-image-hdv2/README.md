@@ -16,11 +16,26 @@ The following input variables can be configured:
 |--------------|-----------------------------------------------------------------------------|----------|---------------|
 | name         | Workload name as shown in the HelpDesk workspace                            | Yes      |               |
 | image        | New container image URI (e.g. an ECR image reference)                       | Yes      |               |
-| type         | Workload type. Options: `service` (alias `eks`), `lambda`                   | No       | `service`     |
+| type         | Workload type. Options: `service` (alias `eks`), `lambda`, `cronjob`        | No       | `service`     |
 | workspace    | AI HelpDesk workspace name the workload belongs to. Falls back to `DUPLO_WORKSPACE`. | No       | `""`          |
 | workspace_id | AI HelpDesk workspace id. Skips the workspace name lookup when provided. Falls back to `DUPLO_WORKSPACE_ID`. | No       | `""`          |
 
 One of `workspace` or `workspace_id` is required (via input or environment).
+
+### Update a CronJob image
+
+```yaml
+    - name: Update CronJob Image
+      uses: duplocloud/actions/update-image-hdv2@v1
+      with:
+        type: cronjob
+        name: nightly-report
+        image: my-image:latest
+        workspace: my-workspace
+```
+
+`type: cronjob` updates the first container of the cronjob's job template
+via `duploctl hd_cronjob update_image` (requires duplocloud/duploctl#290).
 
 ## Deployment modes
 

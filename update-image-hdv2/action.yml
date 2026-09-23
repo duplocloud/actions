@@ -4,7 +4,9 @@ description: >
   EKS AppServices and AWS Lambdas within an AI HelpDesk workspace.
 inputs:
   type:
-    description: Workload type. One of "service" (alias "eks") or "lambda".
+    description: >-
+      Workload type. One of "service" (alias "eks"), "lambda", or
+      "cronjob".
     required: false
     default: service
   name:
@@ -70,12 +72,13 @@ runs:
       case "$TYPE" in
         service|eks) RESOURCE="appservice" ;;
         lambda)      RESOURCE="hd_lambda" ;;
+        cronjob)     RESOURCE="hd_cronjob" ;;
         ecs)
           echo "::error::type=ecs is not yet supported by HelpDesk V2 (no backend update-image endpoint). Tracked in DUPLO-43548."
           exit 1
           ;;
         *)
-          echo "::error::Invalid type: $TYPE. Valid types: service (eks), lambda"
+          echo "::error::Invalid type: $TYPE. Valid types: service (eks), lambda, cronjob"
           exit 1
           ;;
       esac
