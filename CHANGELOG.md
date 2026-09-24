@@ -10,6 +10,7 @@ and this project adheres to
 
 ### Added
 
+- New `aws-credentials` action — mints just-in-time AWS credentials from an AI HelpDesk workspace (`duploctl aws_credentials`) for a cloud scope (by name/id, defaulting to the workspace's only AWS scope) or the IAM role attached to a resource group, exporting masked `AWS_*` environment variables for later steps plus `region`/`console_url`/`expiration` outputs. Works against integrated portals and standalone AI HelpDesks.
 - `update-image` action now supports updating sidecar (additional) and init container images for Kubernetes services via new `container_images` and `init_container_images` JSON inputs. Main `image` is now optional when one of these is provided. Only applicable when `type=service`.
 
 ## [0.1.0] - 2026-05-13

@@ -128,6 +128,9 @@ Import a list resources into a Terraform state file.
 ### [duplocloud/actions/k8s-job](./k8s-job)  
 Import a list resources into a Terraform state file.
 
+### [duplocloud/actions/aws-credentials](./aws-credentials)  
+Mints just-in-time AWS credentials from an AI HelpDesk workspace and exports them for later steps.
+
 ## License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE).

@@ -1,0 +1,147 @@
+name: AI HelpDesk AWS Credentials
+description: >-
+  Mints just-in-time AWS credentials from an AI HelpDesk workspace and
+  exports them for later steps. Works against both integrated portals
+  and standalone AI HelpDesks.
+author: duplocloud
+branding:
+  icon: key
+  color: blue
+inputs:
+  scope:
+    description: >-
+      Cloud scope name to mint credentials for. Optional when the
+      workspace has exactly one AWS scope and no resource group is
+      given.
+    required: false
+    default: ""
+  scope_id:
+    description: Cloud scope id. Skips the scope name lookup when provided.
+    required: false
+    default: ""
+  resource_group:
+    description: >-
+      Mint credentials for the IAM role attached to this resource
+      group (by name) instead of a cloud scope.
+    required: false
+    default: ""
+  resource_group_id:
+    description: Resource group id. Skips the name lookup when provided.
+    required: false
+    default: ""
+  workspace:
+    description: >-
+      AI HelpDesk workspace name. Falls back to the DUPLO_WORKSPACE
+      environment variable.
+    required: false
+    default: ""
+  workspace_id:
+    description: >-
+      AI HelpDesk workspace id. Skips the workspace name lookup when
+      provided. Falls back to the DUPLO_WORKSPACE_ID environment
+      variable. One of workspace or workspace_id is required (via
+      input or environment).
+    required: false
+    default: ""
+  export_env:
+    description: >-
+      Export AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY /
+      AWS_SESSION_TOKEN / AWS_REGION for the rest of the job. Set to
+      false to only expose the non-secret outputs.
+    required: false
+    default: "true"
+outputs:
+  region:
+    description: AWS region the credentials were minted for.
+    value: ${{ steps.creds.outputs.region }}
+  console_url:
+    description: Federated AWS Console sign-in URL.
+    value: ${{ steps.creds.outputs.console_url }}
+  expiration:
+    description: UTC expiration timestamp of the temporary credentials.
+    value: ${{ steps.creds.outputs.expiration }}
+
+runs:
+  using: composite
+  steps:
+
+  - name: Mint JIT Credentials
+    id: creds
+    shell: bash
+    env:
+      SCOPE: ${{ inputs.scope }}
+      SCOPE_ID: ${{ inputs.scope_id }}
+      RESOURCE_GROUP: ${{ inputs.resource_group }}
+      RESOURCE_GROUP_ID: ${{ inputs.resource_group_id }}
+      WORKSPACE: ${{ inputs.workspace }}
+      WORKSPACE_ID: ${{ inputs.workspace_id }}
+      EXPORT_ENV: ${{ inputs.export_env }}
+    run: |
+      set -euo pipefail
+
+      if [ -z "${DUPLO_HOST:-}" ] || [ -z "${DUPLO_TOKEN:-}" ]; then
+        echo "::error::DUPLO_HOST and DUPLO_TOKEN must be set. Run the Duplo Setup action first."
+        exit 1
+      fi
+      command -v duploctl >/dev/null || { echo "::error::duploctl not found. Run the Duplo Setup action first."; exit 1; }
+      command -v jq >/dev/null || { echo "::error::jq is required but not found on the runner."; exit 1; }
+
+      # Resolve the workspace selector from inputs or the environment
+      WORKSPACE="${WORKSPACE:-${DUPLO_WORKSPACE:-}}"
+      WORKSPACE_ID="${WORKSPACE_ID:-${DUPLO_WORKSPACE_ID:-}}"
+      if [ -z "$WORKSPACE" ] && [ -z "$WORKSPACE_ID" ]; then
+        echo "::error::one of workspace or workspace_id is required (input or DUPLO_WORKSPACE / DUPLO_WORKSPACE_ID environment variable)"
+        exit 1
+      fi
+      ARGS=()
+      if [ -n "$WORKSPACE_ID" ]; then
+        ARGS+=(--workspace-id "$WORKSPACE_ID")
+      else
+        ARGS+=(--workspace "$WORKSPACE")
+      fi
+
+      # Target selection: a resource group beats a scope; duploctl
+      # itself defaults to the workspace's only AWS scope when nothing
+      # is given and errors with the available names otherwise.
+      if [ -n "$RESOURCE_GROUP_ID" ]; then
+        ARGS+=(--resource-group-id "$RESOURCE_GROUP_ID")
+      elif [ -n "$RESOURCE_GROUP" ]; then
+        ARGS+=(--resource-group "$RESOURCE_GROUP")
+      elif [ -n "$SCOPE_ID" ]; then
+        ARGS+=(--id "$SCOPE_ID")
+      elif [ -n "$SCOPE" ]; then
+        ARGS+=("$SCOPE")
+      fi
+
+      CREDS=$(duploctl aws_credentials find "${ARGS[@]}" -o json)
+      ACCESS_KEY_ID=$(jq -r '.accessKeyId // empty' <<< "$CREDS")
+      SECRET_ACCESS_KEY=$(jq -r '.secretAccessKey // empty' <<< "$CREDS")
+      SESSION_TOKEN=$(jq -r '.sessionToken // empty' <<< "$CREDS")
+      REGION=$(jq -r '.region // empty' <<< "$CREDS")
+      CONSOLE_URL=$(jq -r '.consoleUrl // empty' <<< "$CREDS")
+      EXPIRATION=$(jq -r '.expiration // empty' <<< "$CREDS")
+      if [ -z "$ACCESS_KEY_ID" ] || [ -z "$SECRET_ACCESS_KEY" ]; then
+        echo "::error::The AI HelpDesk returned incomplete AWS credentials."
+        exit 1
+      fi
+      echo "::add-mask::$SECRET_ACCESS_KEY"
+      [ -n "$SESSION_TOKEN" ] && echo "::add-mask::$SESSION_TOKEN"
+      # The federated console URL embeds a sign-in token, so keep it out
+      # of logs too; masking still lets it flow through the output.
+      [ -n "$CONSOLE_URL" ] && echo "::add-mask::$CONSOLE_URL"
+
+      {
+        echo "region=$REGION"
+        echo "console_url=$CONSOLE_URL"
+        echo "expiration=$EXPIRATION"
+      } >> "$GITHUB_OUTPUT"
+      if [ "$EXPORT_ENV" = "true" ]; then
+        {
+          echo "AWS_ACCESS_KEY_ID=$ACCESS_KEY_ID"
+          echo "AWS_SECRET_ACCESS_KEY=$SECRET_ACCESS_KEY"
+          echo "AWS_SESSION_TOKEN=$SESSION_TOKEN"
+          echo "AWS_REGION=$REGION"
+          echo "AWS_DEFAULT_REGION=$REGION"
+        } >> "$GITHUB_ENV"
+      fi
+      echo "Minted AWS credentials (region '$REGION', expires $EXPIRATION)"
