@@ -140,6 +140,13 @@ Import a list resources into a Terraform state file.
 ### [duplocloud/actions/k8s-job](./k8s-job)  
 Import a list resources into a Terraform state file.
 
+### [duplocloud/actions/k8s-credentials](./k8s-credentials)  
+Fetches just-in-time Kubernetes credentials for an AI HelpDesk cluster and writes a kubeconfig for kubectl/helm steps.
+### [duplocloud/actions/update-images-hdv2](./update-images-hdv2)  
+Bulk-updates container images for multiple HelpDesk V2 workloads in an AI HelpDesk workspace.
+### [duplocloud/actions/aws-credentials](./aws-credentials)  
+Mints just-in-time AWS credentials from an AI HelpDesk workspace and exports them for later steps.
+
 ## License
 
 The scripts and documentation in this project are released under the [MIT License](LICENSE).
