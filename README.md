@@ -128,6 +128,8 @@ Import a list resources into a Terraform state file.
 ### [duplocloud/actions/k8s-job](./k8s-job)  
 Import a list resources into a Terraform state file.
 
+### [duplocloud/actions/update-images-hdv2](./update-images-hdv2)  
+Bulk-updates container images for multiple HelpDesk V2 workloads in an AI HelpDesk workspace.
 ### [duplocloud/actions/aws-credentials](./aws-credentials)  
 Mints just-in-time AWS credentials from an AI HelpDesk workspace and exports them for later steps.
 

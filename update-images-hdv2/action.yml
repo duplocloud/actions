@@ -1,0 +1,122 @@
+name: Update Images (HelpDesk V2)
+description: >-
+  Bulk-updates container images for multiple HelpDesk V2 workloads in an
+  AI HelpDesk workspace using duploctl. Works against both integrated
+  portals and standalone AI HelpDesks.
+author: duplocloud
+branding:
+  icon: layers
+  color: blue
+inputs:
+  workloads:
+    description: |
+      JSON array of workload-image entries. Each entry takes a name, an
+      image, and an optional type ("service"/"eks", "lambda", or
+      "cronjob") defaulting to the action's type input.
+      Format: [{"name": "web", "image": "img:tag", "type": "service"}]
+    required: true
+  type:
+    description: >-
+      Default workload type for entries that do not carry their own.
+      One of "service" (alias "eks"), "lambda", or "cronjob".
+    required: false
+    default: service
+  workspace:
+    description: >-
+      AI HelpDesk workspace name the workloads belong to. Falls back to
+      the DUPLO_WORKSPACE environment variable.
+    required: false
+    default: ""
+  workspace_id:
+    description: >-
+      AI HelpDesk workspace id. Skips the workspace name lookup when
+      provided. Falls back to the DUPLO_WORKSPACE_ID environment
+      variable. One of workspace or workspace_id is required (via input
+      or environment).
+    required: false
+    default: ""
+  loglevel:
+    description: Log level for duploctl (INFO, WARN, ERROR, DEBUG).
+    required: false
+    default: INFO
+
+runs:
+  using: composite
+  steps:
+
+  - name: Bulk Update Images
+    id: bulk-update
+    shell: bash
+    env:
+      WORKLOADS: ${{ inputs.workloads }}
+      DEFAULT_TYPE: ${{ inputs.type }}
+      WORKSPACE: ${{ inputs.workspace }}
+      WORKSPACE_ID: ${{ inputs.workspace_id }}
+      LOGLEVEL: ${{ inputs.loglevel }}
+    run: |
+      set -euo pipefail
+
+      if [ -z "${DUPLO_HOST:-}" ] || [ -z "${DUPLO_TOKEN:-}" ]; then
+        echo "::error::DUPLO_HOST and DUPLO_TOKEN must be set. Run the Duplo Setup action first."
+        exit 1
+      fi
+      command -v duploctl >/dev/null || { echo "::error::duploctl not found. Run the Duplo Setup action first."; exit 1; }
+      command -v jq >/dev/null || { echo "::error::jq is required but not found on the runner."; exit 1; }
+
+      # Resolve the workspace selector from inputs or the environment
+      WORKSPACE="${WORKSPACE:-${DUPLO_WORKSPACE:-}}"
+      WORKSPACE_ID="${WORKSPACE_ID:-${DUPLO_WORKSPACE_ID:-}}"
+      if [ -z "$WORKSPACE" ] && [ -z "$WORKSPACE_ID" ]; then
+        echo "::error::one of workspace or workspace_id is required (input or DUPLO_WORKSPACE / DUPLO_WORKSPACE_ID environment variable)"
+        exit 1
+      fi
+      WS_ARGS=()
+      if [ -n "$WORKSPACE_ID" ]; then
+        WS_ARGS+=(--workspace-id "$WORKSPACE_ID")
+      else
+        WS_ARGS+=(--workspace "$WORKSPACE")
+      fi
+
+      if ! COUNT=$(echo "$WORKLOADS" | jq 'length' 2>/dev/null) || [ "$COUNT" -eq 0 ]; then
+        echo "::error::workloads must be a non-empty JSON array of {name, image, type?} entries."
+        exit 1
+      fi
+
+      # Validate every entry up front so a bad entry fails the run
+      # before any image is touched — the backend has no bulk endpoint,
+      # so per-entry calls are not atomic.
+      declare -a NAMES IMAGES RESOURCES
+      i=0
+      while IFS= read -r entry; do
+        NAME=$(echo "$entry" | jq -r '.name // empty')
+        IMAGE=$(echo "$entry" | jq -r '.image // empty')
+        TYPE=$(echo "$entry" | jq -r '.type // empty')
+        TYPE="${TYPE:-$DEFAULT_TYPE}"
+        if [ -z "$NAME" ] || [ -z "$IMAGE" ]; then
+          echo "::error::workloads[$i] needs both name and image."
+          exit 1
+        fi
+        case "$TYPE" in
+          service|eks) RESOURCE="appservice" ;;
+          lambda)      RESOURCE="hd_lambda" ;;
+          cronjob)     RESOURCE="hd_cronjob" ;;
+          ecs)
+            echo "::error::workloads[$i] ('$NAME'): type=ecs is not yet supported by HelpDesk V2 (no backend update-image endpoint). Tracked in DUPLO-43548."
+            exit 1
+            ;;
+          *)
+            echo "::error::workloads[$i] ('$NAME'): invalid type '$TYPE'. Valid types: service (eks), lambda, cronjob"
+            exit 1
+            ;;
+        esac
+        NAMES[$i]="$NAME"; IMAGES[$i]="$IMAGE"; RESOURCES[$i]="$RESOURCE"
+        i=$((i + 1))
+      done < <(echo "$WORKLOADS" | jq -c '.[]')
+
+      # Sequential per-entry updates; fail fast and report progress so a
+      # partial run is visible in the log.
+      for ((j = 0; j < i; j++)); do
+        echo "Updating ${RESOURCES[$j]} '${NAMES[$j]}' to '${IMAGES[$j]}' ($((j + 1))/$i)"
+        duploctl "${RESOURCES[$j]}" update_image "${NAMES[$j]}" "${IMAGES[$j]}" "${WS_ARGS[@]}" --loglevel "$LOGLEVEL"
+      done
+      echo "Updated $i workload image(s)."
