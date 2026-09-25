@@ -26,12 +26,26 @@ inputs:
     required: false
     default: 'false'
   agent_name:
-    description: 'Name of the AI agent to handle the ticket'
-    required: true
-  agent_instance:
-    description: 'Instance ID of the AI agent'
-    required: true
-
+    description: 'Name of the AI agent to handle the ticket. One of agent_name or agent_id is required.'
+    required: false
+    default: ''
+  agent_id:
+    description: 'Id of the AI agent to handle the ticket. Skips the agent name lookup when provided.'
+    required: false
+    default: ''
+  workspace:
+    description: >-
+      AI HelpDesk workspace name to create the ticket in. Falls back to the
+      DUPLO_WORKSPACE environment variable. One of workspace or workspace_id
+      is required (via input or environment).
+    required: false
+    default: ''
+  workspace_id:
+    description: >-
+      AI HelpDesk workspace id. Skips the workspace name lookup when provided.
+      Falls back to the DUPLO_WORKSPACE_ID environment variable.
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -45,18 +59,36 @@ runs:
       CONTEXT: ${{ inputs.context }}
       CONTENT: ${{ inputs.content }}
       INCLUDE_SENSITIVE_DATA: ${{ inputs.include_sensitive_data }}
+      AGENT_NAME: ${{ inputs.agent_name }}
+      AGENT_ID: ${{ inputs.agent_id }}
+      WORKSPACE: ${{ inputs.workspace }}
+      WORKSPACE_ID: ${{ inputs.workspace_id }}
     run: |
-      # Validate required environment variables
-      if [ -z "$DUPLO_HOST" ] || [ -z "$DUPLO_TOKEN" ] || [ -z "$DUPLO_TENANT" ]; then
-        echo "Error: Required environment variables DUPLO_HOST, DUPLO_TOKEN, and DUPLO_TENANT must be set"
-        echo "Please ensure the Duplo Setup action is run before this action"
+      # Validate required environment variables. The ticket API is
+      # workspace-scoped, so a workspace selector replaces the old
+      # DUPLO_TENANT requirement; this works against both an integrated
+      # portal and a standalone AI HelpDesk (dahp_ token).
+      if [ -z "${DUPLO_HOST:-}" ] || [ -z "${DUPLO_TOKEN:-}" ]; then
+        echo "::error::DUPLO_HOST and DUPLO_TOKEN must be set. Run the Duplo Setup action first."
         exit 1
       fi
 
       # Validate duploctl is available
       if ! command -v duploctl &> /dev/null; then
-        echo "Error: duploctl command not found"
-        echo "Please ensure the Duplo Setup action is run before this action"
+        echo "::error::duploctl command not found. Run the Duplo Setup action first."
+        exit 1
+      fi
+
+      # Resolve the workspace selector from inputs or the environment
+      WORKSPACE="${WORKSPACE:-${DUPLO_WORKSPACE:-}}"
+      WORKSPACE_ID="${WORKSPACE_ID:-${DUPLO_WORKSPACE_ID:-}}"
+      if [ -z "$WORKSPACE" ] && [ -z "$WORKSPACE_ID" ]; then
+        echo "::error::One of workspace or workspace_id is required (input or DUPLO_WORKSPACE / DUPLO_WORKSPACE_ID environment variable)."
+        exit 1
+      fi
+
+      if [ -z "$AGENT_NAME" ] && [ -z "$AGENT_ID" ]; then
+        echo "::error::One of agent_name or agent_id is required."
         exit 1
       fi
 
@@ -108,10 +140,14 @@ runs:
       fi
 
       # Set outputs for next step
-      echo "ticket_title=$TICKET_TITLE" >> $GITHUB_OUTPUT
-      echo "ticket_message<<EOF" >> $GITHUB_OUTPUT
-      echo "$TICKET_MESSAGE" >> $GITHUB_OUTPUT
-      echo "EOF" >> $GITHUB_OUTPUT
+      {
+        echo "ticket_title=$TICKET_TITLE"
+        echo "workspace=$WORKSPACE"
+        echo "workspace_id=$WORKSPACE_ID"
+        echo "ticket_message<<EOF"
+        echo "$TICKET_MESSAGE"
+        echo "EOF"
+      } >> $GITHUB_OUTPUT
 
   - name: Create HelpDesk Ticket
     id: duploctl-create-ticket
@@ -120,50 +156,51 @@ runs:
       TICKET_TITLE: ${{ steps.prepare-ticket.outputs.ticket_title }}
       TICKET_MESSAGE: ${{ steps.prepare-ticket.outputs.ticket_message }}
       AGENT_NAME: ${{ inputs.agent_name }}
-      AGENT_INSTANCE: ${{ inputs.agent_instance }}
+      AGENT_ID: ${{ inputs.agent_id }}
+      WORKSPACE: ${{ steps.prepare-ticket.outputs.workspace }}
+      WORKSPACE_ID: ${{ steps.prepare-ticket.outputs.workspace_id }}
     run: |
-      duploctl ai create_ticket \
-        --origin pipelines \
-        --title "$TICKET_TITLE" \
-        --agent_name "$AGENT_NAME" \
-        --instance_id "$AGENT_INSTANCE" \
-        --message "$TICKET_MESSAGE" > /tmp/duploctl_output.json 2>&1
+      ARGS=(--origin pipelines --title "$TICKET_TITLE" --message "$TICKET_MESSAGE")
+      if [ -n "$AGENT_ID" ]; then
+        ARGS+=(--agent_id "$AGENT_ID")
+      else
+        ARGS+=(--agent_name "$AGENT_NAME")
+      fi
+      if [ -n "$WORKSPACE_ID" ]; then
+        ARGS+=(--workspace-id "$WORKSPACE_ID")
+      else
+        ARGS+=(--workspace "$WORKSPACE")
+      fi
+      # stdout carries the JSON result only; duploctl logs go to stderr so
+      # the next step can parse the file with jq.
+      duploctl ticket create_ticket "${ARGS[@]}" -o json > /tmp/duploctl_output.json
 
   - name: Build Step Summary
     shell: bash
     env:
       AGENT_NAME: ${{ inputs.agent_name }}
-      AGENT_INSTANCE: ${{ inputs.agent_instance }}
+      AGENT_ID: ${{ inputs.agent_id }}
+      WORKSPACE: ${{ steps.prepare-ticket.outputs.workspace }}
+      WORKSPACE_ID: ${{ steps.prepare-ticket.outputs.workspace_id }}
       HIDE_RESPONSE: ${{ inputs.hide_response }}
     run: |
-      TICKET_NAME=$(grep -o '"ticketname": "[^"]*"' /tmp/duploctl_output.json | cut -d'"' -f4 || echo "")
-      CHAT_URL=$(grep -o '"chat_url": "[^"]*"' /tmp/duploctl_output.json | cut -d'"' -f4 || echo "")
+      TICKET_NAME=$(jq -r '.ticketname // empty' /tmp/duploctl_output.json 2>/dev/null || echo "")
+      CHAT_URL=$(jq -r '.chat_url // empty' /tmp/duploctl_output.json 2>/dev/null || echo "")
 
       echo "# AI HelpDesk Ticket Created" > $GITHUB_STEP_SUMMARY
       [ -n "$CHAT_URL" ] && echo "**Chat URL:** [$CHAT_URL]($CHAT_URL)" >> $GITHUB_STEP_SUMMARY
       [ -n "$TICKET_NAME" ] && echo "**Ticket:** \`$TICKET_NAME\`" >> $GITHUB_STEP_SUMMARY
-      echo "**Agent:** \`$AGENT_NAME\`" >> $GITHUB_STEP_SUMMARY
-      echo "**Instance:** \`$AGENT_INSTANCE\`" >> $GITHUB_STEP_SUMMARY
-      echo "**Tenant:** \`$DUPLO_TENANT\`" >> $GITHUB_STEP_SUMMARY
+      echo "**Agent:** \`${AGENT_NAME:-$AGENT_ID}\`" >> $GITHUB_STEP_SUMMARY
+      echo "**Workspace:** \`${WORKSPACE:-$WORKSPACE_ID}\`" >> $GITHUB_STEP_SUMMARY
       echo "" >> $GITHUB_STEP_SUMMARY
 
       if [ "$HIDE_RESPONSE" != "true" ]; then
-        AGENT_RESPONSE=$(jq -r '.ai_response.content // empty' /tmp/duploctl_output.json 2>/dev/null || echo "")
+        AGENT_RESPONSE=$(jq -r '.ai_response // empty' /tmp/duploctl_output.json 2>/dev/null || echo "")
 
         if [ -n "$AGENT_RESPONSE" ]; then
           echo "$AGENT_RESPONSE" >> $GITHUB_STEP_SUMMARY
-
-          TOOL_COUNT=$(jq '.ai_response.data.tool_calls // [] | length' /tmp/duploctl_output.json 2>/dev/null || echo "0")
-
-          if [ "$TOOL_COUNT" -gt 0 ]; then
-            jq -r '.ai_response.data.tool_calls[]? | "- \(.name): \(.tool_description // "No description")"' /tmp/duploctl_output.json >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
-            MESSAGE="review and approve the suggested commands"
-          else
-            MESSAGE="continue the conversation"
-          fi
-
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Open the [HelpDesk ticket]($CHAT_URL) to $MESSAGE.**" >> $GITHUB_STEP_SUMMARY
+          echo "**Open the [HelpDesk ticket]($CHAT_URL) to continue the conversation.**" >> $GITHUB_STEP_SUMMARY
         fi
       fi
 
