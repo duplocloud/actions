@@ -168,8 +168,18 @@ runs:
       fi
 
       CONTEXT="${CONTEXT_NAME:-$CLUSTER_NAME}"
+      # The context name lands in unquoted YAML scalar positions; restrict
+      # it to kubeconfig-safe characters instead of trying to escape YAML.
+      if ! printf '%s' "$CONTEXT" | grep -Eq '^[A-Za-z0-9._-]+$'; then
+        echo "::error::context name '$CONTEXT' contains characters that are not kubeconfig-safe (allowed: letters, digits, '.', '_', '-')."
+        exit 1
+      fi
       KPATH="${KUBECONFIG_PATH:-$RUNNER_TEMP/duplo-helpdesk-kubeconfig.yaml}"
       mkdir -p "$(dirname "$KPATH")"
+      # Recreate the file so umask governs its mode: cat > truncates an
+      # existing file but keeps its old (possibly world-readable)
+      # permissions, and the file holds a bearer token.
+      rm -f "$KPATH"
       umask 077
       cat > "$KPATH" <<KCFG
       apiVersion: v1
