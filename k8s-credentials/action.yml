@@ -1,0 +1,215 @@
+name: AI HelpDesk K8s Credentials
+description: >-
+  Fetches just-in-time Kubernetes credentials for an AI HelpDesk cluster
+  and writes a kubeconfig for kubectl/helm steps. Works against both
+  integrated portals and standalone AI HelpDesks.
+author: duplocloud
+branding:
+  icon: anchor
+  color: blue
+inputs:
+  cluster:
+    description: >-
+      Cluster name as shown in the HelpDesk workspace. Optional when the
+      workspace has exactly one cluster.
+    required: false
+    default: ""
+  cluster_id:
+    description: Cluster id. Skips the cluster name lookup when provided.
+    required: false
+    default: ""
+  workspace:
+    description: >-
+      AI HelpDesk workspace name the cluster belongs to. Falls back to the
+      DUPLO_WORKSPACE environment variable.
+    required: false
+    default: ""
+  workspace_id:
+    description: >-
+      AI HelpDesk workspace id. Skips the workspace name lookup when
+      provided. Falls back to the DUPLO_WORKSPACE_ID environment variable.
+      One of workspace or workspace_id is required (via input or
+      environment).
+    required: false
+    default: ""
+  kubeconfig_path:
+    description: >-
+      Where to write the kubeconfig. Defaults to a file under RUNNER_TEMP.
+    required: false
+    default: ""
+  context_name:
+    description: Kubeconfig context name. Defaults to the cluster name.
+    required: false
+    default: ""
+  export_kubeconfig:
+    description: >-
+      Export KUBECONFIG pointing at the written file for the rest of the
+      job. Set to false to only expose the path as an output.
+    required: false
+    default: "true"
+  insecure_skip_tls_verify:
+    description: >-
+      Skip TLS verification of the API server instead of pinning its
+      certificate authority. Only for clusters where the platform cannot
+      supply a complete CA (a known gap on some AWS-provisioned
+      clusters); the bearer token is still required and verified.
+    required: false
+    default: "false"
+outputs:
+  kubeconfig:
+    description: Path of the written kubeconfig file.
+    value: ${{ steps.creds.outputs.kubeconfig }}
+  endpoint:
+    description: Kubernetes API server URL.
+    value: ${{ steps.creds.outputs.endpoint }}
+  namespace:
+    description: Default namespace of the credentials.
+    value: ${{ steps.creds.outputs.namespace }}
+  context:
+    description: Name of the kubeconfig context.
+    value: ${{ steps.creds.outputs.context }}
+
+runs:
+  using: composite
+  steps:
+
+  - name: Fetch JIT Credentials
+    id: creds
+    shell: bash
+    env:
+      CLUSTER: ${{ inputs.cluster }}
+      CLUSTER_ID: ${{ inputs.cluster_id }}
+      WORKSPACE: ${{ inputs.workspace }}
+      WORKSPACE_ID: ${{ inputs.workspace_id }}
+      KUBECONFIG_PATH: ${{ inputs.kubeconfig_path }}
+      CONTEXT_NAME: ${{ inputs.context_name }}
+      EXPORT_KUBECONFIG: ${{ inputs.export_kubeconfig }}
+      INSECURE_SKIP_TLS_VERIFY: ${{ inputs.insecure_skip_tls_verify }}
+    run: |
+      set -euo pipefail
+
+      if [ -z "${DUPLO_HOST:-}" ] || [ -z "${DUPLO_TOKEN:-}" ]; then
+        echo "::error::DUPLO_HOST and DUPLO_TOKEN must be set. Run the Duplo Setup action first."
+        exit 1
+      fi
+      command -v duploctl >/dev/null || { echo "::error::duploctl not found. Run the Duplo Setup action first."; exit 1; }
+      command -v jq >/dev/null || { echo "::error::jq is required but not found on the runner."; exit 1; }
+
+      # Resolve the workspace selector from inputs or the environment
+      WORKSPACE="${WORKSPACE:-${DUPLO_WORKSPACE:-}}"
+      WORKSPACE_ID="${WORKSPACE_ID:-${DUPLO_WORKSPACE_ID:-}}"
+      if [ -z "$WORKSPACE" ] && [ -z "$WORKSPACE_ID" ]; then
+        echo "::error::one of workspace or workspace_id is required (input or DUPLO_WORKSPACE / DUPLO_WORKSPACE_ID environment variable)"
+        exit 1
+      fi
+      WS_ARGS=()
+      if [ -n "$WORKSPACE_ID" ]; then
+        WS_ARGS+=(--workspace-id "$WORKSPACE_ID")
+      else
+        WS_ARGS+=(--workspace "$WORKSPACE")
+      fi
+
+      # The cluster record is needed for the id and as the certificate
+      # authority fallback: on AWS-provisioned clusters the jitAccess
+      # endpoint currently returns an empty CA, while the cluster record
+      # carries the same value at result.certificateAuthority.
+      CLUSTERS=$(duploctl k8s_credentials list "${WS_ARGS[@]}" -o json)
+      if [ -n "$CLUSTER_ID" ]; then
+        RECORD=$(jq -c --arg id "$CLUSTER_ID" '[.[] | select((.id // .Id) == $id)] | first // empty' <<< "$CLUSTERS")
+      elif [ -n "$CLUSTER" ]; then
+        RECORD=$(jq -c --arg n "$CLUSTER" '[.[] | select(((.name // "") | ascii_downcase) == ($n | ascii_downcase))] | first // empty' <<< "$CLUSTERS")
+      else
+        COUNT=$(jq 'length' <<< "$CLUSTERS")
+        if [ "$COUNT" -eq 1 ]; then
+          RECORD=$(jq -c '.[0]' <<< "$CLUSTERS")
+        else
+          echo "::error::cluster is required when the workspace has $COUNT clusters: $(jq -r '[.[].name] | join(", ")' <<< "$CLUSTERS")"
+          exit 1
+        fi
+      fi
+      if [ -z "$RECORD" ]; then
+        echo "::error::cluster '${CLUSTER:-$CLUSTER_ID}' not found in the workspace. Available: $(jq -r '[.[].name] | join(", ")' <<< "$CLUSTERS")"
+        exit 1
+      fi
+      CLUSTER_ID=$(jq -r '.id // .Id' <<< "$RECORD")
+      CLUSTER_NAME=$(jq -r '.name // .id' <<< "$RECORD")
+
+      CREDS=$(duploctl k8s_credentials find --id "$CLUSTER_ID" "${WS_ARGS[@]}" -o json)
+      SERVER=$(jq -r '.apiServer // empty' <<< "$CREDS")
+      TOKEN=$(jq -r '.token // empty' <<< "$CREDS")
+      CA=$(jq -r '.certificateAuthorityDataBase64 // empty' <<< "$CREDS")
+      NAMESPACE=$(jq -r '.defaultNamespace // "default"' <<< "$CREDS")
+      if [ -z "$SERVER" ] || [ -z "$TOKEN" ]; then
+        echo "::error::The AI HelpDesk returned incomplete credentials for cluster '$CLUSTER_NAME'."
+        exit 1
+      fi
+      echo "::add-mask::$TOKEN"
+
+      if [ -z "$CA" ]; then
+        CA=$(jq -r '.result.certificateAuthority // empty' <<< "$RECORD")
+      fi
+      # TLS trust for the cluster: pin the CA, or skip verification when
+      # explicitly requested. The CA must decode to a complete PEM
+      # certificate — some backends return it empty on jitAccess or
+      # truncated on the cluster record, and a broken CA would otherwise
+      # only surface later as a cryptic kubectl TLS error.
+      if [ "$INSECURE_SKIP_TLS_VERIFY" = "true" ]; then
+        TLS_LINE="insecure-skip-tls-verify: true"
+      else
+        if [ -z "$CA" ]; then
+          echo "::error::No certificate authority available for cluster '$CLUSTER_NAME' (neither jitAccess nor the cluster record carries one). Set insecure_skip_tls_verify: true to proceed without one."
+          exit 1
+        fi
+        if ! printf '%s' "$CA" | base64 -d 2>/dev/null | grep -q "END CERTIFICATE"; then
+          echo "::error::The certificate authority the AI HelpDesk returned for cluster '$CLUSTER_NAME' is not a complete certificate (a known backend gap). Set insecure_skip_tls_verify: true to proceed without it."
+          exit 1
+        fi
+        TLS_LINE="certificate-authority-data: $CA"
+      fi
+
+      CONTEXT="${CONTEXT_NAME:-$CLUSTER_NAME}"
+      # The context name lands in unquoted YAML scalar positions; restrict
+      # it to kubeconfig-safe characters instead of trying to escape YAML.
+      if ! printf '%s' "$CONTEXT" | grep -Eq '^[A-Za-z0-9._-]+$'; then
+        echo "::error::context name '$CONTEXT' contains characters that are not kubeconfig-safe (allowed: letters, digits, '.', '_', '-')."
+        exit 1
+      fi
+      KPATH="${KUBECONFIG_PATH:-$RUNNER_TEMP/duplo-helpdesk-kubeconfig.yaml}"
+      mkdir -p "$(dirname "$KPATH")"
+      # Recreate the file so umask governs its mode: cat > truncates an
+      # existing file but keeps its old (possibly world-readable)
+      # permissions, and the file holds a bearer token.
+      rm -f "$KPATH"
+      umask 077
+      cat > "$KPATH" <<KCFG
+      apiVersion: v1
+      kind: Config
+      clusters:
+      - name: $CONTEXT
+        cluster:
+          server: $SERVER
+          $TLS_LINE
+      users:
+      - name: $CONTEXT
+        user:
+          token: $TOKEN
+      contexts:
+      - name: $CONTEXT
+        context:
+          cluster: $CONTEXT
+          user: $CONTEXT
+          namespace: $NAMESPACE
+      current-context: $CONTEXT
+      KCFG
+
+      {
+        echo "kubeconfig=$KPATH"
+        echo "endpoint=$SERVER"
+        echo "namespace=$NAMESPACE"
+        echo "context=$CONTEXT"
+      } >> "$GITHUB_OUTPUT"
+      if [ "$EXPORT_KUBECONFIG" = "true" ]; then
+        echo "KUBECONFIG=$KPATH" >> "$GITHUB_ENV"
+      fi
+      echo "Wrote kubeconfig for cluster '$CLUSTER_NAME' ($SERVER) to $KPATH"
+      echo "The bearer token is short-lived (minutes): use it promptly and re-run this action to refresh."
