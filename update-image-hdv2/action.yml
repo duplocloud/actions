@@ -54,6 +54,10 @@ runs:
       fi
       command -v duploctl >/dev/null || { echo "::error::duploctl not found. Run the Duplo Setup action first."; exit 1; }
 
+      if [ -z "$NAME" ]; then
+        echo "::error::name is required"
+        exit 1
+      fi
       if [ -z "$IMAGE" ]; then
         echo "::error::image is required"
         exit 1
