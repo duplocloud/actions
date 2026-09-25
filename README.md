@@ -30,6 +30,7 @@ The following input variables can be configured:
 | `version`        | Duplo version to install.                                                    | `false`  | `latest`      |
 | `jit`             | Enable JIT (Just-In-Time) authentication for cloud providers.               | `false`  | `true`        |
 | `cloud-cli`       | Enable cloud CLI installation and configuration (AWS CLI, gcloud, Azure CLI). | `false`  | `true`        |
+| `mode`            | Deployment mode: `portal`, `helpdesk` (standalone AI HelpDesk), or `auto` (detect from the token — `dahp_` tokens are helpdesk API tokens). In helpdesk mode the portal discovery, cloud JIT, and cloud CLI steps are skipped. | `false`  | `auto`        |
 
 
 ## Usage
@@ -51,6 +52,17 @@ jobs:
       uses: duplocloud/actions@<VERSION OF THIS ACTION>
       with:
         version: <DUPLOCTL VERSION>
+```
+
+**Standalone AI HelpDesk Example:**  
+For a standalone AI HelpDesk, set `DUPLO_HOST` to the helpdesk URL and `DUPLO_TOKEN` to a `dahp_` API token minted from the helpdesk. The action detects the token prefix and skips the portal discovery and cloud JIT/CLI steps; no `DUPLO_TENANT` is needed. Pass `mode: helpdesk` to make the choice explicit instead of relying on detection.  
+```yaml
+steps:
+- name: Duplo Setup
+  uses: duplocloud/actions@<VERSION OF THIS ACTION>
+  env:
+    DUPLO_HOST: ${{ vars.DUPLO_HOST }}        # https://my-helpdesk.example.com
+    DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}   # dahp_...
 ```
 
 **GCP or Azure Example with Credentials:**  
