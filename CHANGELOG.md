@@ -11,6 +11,8 @@ and this project adheres to
 ### Added
 
 - New `run-job-hdv2` action — the AI HelpDesk counterpart to `run-job`. Creates a Kubernetes job in a workspace via `duploctl hd_job create` and waits for it to run to completion (duploctl gates on the Job's `Complete`/`Failed` conditions). `replace: true` deletes an existing job of the same name first, since HelpDesk jobs are immutable. Workspace selector falls back to `DUPLO_WORKSPACE`/`DUPLO_WORKSPACE_ID`; requires only `DUPLO_HOST`/`DUPLO_TOKEN`.
+- New `update-images-hdv2` action — the HDV2 counterpart to `update-images`. Bulk-updates images for multiple workloads from a `workloads` JSON array (`{name, image, type?}`; types `service`/`lambda`/`cronjob`), validating every entry before touching anything and then updating sequentially with fail-fast. Workspace selector falls back to `DUPLO_WORKSPACE`/`DUPLO_WORKSPACE_ID`; requires only `DUPLO_HOST`/`DUPLO_TOKEN`.
+- New `aws-credentials` action — mints just-in-time AWS credentials from an AI HelpDesk workspace (`duploctl aws_credentials`) for a cloud scope (by name/id, defaulting to the workspace's only AWS scope) or the IAM role attached to a resource group, exporting masked `AWS_*` environment variables for later steps plus `region`/`console_url`/`expiration` outputs. Works against integrated portals and standalone AI HelpDesks.
 - `update-image` action now supports updating sidecar (additional) and init container images for Kubernetes services via new `container_images` and `init_container_images` JSON inputs. Main `image` is now optional when one of these is provided. Only applicable when `type=service`.
 
 ## [0.1.0] - 2026-05-13
