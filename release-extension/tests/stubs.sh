@@ -43,16 +43,28 @@ EOF
 cat > "$TMP/bin/curl" <<'EOF'
 #!/usr/bin/env bash
 echo "curl $*" >> "$LOG"
-url=""; data=""; method=GET; hdrfile=""
+url=""; data=""; method=GET; hdrfile=""; outfile=""; putfile=""
 while [ $# -gt 0 ]; do
   case "$1" in
     -X) method=$2; shift ;;
     --data|-d) data=$2; method=${method/GET/POST}; shift ;;
     -H) case "$2" in @*) hdrfile=${2#@} ;; esac; shift ;;
+    -o) outfile=$2; shift ;;
+    -T) putfile=$2; shift ;;
     http*) url=$1 ;;
   esac
   shift
 done
+
+# The console upload PUT goes to the grant's s3.stub URL. Model it as a create-only put into $S3, writing the body to
+# -o and the HTTP code to stdout the way curl -w does (no --fail-with-body, so the exit is 0 and the caller branches
+# on the code). 412 when the key already holds an object.
+if [ "$method" = PUT ]; then
+  [ -n "$outfile" ] && echo '{}' > "$outfile"
+  key="${url#*://s3.stub/}"; key="${key%%\?*}"; obj="$S3/$(echo "$key" | tr / _)"
+  if [ -f "$obj" ]; then printf '412'; else cp "$putfile" "$obj" 2>/dev/null; printf '200'; fi
+  exit 0
+fi
 if [ -n "$hdrfile" ] && grep -qF -- "$CONSOLE_API_KEY" "$hdrfile" 2>/dev/null
 then echo "HEADER_FILE_KEY=yes" >> "$LOG"; else echo "HEADER_FILE_KEY=no" >> "$LOG"; fi
 
