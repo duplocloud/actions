@@ -1,0 +1,77 @@
+name: Release extension
+description: >-
+  Take a repository's built DuploCloud extensions through signing, a GitHub release, console registration, upload and
+  optional publishing. The repository's own build runs first, through build-command, and this action owns the rest.
+
+inputs:
+  name:
+    description: Agent display name for a single-extension repository. Defaults to the manifest's name, then its id.
+    required: false
+  description:
+    description: Agent description for a single-extension repository. Defaults to the manifest's description.
+    required: false
+  changelog:
+    description: Changelog text for the version, for a single-extension repository.
+    required: false
+  sdk-versions:
+    description: Newline-separated SDK versions the build produced a bundle for. Empty means one default bundle.
+    required: false
+  publish:
+    description: Publish a version when this run registered its first build. A version already published is left alone.
+    required: false
+    default: "false"
+  signing-key:
+    description: Secret. The publisher's private key PEM. Required in DuploCloud's organizations.
+    required: false
+  signing-cert:
+    description: The publisher's certificate. Required in DuploCloud's organizations.
+    required: false
+  console-api-key:
+    description: Secret. The console API key that registers versions and artifacts. Required.
+    required: true
+  console-url:
+    description: The console base URL.
+    required: false
+    default: https://console.duplocloud.com
+  console-team:
+    description: The console team whose agents routes to use. Empty uses the staff routes, which need view_agents.
+    required: false
+  armdot-license:
+    description: Secret. Base64 of the ArmDot license file. Required in DuploCloud's organizations, ignored elsewhere.
+    required: false
+  build-command:
+    description: The repository's build, run before anything is signed or released.
+    required: false
+    default: ./scripts/build-all.sh
+  bundle-bucket:
+    description: The S3 bucket the AWS backend uploads bundles to.
+    required: false
+    default: duplo-helpdesk-channels
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      with:
+        python-version: '3.12'
+    - name: Install the signer's dependencies
+      shell: bash
+      run: pip install --require-hashes -r "$GITHUB_ACTION_PATH/scripts/extension-sign.requirements.txt"
+    - name: Release each extension
+      shell: bash
+      run: "$GITHUB_ACTION_PATH/scripts/release.sh"
+      env:
+        INPUT_NAME: ${{ inputs.name }}
+        INPUT_DESCRIPTION: ${{ inputs.description }}
+        INPUT_CHANGELOG: ${{ inputs.changelog }}
+        INPUT_SDK_VERSIONS: ${{ inputs.sdk-versions }}
+        INPUT_PUBLISH: ${{ inputs.publish }}
+        INPUT_SIGNING_KEY: ${{ inputs.signing-key }}
+        INPUT_SIGNING_CERT: ${{ inputs.signing-cert }}
+        INPUT_CONSOLE_API_KEY: ${{ inputs.console-api-key }}
+        INPUT_CONSOLE_URL: ${{ inputs.console-url }}
+        INPUT_CONSOLE_TEAM: ${{ inputs.console-team }}
+        INPUT_ARMDOT_LICENSE: ${{ inputs.armdot-license }}
+        INPUT_BUILD_COMMAND: ${{ inputs.build-command }}
+        INPUT_BUNDLE_BUCKET: ${{ inputs.bundle-bucket }}
+        GH_TOKEN: ${{ github.token }}
