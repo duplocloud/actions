@@ -1,0 +1,200 @@
+{
+  "root_keys": {
+    "a7d500cea1298111": "root.pub.pem"
+  },
+  "cases": [
+    {
+      "name": "valid",
+      "sig": "extension.zip.sig",
+      "sha256": "445472fcbd115e33d6324838d42b9f567b5167c4349250f85a6555b2424a940c",
+      "manifest_id": "io.example.hello",
+      "version": "1.0.0",
+      "sdk_version": "1.0.0",
+      "trusted_publishers": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "now": 1798761600,
+      "expect": "ok"
+    },
+    {
+      "name": "valid-trust-check-skipped",
+      "sig": "extension.zip.sig",
+      "sha256": "445472fcbd115e33d6324838d42b9f567b5167c4349250f85a6555b2424a940c",
+      "manifest_id": "io.example.hello",
+      "version": "1.0.0",
+      "sdk_version": "1.0.0",
+      "trusted_publishers": null,
+      "now": 1798761600,
+      "expect": "ok"
+    },
+    {
+      "name": "tampered-hash",
+      "sig": "extension.zip.sig",
+      "sha256": "8370c756d9c473c4d0c0fc89841fd8bfe37cb50fdc107e09d87583819d987946",
+      "manifest_id": "io.example.hello",
+      "version": "1.0.0",
+      "sdk_version": "1.0.0",
+      "trusted_publishers": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "now": 1798761600,
+      "expect": "hash_mismatch"
+    },
+    {
+      "name": "wrong-version",
+      "sig": "extension.zip.sig",
+      "sha256": "445472fcbd115e33d6324838d42b9f567b5167c4349250f85a6555b2424a940c",
+      "manifest_id": "io.example.hello",
+      "version": "1.0.1",
+      "sdk_version": "1.0.0",
+      "trusted_publishers": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "now": 1798761600,
+      "expect": "manifest_mismatch"
+    },
+    {
+      "name": "wrong-namespace",
+      "sig": "outside-namespace.zip.sig",
+      "sha256": "445472fcbd115e33d6324838d42b9f567b5167c4349250f85a6555b2424a940c",
+      "manifest_id": "com.other.hello",
+      "version": "1.0.0",
+      "sdk_version": "1.0.0",
+      "trusted_publishers": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "now": 1798761600,
+      "expect": "outside_namespace"
+    },
+    {
+      "name": "expired",
+      "sig": "extension.zip.sig",
+      "sha256": "445472fcbd115e33d6324838d42b9f567b5167c4349250f85a6555b2424a940c",
+      "manifest_id": "io.example.hello",
+      "version": "1.0.0",
+      "sdk_version": "1.0.0",
+      "trusted_publishers": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "now": 2082758400,
+      "expect": "cert_expired"
+    },
+    {
+      "name": "not-yet-valid",
+      "sig": "extension.zip.sig",
+      "sha256": "445472fcbd115e33d6324838d42b9f567b5167c4349250f85a6555b2424a940c",
+      "manifest_id": "io.example.hello",
+      "version": "1.0.0",
+      "sdk_version": "1.0.0",
+      "trusted_publishers": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "now": 1767225599,
+      "expect": "cert_expired"
+    },
+    {
+      "name": "untrusted-publisher",
+      "sig": "extension.zip.sig",
+      "sha256": "445472fcbd115e33d6324838d42b9f567b5167c4349250f85a6555b2424a940c",
+      "manifest_id": "io.example.hello",
+      "version": "1.0.0",
+      "sdk_version": "1.0.0",
+      "trusted_publishers": [
+        "00000000-0000-4000-8000-000000000002"
+      ],
+      "now": 1798761600,
+      "expect": "untrusted_publisher"
+    },
+    {
+      "name": "bad-signature",
+      "sig": "bad-signature.zip.sig",
+      "sha256": "445472fcbd115e33d6324838d42b9f567b5167c4349250f85a6555b2424a940c",
+      "manifest_id": "io.example.hello",
+      "version": "1.0.0",
+      "sdk_version": "1.0.0",
+      "trusted_publishers": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "now": 1798761600,
+      "expect": "bad_signature"
+    },
+    {
+      "name": "kid-mismatch",
+      "sig": "kid-mismatch.zip.sig",
+      "sha256": "445472fcbd115e33d6324838d42b9f567b5167c4349250f85a6555b2424a940c",
+      "manifest_id": "io.example.hello",
+      "version": "1.0.0",
+      "sdk_version": "1.0.0",
+      "trusted_publishers": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "now": 1798761600,
+      "expect": "kid_mismatch"
+    },
+    {
+      "name": "unknown-root",
+      "sig": "unknown-root.zip.sig",
+      "sha256": "445472fcbd115e33d6324838d42b9f567b5167c4349250f85a6555b2424a940c",
+      "manifest_id": "io.example.hello",
+      "version": "1.0.0",
+      "sdk_version": "1.0.0",
+      "trusted_publishers": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "now": 1798761600,
+      "expect": "unknown_root"
+    },
+    {
+      "name": "cert-as-signature",
+      "sig": "cert-as-signature.zip.sig",
+      "sha256": "445472fcbd115e33d6324838d42b9f567b5167c4349250f85a6555b2424a940c",
+      "manifest_id": "io.example.hello",
+      "version": "1.0.0",
+      "sdk_version": "1.0.0",
+      "trusted_publishers": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "now": 1798761600,
+      "expect": "bad_typ"
+    },
+    {
+      "name": "alg-none",
+      "sig": "alg-none.zip.sig",
+      "sha256": "445472fcbd115e33d6324838d42b9f567b5167c4349250f85a6555b2424a940c",
+      "manifest_id": "io.example.hello",
+      "version": "1.0.0",
+      "sdk_version": "1.0.0",
+      "trusted_publishers": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "now": 1798761600,
+      "expect": "malformed"
+    },
+    {
+      "name": "alg-hs256",
+      "sig": "alg-hs256.zip.sig",
+      "sha256": "445472fcbd115e33d6324838d42b9f567b5167c4349250f85a6555b2424a940c",
+      "manifest_id": "io.example.hello",
+      "version": "1.0.0",
+      "sdk_version": "1.0.0",
+      "trusted_publishers": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "now": 1798761600,
+      "expect": "malformed"
+    },
+    {
+      "name": "missing-cert-header",
+      "sig": "missing-cert-header.zip.sig",
+      "sha256": "445472fcbd115e33d6324838d42b9f567b5167c4349250f85a6555b2424a940c",
+      "manifest_id": "io.example.hello",
+      "version": "1.0.0",
+      "sdk_version": "1.0.0",
+      "trusted_publishers": [
+        "00000000-0000-4000-8000-000000000001"
+      ],
+      "now": 1798761600,
+      "expect": "malformed"
+    }
+  ]
+}
