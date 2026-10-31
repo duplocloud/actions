@@ -47,6 +47,7 @@ and this project adheres to
 - Updated ai-helpdesk action to display the first agent response in the summary by default with optional `hide_response` parameter
 - security-scan: `enforce: "true"` now also fails on scanner failures, not just findings
 - security-scan: the trivy scans emit JSON reports rather than console-only output, so their findings can be itemised and baselined
+- The default duploctl version is now `0.4.5` (was `0.3.7`). With 0.3.7, `update_image --wait` on a service fails with `KeyError: 'Name'` whenever the tenant has a pod Duplo didn't create, such as one started with `kubectl run`. Since 2026-10-29 that failed every ai-platform deploy to dev01
 
 ## [0.0.13] - 2025-09-23
 
