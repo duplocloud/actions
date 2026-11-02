@@ -2,9 +2,14 @@
 # The two create-only upload backends. Sourced by release.sh and the tests. The AWS backend puts straight to the
 # bucket with the assumed role. The console backend puts through a console-issued grant, for a pipeline with no role.
 
-# upload_backend: aws when the caller supplied AWS credentials, else console.
+# upload_backend: aws only inside DuploCloud's own organizations when the caller supplied AWS credentials, else
+# console. A customer repository that ran configure-aws-credentials for its own deploys would otherwise take the aws
+# path and put into the DuploCloud bucket with its own credentials, failing with AccessDenied after the release.
 upload_backend() {
-  if [ -n "${AWS_ACCESS_KEY_ID:-}" ]; then printf 'aws'; else printf 'console'; fi
+  case "${GITHUB_REPOSITORY_OWNER:-}" in
+    duplocloud|duplocloud-internal) [ -n "${AWS_ACCESS_KEY_ID:-}" ] && { printf 'aws'; return; } ;;
+  esac
+  printf 'console'
 }
 
 # aws_put_once <file> <bucket> <key>: create-only put. On a 412 the bytes are compared, identical counting as already

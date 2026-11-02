@@ -31,11 +31,17 @@ chmod +x "$TMP/bin/curl"
 echo "upload:"
 
 # --- upload_backend ------------------------------------------------------------------------------
-t "upload_backend is aws when AWS_ACCESS_KEY_ID is set"
-[ "$(AWS_ACCESS_KEY_ID=x upload_backend)" = aws ] && ok || bad "expected aws"
+t "upload_backend is aws inside a DuploCloud org with AWS credentials"
+[ "$(GITHUB_REPOSITORY_OWNER=duplocloud AWS_ACCESS_KEY_ID=x upload_backend)" = aws ] && ok || bad "expected aws"
 
-t "upload_backend is console without AWS_ACCESS_KEY_ID"
-[ "$(unset AWS_ACCESS_KEY_ID; upload_backend)" = console ] && ok || bad "expected console"
+t "upload_backend is console inside a DuploCloud org without AWS credentials"
+[ "$(unset AWS_ACCESS_KEY_ID; GITHUB_REPOSITORY_OWNER=duplocloud upload_backend)" = console ] && ok || bad "expected console"
+
+t "upload_backend is console in a customer repo even with AWS credentials"
+[ "$(GITHUB_REPOSITORY_OWNER=acme AWS_ACCESS_KEY_ID=x upload_backend)" = console ] && ok || bad "customer with aws must use console"
+
+t "upload_backend is console when no owner is set"
+[ "$(unset GITHUB_REPOSITORY_OWNER; AWS_ACCESS_KEY_ID=x upload_backend)" = console ] && ok || bad "expected console"
 
 # --- aws_put_once --------------------------------------------------------------------------------
 t "aws_put_once uploads a fresh object"

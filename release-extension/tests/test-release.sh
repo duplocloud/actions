@@ -132,6 +132,18 @@ rc_put=$(grep -n 'put-object' "$WORK/log" | head -1 | cut -d: -f1)
 t "the console key and signing key never appear in the logged argv"
 if ! grep -q 'console-key-xyz' "$WORK/log"; then ok; else bad "key in log"; fi
 
+t "the build cannot read the signing key, console key or release token, but keeps the license path"
+fresh_repo; base_env
+export GITHUB_REPOSITORY_OWNER=duplocloud GITHUB_REPOSITORY=duplocloud/ext AWS_ACCESS_KEY_ID=x
+export INPUT_SIGNING_KEY=supersign INPUT_SIGNING_CERT=c INPUT_ARMDOT_LICENSE="$(printf lic | base64)" BUILD_STAMP=1 GH_TOKEN=ghtok
+# A build command that records its own environment, then runs the real build so the rest of the run still succeeds.
+export INPUT_BUILD_COMMAND="env > '$WORK/buildenv'; '$WORK/fakebuild.sh'"
+rc="$(run_release)"
+if [ "$rc" -eq 0 ] \
+  && ! grep -qE '^(EXTENSION_SIGNING_KEY|CONSOLE_API_KEY|GH_TOKEN|INPUT_SIGNING_KEY|INPUT_CONSOLE_API_KEY|INPUT_ARMDOT_LICENSE)=' "$WORK/buildenv" \
+  && grep -q '^ARMDOT_LICENSE_FILE_PATH=' "$WORK/buildenv"; then ok
+else bad "rc=$rc; $(grep -E 'SIGNING_KEY|CONSOLE_API_KEY|GH_TOKEN|ARMDOT' "$WORK/buildenv" 2>/dev/null)"; fi
+
 # --- Fresh release, console backend (customer) ---------------------------------------------------
 t "a customer console-backend build uploads only the zip through the console grant"
 fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=acme GITHUB_REPOSITORY=acme/ext INPUT_CONSOLE_TEAM=acme
@@ -142,9 +154,19 @@ if [ "$rc" -eq 0 ] \
   && [ "$(grep -c 'https://s3.stub/' "$WORK/log")" = 1 ]; then ok
 else bad "rc=$rc; log: $(cat "$WORK/log")"; fi
 
+t "a customer repo with its own AWS credentials still uploads through the console, not S3"
+fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=acme GITHUB_REPOSITORY=acme/ext INPUT_CONSOLE_TEAM=acme AWS_ACCESS_KEY_ID=x
+rc="$(run_release)"
+if [ "$rc" -eq 0 ] \
+  && grep -q 'curl .*-T .*extension.zip .*https://s3.stub/' "$WORK/log" \
+  && ! grep -q 'put-object' "$WORK/log"; then ok
+else bad "rc=$rc; log: $(cat "$WORK/log")"; fi
+
 # --- Two SDK versions ----------------------------------------------------------------------------
 t "two sdk-versions make two tags and two artifacts under one version"
-fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=acme GITHUB_REPOSITORY=acme/ext AWS_ACCESS_KEY_ID=x
+fresh_repo; base_env
+export GITHUB_REPOSITORY_OWNER=duplocloud GITHUB_REPOSITORY=duplocloud/ext AWS_ACCESS_KEY_ID=x
+export INPUT_SIGNING_KEY=k INPUT_SIGNING_CERT=c INPUT_ARMDOT_LICENSE="$(printf lic | base64)" BUILD_STAMP=1
 export INPUT_SDK_VERSIONS="$(printf '1.0.6\n1.0.7')" BUILD_SDKS="1.0.6 1.0.7"
 rc="$(run_release)"
 if [ "$rc" -eq 0 ] \
@@ -165,7 +187,8 @@ fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=acme GITHUB_REPOSITORY=acme
 echo '[{"uuid":"v-1"}]' > "$CONSOLE/versions.json"
 echo '[{"sdk_version":"9.9.9","s3_path":"s3://x/y","sha256":"aa","signature":"s"}]' > "$CONSOLE/artifacts.json"
 rc="$(run_release)"
-[ "$rc" -eq 0 ] && [ "$(grep -c 'PATCH' "$WORK/log")" = 0 ] && ok || bad "rc=$rc patches=$(grep -c 'PATCH' "$WORK/log") $(cat "$WORK/out")"
+[ "$rc" -eq 0 ] && [ "$(grep -c 'PATCH' "$WORK/log")" = 0 ] && grep -q 'still unpublished' "$WORK/out" && ok \
+  || bad "rc=$rc patches=$(grep -c 'PATCH' "$WORK/log") $(cat "$WORK/out")"
 
 # --- Changed content at an existing tag ----------------------------------------------------------
 t "a version already released at a tag whose content changed fails with the bump message"

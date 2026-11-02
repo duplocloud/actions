@@ -94,7 +94,7 @@ version_fields() {
   m="$(unzip -p "$zip" manifest.json 2>/dev/null)" || { echo "::error::$zip — cannot read manifest.json." >&2; return 1; }
   name="${INPUT_NAME:-$(jq -r '.name // .id' <<<"$m")}"
   description="${INPUT_DESCRIPTION:-$(jq -r '.description // ""' <<<"$m")}"
-  changelog="${INPUT_CHANGELOG:-}"
+  changelog="${INPUT_CHANGELOG:-$(jq -r '.changelog // ""' <<<"$m")}"
   jq -cn --arg n "$name" --arg d "$description" --arg c "$changelog" '{name:$n,description:$d,changelog:$c}'
 }
 

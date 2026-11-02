@@ -54,7 +54,11 @@ if duplo_org && [ -n "${INPUT_ARMDOT_LICENSE:-}" ]; then
 fi
 DUPLO_SDK_VERSIONS="$(printf '%s' "$sdk_versions" | paste -sd, -)"; export DUPLO_SDK_VERSIONS
 echo "==> Building with $build_command"
-eval "$build_command"
+# Strip the release credentials from the build's environment, so a build-command that runs an install script on the
+# runner cannot read the signing key, the console key or the release token (D13). The decoded license path stays, as
+# the build needs it to obfuscate.
+env -u EXTENSION_SIGNING_KEY -u CONSOLE_API_KEY -u GH_TOKEN -u INPUT_SIGNING_KEY -u INPUT_CONSOLE_API_KEY \
+  -u INPUT_ARMDOT_LICENSE bash -eo pipefail -c "$build_command"
 
 # --- Validate every bundle and resolve every agent, before anything is signed or released. -----------------------
 stamp_required=0; duplo_org && stamp_required=1
@@ -141,6 +145,10 @@ for dir in "${dirs[@]}"; do
 
     if [ "$publish" = true ] && [ "$reg" = first ]; then
       publish_version "$uuid" "$vuuid" || { rm -rf "$workdir"; failed=$((failed + 1)); continue; }
+    elif [ "$publish" = true ] && ! version_is_published "$uuid" "$vuuid"; then
+      # The build was registered by an earlier run that then failed before upload, so this resume uploaded it but never
+      # publishes (publishing keys on a build this run newly registers). Surface it rather than end green unpublished.
+      echo "::warning::$tag — publish was requested, but the version is still unpublished because its build was registered by an earlier run. Publish it in the console, or bump manifest.version and re-run."
     fi
     rm -rf "$workdir"
   done <<<"${dir_bundles[$dir]}"

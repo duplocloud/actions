@@ -117,3 +117,11 @@ publish_version() {
   body="$(console PATCH "$base/" '{"is_published": true}')" || { echo "::error::console refused to publish the version: $body" >&2; return 1; }
   echo "==> published the version in the license server"
 }
+
+# version_is_published <agent-uuid> <version-uuid>: return 0 when the console marks the version published, else 1. A
+# failed lookup returns 1 too, so a caller warns rather than claims the version is published.
+version_is_published() {
+  local agent="$1" vuuid="$2" body
+  body="$(console GET "$(agents_base)/$agent/versions/$vuuid/")" || return 1
+  jq -e '.is_published == true' >/dev/null <<<"$body"
+}

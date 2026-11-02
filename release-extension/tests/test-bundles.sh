@@ -78,6 +78,11 @@ t "version_fields takes INPUT_NAME over the manifest"
 out="$(unset INPUT_DESCRIPTION INPUT_CHANGELOG; INPUT_NAME=X version_fields "$TMP/vf.zip" 2>&1)"
 if [ "$(jq -r .name <<<"$out")" = "X" ]; then ok; else bad "$out"; fi
 
+t "version_fields falls back to the manifest changelog when INPUT_CHANGELOG is unset"
+mkbundle "$TMP/vfc.zip" '{id:"io.acme.tool",version:"1.0.0",sdkVersion:"1.0.0",name:"Hello",description:"d",changelog:"from manifest",resources:[{restSegment:"extensions/x"}]}'
+out="$(unset INPUT_NAME INPUT_DESCRIPTION INPUT_CHANGELOG; version_fields "$TMP/vfc.zip" 2>&1)"
+if [ "$(jq -r .changelog <<<"$out")" = "from manifest" ]; then ok; else bad "$out"; fi
+
 # --- check_text_inputs ---------------------------------------------------------------------------
 t "check_text_inputs fails a text input across more than one extension"
 ( unset INPUT_DESCRIPTION INPUT_CHANGELOG; INPUT_NAME=X check_text_inputs 2 ) >/dev/null 2>&1 && bad "allowed a name for 2 extensions" || ok
