@@ -8,6 +8,8 @@ and this project adheres to
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-03
+
 ### Added
 
 - New `release-extension` action — takes a repository's built DuploCloud extensions through signing, a GitHub release, console registration, upload and optional publishing, with the repository's own build run first through `build-command`. It serves a DuploCloud repository, which signs with `signing-key`/`signing-cert` and obfuscates with `armdot-license` and uploads to the bundle bucket through an assumed role, and a customer pipeline that holds only `console-api-key` and uploads through a console-issued URL. Console calls use the agents routes, staff or team (`console-team`). Every write is create-only, so a re-run of a finished release changes nothing and an interrupted run resumes. Registration requires `view_agents` on the staff routes.
