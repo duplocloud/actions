@@ -89,6 +89,19 @@ fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=duplocloud INPUT_SIGNING_KE
 rc="$(run_release)"
 [ "$rc" -ne 0 ] && [ ! -f "$WORK/built.marker" ] && grep -q 'armdot-license is required' "$WORK/out" && ok || bad "rc=$rc $(cat "$WORK/out")"
 
+t "devkit's build with no DUPLO_HOST fails before the build, naming the secret"
+fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=acme AWS_ACCESS_KEY_ID=x INPUT_BUILD_COMMAND="./scripts/build-all.sh"
+unset DUPLO_HOST DUPLO_TOKEN
+rc="$(run_release)"
+[ "$rc" -ne 0 ] && [ ! -f "$WORK/built.marker" ] && grep -q 'DUPLO_HOST is empty' "$WORK/out" && ok || bad "rc=$rc $(cat "$WORK/out")"
+
+t "devkit's build with sdk-versions needs no host"
+fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=acme AWS_ACCESS_KEY_ID=x INPUT_SDK_VERSIONS="1.0.6"
+export INPUT_BUILD_COMMAND="./scripts/build-all.sh"; mkdir -p scripts; cp "$WORK/fakebuild.sh" scripts/build-all.sh
+unset DUPLO_HOST DUPLO_TOKEN
+rc="$(run_release)"
+! grep -q 'DUPLO_HOST is empty' "$WORK/out" && [ -f "$WORK/built.marker" ] && ok || bad "rc=$rc $(cat "$WORK/out")"
+
 t "outside a DuploCloud org the build runs unsigned and no license is written"
 fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=acme AWS_ACCESS_KEY_ID=x
 rc="$(run_release)"

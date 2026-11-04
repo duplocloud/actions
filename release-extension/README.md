@@ -123,6 +123,8 @@ signing-key screens in `docs/platform_owner/agent-publishers.md`, both in the co
 - In `duplocloud` and `duplocloud-internal`, a missing `signing-key`, `signing-cert` or `armdot-license` fails the job
   before the build. DuploCloud releases are always signed and obfuscated. Elsewhere signing runs only when both a key
   and a certificate are supplied, and `armdot-license` is ignored.
+- With devkit's build command and no `sdk-versions`, an empty `DUPLO_HOST` or `DUPLO_TOKEN` fails before the build,
+  naming the secret, since that build takes the SDK from the host and otherwise falls back to a local target.
 - A `name`, `description` or `changelog` set in a repository with more than one extension fails before the build, since
   one value cannot label several agents. Set those in each `manifest.json` instead.
 - A build whose bundle carries no `armdot` obfuscation stamp fails in a DuploCloud organization. Set `armdot-license`,

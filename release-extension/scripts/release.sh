@@ -44,6 +44,22 @@ mapfile -t dirs < <(extension_dirs)
 [ "${#dirs[@]}" -gt 0 ] || { echo "::error::no extension found under extensions/*/, extension/*/ or extension/."; exit 1; }
 check_text_inputs "${#dirs[@]}" || exit 1
 
+# --- The build's host. Devkit's build takes the SDK from DUPLO_HOST with DUPLO_TOKEN unless sdk-versions names feed
+# versions, and with neither set it falls back to a local target that does not exist on a runner. Named here so the
+# failure says which secret is missing rather than which port refused the connection. A build-command that is not
+# devkit's is left to its own checks.
+case "$build_command" in
+  *build-all.sh*|*build-extension.sh*)
+    if [ -z "$sdk_versions" ]; then
+      for v in DUPLO_HOST DUPLO_TOKEN; do
+        [ -n "${!v:-}" ] && continue
+        echo "::error::$v is empty. Devkit's build takes the SDK from that host, so set both DUPLO_HOST and DUPLO_TOKEN" \
+          "in the job env, or pass sdk-versions to build from the package feed."
+        exit 1
+      done
+    fi ;;
+esac
+
 # --- License and build. The license applies only in DuploCloud's organizations, where it is required above. -------
 if duplo_org && [ -n "${INPUT_ARMDOT_LICENSE:-}" ]; then
   armdot_key="$RUNNER_TEMP/armdot.key"
