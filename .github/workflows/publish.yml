@@ -71,16 +71,20 @@ jobs:
 
           ${{ steps.bump.outputs.release-notes }}
 
-    # Move the floating major tag (for example v1 for 1.2.3) to this release, so `@v1` tracks the latest 1.x. The
-    # checkout persisted the app token on origin, so no token is embedded here. Skipped for a prerelease.
+    # Move the floating major tag (for example v1 for 1.2.3) to this release, so `@v1` tracks the latest 1.x. The bump
+    # pushed the release tag from its own commit, which this checkout does not have, so the major tag is set on the
+    # fetched release tag rather than on HEAD. The checkout persisted the app token on origin, so no token is embedded
+    # here. Skipped for a prerelease.
     - name: Move the major tag
       if: ${{ inputs.push && !contains(steps.bump.outputs.version, '-') }}
       env:
         VERSION: ${{ steps.bump.outputs.version }}
+        TAG: ${{ steps.bump.outputs.tag }}
       run: |
         set -euo pipefail
+        git fetch --force --quiet origin "refs/tags/$TAG:refs/tags/$TAG"
         major="v${VERSION%%.*}"
-        git tag -f "$major"
+        git tag -f "$major" "refs/tags/$TAG"
         git push -f origin "refs/tags/$major"
 
     - name: Summary
