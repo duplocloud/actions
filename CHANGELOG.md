@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- `release-extension`: with devkit's build command and no `sdk-versions`, an empty `DUPLO_HOST` or `DUPLO_TOKEN` fails the job before the build, naming the secret. The build otherwise fell back to devkit's local target and failed on a connection refused.
+
 ## [1.0.0] - 2026-11-03
 
 ### Added
