@@ -35,12 +35,22 @@ local target, a stack on the runner that does not exist, and fails before anythi
 
 ## The two credential shapes
 
-A DuploCloud repository, which signs, obfuscates and uploads with the assumed role. `publish` stays false so the
-version registers unpublished and a platform owner publishes it in the console once the build is verified. To publish
-from the pipeline instead, run the workflow by hand with `publish: true`, which publishes the versions that run
-registers a first build for.
+A DuploCloud repository, which signs, obfuscates and uploads with the assumed role. On a push `publish` is false, so
+the version registers unpublished and a platform owner publishes it in the console once the build is verified. To
+publish from the pipeline instead, run the workflow by hand with its `publish` input checked, which publishes the
+versions that run registers a first build for.
 
 ```yaml
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish each version this run registers a first build for
+        type: boolean
+        default: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -64,7 +74,7 @@ jobs:
           signing-key: ${{ secrets.CONSOLE_SIGNING_KEY }}
           signing-cert: ${{ vars.CONSOLE_SIGNING_CERT }}
           armdot-license: ${{ secrets.ARMDOT_LICENSE_KEY }}
-          publish: false
+          publish: ${{ inputs.publish || false }}
 ```
 
 A customer repository, which holds only a console key and uploads through a console-issued URL:
@@ -92,7 +102,7 @@ jobs:
 
 A platform owner sets each of these up once in the console, and they then serve every release.
 
-- `console-api-key`: in the platform-owner team, create a custom role holding View extension versions, Manage extension
+- `console-api-key`: in the platform-owner team, create a custom role holding View agent versions, Manage agent
   versions and `view_agents`, create a service account with that role, and store its API key as a secret. The action
   looks the extension up by manifest id on the staff routes, which `view_agents` covers, then reads and creates
   versions and artifacts, and publishes when asked. A customer pipeline uses a key from its own team instead and
@@ -104,8 +114,8 @@ A platform owner sets each of these up once in the console, and they then serve 
 - The extension's record: an agent under the same team whose manifest id equals the `id` in the extension's
   `manifest.json`. The action finds the record by that id and fails when none exists.
 
-The console's platform-owner guide, `docs/platform_owner/extension-versions.md` in the console repository, has the
-service-account and signing-key screens.
+The console's platform-owner guide has the service-account setup in `docs/platform_owner/agent-versions.md` and the
+signing-key screens in `docs/platform_owner/agent-publishers.md`, both in the console repository.
 
 ## What fails, and why
 
