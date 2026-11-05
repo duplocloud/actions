@@ -113,6 +113,13 @@ for dir in "${dirs[@]}"; do
       if ! gh release download "$tag" -p extension.zip -p extension.zip.sig -D "$workdir" 2>/dev/null; then
         echo "::error::$tag — cannot download its release assets."; rm -rf "$workdir"; failed=$((failed + 1)); continue
       fi
+      # A release cut before the repository signed. Refused here, before the version or artifact is created, so a
+      # DuploCloud build is never registered unsigned.
+      if duplo_org && [ ! -s "$worksig" ]; then
+        echo "::error::$tag — its release has no extension.zip.sig, and a DuploCloud build is never registered unsigned." \
+          "A release cannot gain a signature after it is cut, so bump manifest.version to release a signed build."
+        rm -rf "$workdir"; failed=$((failed + 1)); continue
+      fi
       resumed=$((resumed + 1))
     else
       cp "$zip" "$workzip"

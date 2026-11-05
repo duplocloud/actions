@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- `release-extension`: in a DuploCloud organization, a release at an existing tag with no `extension.zip.sig` now fails before anything is registered. It was registered with the console as an unsigned build, and the job then failed at the signature upload.
+
 ### Added
 
 - `release-extension`: with devkit's build command, an empty `DUPLO_HOST` or `DUPLO_TOKEN` fails the job before the build, naming the secret. The build otherwise fell back to devkit's local target and failed on a connection refused.

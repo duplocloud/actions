@@ -18,7 +18,9 @@ case "$1 $2" in
   "release download")
     pats=(); dest=""
     while [ $# -gt 0 ]; do case "$1" in -p) pats+=("$2"); shift ;; -D) dest=$2; shift ;; esac; shift; done
-    for p in "${pats[@]}"; do cp "$ASSETS/$p" "$dest"/; done ;;
+    # Like gh: an asset the release lacks is left out, and the download fails only when no pattern matches.
+    got=0; for p in "${pats[@]}"; do [ -f "$ASSETS/$p" ] && cp "$ASSETS/$p" "$dest"/ && got=1; done
+    [ "$got" = 1 ] ;;
   "release create") exit "${GH_CREATE_RC:-0}" ;;
   "release view") [ "${GH_VIEW_RC:-0}" = 0 ] || exit "${GH_VIEW_RC}"
                    printf '%s\n' "${GH_ASSETS:-extension.zip,extension.zip.sig}" ;;
