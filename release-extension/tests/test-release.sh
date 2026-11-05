@@ -212,4 +212,30 @@ export GITHUB_SHA="$(git rev-parse HEAD)"
 rc="$(run_release)"
 [ "$rc" -ne 0 ] && grep -q 'Bump manifest.version' "$WORK/out" && ok || bad "rc=$rc $(cat "$WORK/out")"
 
+# --- A release at an existing tag with no signature -----------------------------------------------
+# unsigned_release: tags HEAD as the build's release and gives that release an extension.zip and no .sig.
+unsigned_release() {
+  ( BUILD_STAMP=1 "$WORK/fakebuild.sh" ) && cp extensions/hello/dist/extension.zip "$ASSETS/extension.zip"
+  rm -f built.marker; git tag hello-v1.0.0-sdk-1.0.0
+}
+
+t "a DuploCloud release at an existing tag with no .sig fails before anything is registered or uploaded"
+fresh_repo; base_env
+export GITHUB_REPOSITORY_OWNER=duplocloud GITHUB_REPOSITORY=duplocloud/ext AWS_ACCESS_KEY_ID=x
+export INPUT_SIGNING_KEY=k INPUT_SIGNING_CERT=c INPUT_ARMDOT_LICENSE="$(printf lic | base64)" BUILD_STAMP=1
+unsigned_release
+rc="$(run_release)"
+if [ "$rc" -ne 0 ] && grep -q 'has no extension.zip.sig' "$WORK/out" && grep -q 'manifest.version' "$WORK/out" \
+  && ! grep -q -- '-X POST' "$WORK/log" && ! grep -q 'put-object' "$WORK/log" \
+  && ! grep -q 'gh release create' "$WORK/log"; then ok
+else bad "rc=$rc; out: $(cat "$WORK/out"); log: $(cat "$WORK/log")"; fi
+
+t "a customer release at an existing tag with no .sig still registers, unsigned"
+fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=acme GITHUB_REPOSITORY=acme/ext INPUT_CONSOLE_TEAM=acme
+unsigned_release
+rc="$(run_release)"
+if [ "$rc" -eq 0 ] && [ "$(grep -- '-X POST' "$WORK/log" | grep -c '/artifacts/$')" = 1 ] \
+  && ! grep -q 'gh release create' "$WORK/log" && grep -q 'resumed 1' "$WORK/out"; then ok
+else bad "rc=$rc; out: $(cat "$WORK/out"); log: $(cat "$WORK/log")"; fi
+
 echo; echo "passed $PASS, failed $FAIL"; [ "$FAIL" -eq 0 ]

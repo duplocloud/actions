@@ -88,6 +88,9 @@ jobs:
   or upgrade the devkit.
 - When `sdk-versions` lists versions the build produced no bundle for, the job fails naming the devkit upgrade, before
   anything is signed.
+- In a DuploCloud organization, a release at an existing tag that has no `extension.zip.sig` fails before anything is
+  registered, since it was cut before the repository signed and cannot gain a signature. Bump `manifest.version` to
+  release a signed build. Elsewhere that release registers unsigned.
 - When no agent in the console has the extension's manifest id, the job fails and asks for the agent to be created
   first. On the staff routes a 403 means the console key's role is missing `view_agents`.
 
