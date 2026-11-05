@@ -80,12 +80,17 @@ jobs:
 - In `duplocloud` and `duplocloud-internal`, a missing `signing-key`, `signing-cert` or `armdot-license` fails the job
   before the build. DuploCloud releases are always signed and obfuscated. Elsewhere signing runs only when both a key
   and a certificate are supplied, and `armdot-license` is ignored.
+- With devkit's build command, an empty `DUPLO_HOST` or `DUPLO_TOKEN` fails before the build,
+  naming the secret, since that build takes the SDK from the host and otherwise falls back to a local target.
 - A `name`, `description` or `changelog` set in a repository with more than one extension fails before the build, since
   one value cannot label several agents. Set those in each `manifest.json` instead.
 - A build whose bundle carries no `armdot` obfuscation stamp fails in a DuploCloud organization. Set `armdot-license`,
   or upgrade the devkit.
 - When `sdk-versions` lists versions the build produced no bundle for, the job fails naming the devkit upgrade, before
   anything is signed.
+- In a DuploCloud organization, a release at an existing tag that has no `extension.zip.sig` fails before anything is
+  registered, since it was cut before the repository signed and cannot gain a signature. Bump `manifest.version` to
+  release a signed build. Elsewhere that release registers unsigned.
 - When no agent in the console has the extension's manifest id, the job fails and asks for the agent to be created
   first. On the staff routes a 403 means the console key's role is missing `view_agents`.
 
