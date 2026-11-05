@@ -36,9 +36,9 @@ local target, a stack on the runner that does not exist, and fails before anythi
 ## The two credential shapes
 
 A DuploCloud repository, which signs, obfuscates and uploads with the assumed role. On a push `publish` is false, so
-the version registers unpublished and a platform owner publishes it in the console once the build is verified. To
-publish from the pipeline instead, run the workflow by hand with its `publish` input checked, which publishes the
-versions that run registers a first build for.
+the version registers unpublished and a platform owner publishes it in the console once the build is verified. A
+hand-run with its `publish` input checked publishes only the versions that run registers a first build for, so a
+version a push to `main` already released is published in the console.
 
 ```yaml
 on:
@@ -53,6 +53,7 @@ on:
 
 jobs:
   release:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
