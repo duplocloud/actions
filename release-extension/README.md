@@ -29,17 +29,38 @@ The caller checks out with `fetch-depth: 0`, so the action can read the reposito
 `contents: write` to create releases. A DuploCloud repository that uploads through the AWS backend also assumes its
 publisher role and grants `id-token: write`. The action does not assume the role itself.
 
+The build the action runs is the repository's own. Devkit's `scripts/build-all.sh` takes the SDK from the host named by
+`DUPLO_HOST` and `DUPLO_TOKEN`, so the job carries both in its `env`. Without them the build falls back to devkit's
+local target, a stack on the runner that does not exist, and fails before anything is signed.
+
 ## The two credential shapes
 
-A DuploCloud repository, which signs, obfuscates and uploads with the assumed role:
+A DuploCloud repository, which signs, obfuscates and uploads with the assumed role. On a push `publish` is false, so
+the version registers unpublished and a platform owner publishes it in the console once the build is verified. A
+hand-run with its `publish` input checked publishes only the versions that run registers a first build for, so a
+version a push to `main` already released is published in the console.
 
 ```yaml
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish each version this run registers a first build for
+        type: boolean
+        default: false
+
 jobs:
   release:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       id-token: write
+    env:
+      DUPLO_HOST: ${{ secrets.DUPLO_HOST }}
+      DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,7 +75,7 @@ jobs:
           signing-key: ${{ secrets.CONSOLE_SIGNING_KEY }}
           signing-cert: ${{ vars.CONSOLE_SIGNING_CERT }}
           armdot-license: ${{ secrets.ARMDOT_LICENSE_KEY }}
-          publish: true
+          publish: ${{ inputs.publish || false }}
 ```
 
 A customer repository, which holds only a console key and uploads through a console-issued URL:
@@ -65,6 +86,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      DUPLO_HOST: ${{ secrets.DUPLO_HOST }}
+      DUPLO_TOKEN: ${{ secrets.DUPLO_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -74,6 +98,25 @@ jobs:
           console-api-key: ${{ secrets.CONSOLE_API_KEY }}
           console-team: my-team
 ```
+
+## Where the console values come from
+
+A platform owner sets each of these up once in the console, and they then serve every release.
+
+- `console-api-key`: in the platform-owner team, create a custom role holding View agent versions, Manage agent
+  versions and `view_agents`, create a service account with that role, and store its API key as a secret. The action
+  looks the extension up by manifest id on the staff routes, which `view_agents` covers, then reads and creates
+  versions and artifacts, and publishes when asked. A customer pipeline uses a key from its own team instead and
+  passes that team as `console-team`, which needs no staff capability.
+- `signing-key` and `signing-cert`: the publishing team needs a namespace covering its manifest ids, and a signing key
+  created under that team. The console returns the key's private PEM once, at creation, and that is the secret. The
+  key's certificate is the variable. The certificate names the namespaces it signs for, so an id outside them is
+  refused at signing.
+- The extension's record: an agent under the same team whose manifest id equals the `id` in the extension's
+  `manifest.json`. The action finds the record by that id and fails when none exists.
+
+The console's platform-owner guide has the service-account setup in `docs/platform_owner/agent-versions.md` and the
+signing-key screens in `docs/platform_owner/agent-publishers.md`, both in the console repository.
 
 ## What fails, and why
 

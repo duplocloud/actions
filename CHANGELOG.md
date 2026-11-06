@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- `release-extension` README: both example workflows carry `DUPLO_HOST` and `DUPLO_TOKEN` in the job `env`, since the devkit build takes the SDK from that host and otherwise falls back to a local target that does not exist on a runner. The DuploCloud example takes `publish` from a manual-run input, false on a push, and a new section says where the console key, the signing key and certificate, and the agent record come from.
+
 ## [1.0.0] - 2026-11-03
 
 ### Added
