@@ -22,6 +22,9 @@ case "$1 $2" in
   "release create") exit "${GH_CREATE_RC:-0}" ;;
   "release view") [ "${GH_VIEW_RC:-0}" = 0 ] || exit "${GH_VIEW_RC}"
                    printf '%s\n' "${GH_ASSETS:-extension.zip,extension.zip.sig}" ;;
+  "api repos/duplocloud-internal/.github/contents/armdot/"*)
+    [ "${GH_CONFIG_RC:-0}" = 0 ] || exit "${GH_CONFIG_RC}"
+    printf 'stub %s fetched with %s\n' "${2##*/}" "${GH_TOKEN:-no-token}" ;;
   "api repos/{owner}/{repo}/releases/tags/"*)
     [ "${GH_API_RC:-0}" = 0 ] || exit "${GH_API_RC}"
     if [[ "$*" == *'assets[]'* ]]; then printf '%s\n' "${GH_DIGEST-sha256:$ZSHA}"

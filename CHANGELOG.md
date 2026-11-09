@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- `release-extension`: new `armdot-config-token` input, required in DuploCloud's organizations. The ArmDot build files moved out of the public devkit into `armdot/` in the private `duplocloud-internal/.github`; a licensed build fetches them with this token before the build and passes their directory to devkit's build as `DUPLO_ARMDOT_DIR`. The token is stripped from the build's environment with the other credentials. Nothing changes for a repository outside DuploCloud's organizations.
+
 ### Changed
 
 - `release-extension` README: both example workflows carry `DUPLO_HOST` and `DUPLO_TOKEN` in the job `env`, since the devkit build takes the SDK from that host and otherwise falls back to a local target that does not exist on a runner. The DuploCloud example takes `publish` from a manual-run input, false on a push, and a new section says where the console key, the signing key and certificate, and the agent record come from.

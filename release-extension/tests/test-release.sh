@@ -70,7 +70,8 @@ fresh_repo() {
 base_env() {
   export INPUT_CONSOLE_API_KEY="console-key-xyz" INPUT_CONSOLE_URL="https://console.example.com"
   export INPUT_BUILD_COMMAND="$WORK/fakebuild.sh" INPUT_BUNDLE_BUCKET="duplo-helpdesk-channels" BUCKET="duplo-helpdesk-channels"
-  export INPUT_SIGNING_KEY="" INPUT_SIGNING_CERT="" INPUT_ARMDOT_LICENSE="" INPUT_SDK_VERSIONS="" INPUT_PUBLISH="false"
+  export INPUT_SIGNING_KEY="" INPUT_SIGNING_CERT="" INPUT_ARMDOT_LICENSE="" INPUT_ARMDOT_CONFIG_TOKEN="cfg-token-abc"
+  export INPUT_SDK_VERSIONS="" INPUT_PUBLISH="false"
   export INPUT_NAME="" INPUT_DESCRIPTION="" INPUT_CHANGELOG="" INPUT_CONSOLE_TEAM=""
   unset AWS_ACCESS_KEY_ID BUILD_SDKS BUILD_STAMP
 }
@@ -89,10 +90,24 @@ fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=duplocloud INPUT_SIGNING_KE
 rc="$(run_release)"
 [ "$rc" -ne 0 ] && [ ! -f "$WORK/built.marker" ] && grep -q 'armdot-license is required' "$WORK/out" && ok || bad "rc=$rc $(cat "$WORK/out")"
 
-t "outside a DuploCloud org the build runs unsigned and no license is written"
+t "duplocloud without an armdot config token fails before the build"
+fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=duplocloud INPUT_SIGNING_KEY=k INPUT_SIGNING_CERT=c \
+  INPUT_ARMDOT_LICENSE="$(printf x | base64)" INPUT_ARMDOT_CONFIG_TOKEN=""
+rc="$(run_release)"
+[ "$rc" -ne 0 ] && [ ! -f "$WORK/built.marker" ] && grep -q 'armdot-config-token is required' "$WORK/out" && ok || bad "rc=$rc $(cat "$WORK/out")"
+
+t "duplocloud whose ArmDot files cannot be fetched fails before the build"
+fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=duplocloud INPUT_SIGNING_KEY=k INPUT_SIGNING_CERT=c \
+  INPUT_ARMDOT_LICENSE="$(printf x | base64)" GH_CONFIG_RC=1
+rc="$(run_release)"
+[ "$rc" -ne 0 ] && [ ! -f "$WORK/built.marker" ] && grep -q 'could not fetch armdot/ArmDot.Obfuscation.props' "$WORK/out" && ok || bad "rc=$rc $(cat "$WORK/out")"
+unset GH_CONFIG_RC
+
+t "outside a DuploCloud org the build runs unsigned, and no license or ArmDot files are written"
 fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=acme AWS_ACCESS_KEY_ID=x
 rc="$(run_release)"
-[ "$rc" -eq 0 ] && [ -f "$WORK/built.marker" ] && [ ! -f "$RUNNER_TEMP/armdot.key" ] && ok || bad "rc=$rc $(cat "$WORK/out")"
+[ "$rc" -eq 0 ] && [ -f "$WORK/built.marker" ] && [ ! -f "$RUNNER_TEMP/armdot.key" ] && [ ! -d "$RUNNER_TEMP/armdot" ] \
+  && ! grep -q 'contents/armdot' "$LOG" && ok || bad "rc=$rc $(cat "$WORK/out")"
 
 t "a text input across two extensions fails before the build"
 fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=acme AWS_ACCESS_KEY_ID=x INPUT_NAME=Renamed
@@ -132,7 +147,19 @@ rc_put=$(grep -n 'put-object' "$WORK/log" | head -1 | cut -d: -f1)
 t "the console key and signing key never appear in the logged argv"
 if ! grep -q 'console-key-xyz' "$WORK/log"; then ok; else bad "key in log"; fi
 
-t "the build cannot read the signing key, console key or release token, but keeps the license path"
+t "a DuploCloud build gets the four ArmDot files, fetched with the config token, and their directory in DUPLO_ARMDOT_DIR"
+fresh_repo; base_env
+export GITHUB_REPOSITORY_OWNER=duplocloud GITHUB_REPOSITORY=duplocloud/ext AWS_ACCESS_KEY_ID=x GH_TOKEN=ghtok
+export INPUT_SIGNING_KEY=k INPUT_SIGNING_CERT=c INPUT_ARMDOT_LICENSE="$(printf lic | base64)" BUILD_STAMP=1
+export INPUT_BUILD_COMMAND="env > '$WORK/buildenv'; '$WORK/fakebuild.sh'"
+rc="$(run_release)"
+want="ArmDot.Obfuscation.props ArmDot.Obfuscation.targets ArmDotObfuscationAssemblyInfo.cs Directory.Build.targets.template"
+if [ "$rc" -eq 0 ] && [ "$(ls "$RUNNER_TEMP/armdot" | tr '\n' ' ')" = "$want " ] \
+  && grep -q 'fetched with cfg-token-abc' "$RUNNER_TEMP/armdot/ArmDot.Obfuscation.targets" \
+  && grep -q "^DUPLO_ARMDOT_DIR=$RUNNER_TEMP/armdot\$" "$WORK/buildenv"; then ok
+else bad "rc=$rc $(ls "$RUNNER_TEMP/armdot" 2>&1) $(grep ARMDOT "$WORK/buildenv" 2>/dev/null)"; fi
+
+t "the build cannot read the signing key, console key, release token or config token, but keeps the license path"
 fresh_repo; base_env
 export GITHUB_REPOSITORY_OWNER=duplocloud GITHUB_REPOSITORY=duplocloud/ext AWS_ACCESS_KEY_ID=x
 export INPUT_SIGNING_KEY=supersign INPUT_SIGNING_CERT=c INPUT_ARMDOT_LICENSE="$(printf lic | base64)" BUILD_STAMP=1 GH_TOKEN=ghtok
@@ -140,7 +167,7 @@ export INPUT_SIGNING_KEY=supersign INPUT_SIGNING_CERT=c INPUT_ARMDOT_LICENSE="$(
 export INPUT_BUILD_COMMAND="env > '$WORK/buildenv'; '$WORK/fakebuild.sh'"
 rc="$(run_release)"
 if [ "$rc" -eq 0 ] \
-  && ! grep -qE '^(EXTENSION_SIGNING_KEY|CONSOLE_API_KEY|GH_TOKEN|INPUT_SIGNING_KEY|INPUT_CONSOLE_API_KEY|INPUT_ARMDOT_LICENSE)=' "$WORK/buildenv" \
+  && ! grep -qE '^(EXTENSION_SIGNING_KEY|CONSOLE_API_KEY|GH_TOKEN|INPUT_SIGNING_KEY|INPUT_CONSOLE_API_KEY|INPUT_ARMDOT_LICENSE|INPUT_ARMDOT_CONFIG_TOKEN)=' "$WORK/buildenv" \
   && grep -q '^ARMDOT_LICENSE_FILE_PATH=' "$WORK/buildenv"; then ok
 else bad "rc=$rc; $(grep -E 'SIGNING_KEY|CONSOLE_API_KEY|GH_TOKEN|ARMDOT' "$WORK/buildenv" 2>/dev/null)"; fi
 
