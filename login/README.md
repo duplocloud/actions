@@ -16,9 +16,7 @@ through `GITHUB_ENV`. All subsequent steps in the same job receive it. No
 - An enabled GitHub OIDC trust in the deployment's auth service, bound to the intended user and
   repository/workflow conditions. Its name is the `trust_name` input.
 - `DUPLO_HOST` set at job or workflow scope to the standalone HelpDesk or
-  integrated portal base URL. HTTPS is required. Standalone installations
-  must include the shared `/v3/auth/oidc` route; older HelpDesk versions
-  exposing only `/v1/aiservicedesk/oidc` need a backend upgrade.
+  integrated portal base URL. HTTPS is required.
 - Job permission `id-token: write`. This allows requesting an OIDC JWT;
   the configured trust determines what that identity can access.
 - The `audience` must exactly match the trust, including any trailing slash.
