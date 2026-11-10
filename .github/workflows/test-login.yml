@@ -1,0 +1,28 @@
+name: Test login
+
+on:
+  pull_request:
+    paths:
+      - 'login/**'
+      - '.github/workflows/test-login.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'login/**'
+      - '.github/workflows/test-login.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: node --test login/tests/login.test.cjs
