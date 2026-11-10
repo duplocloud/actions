@@ -48,22 +48,24 @@ async function run({ env = process.env, fetch = globalThis.fetch, log = console.
   if (!singleLine(jwt?.value)) throw new Error('GitHub returned an invalid OIDC token.');
   mask(jwt.value, log);
 
-  const result = await requestJson(fetch, `${host}/v1/aiservicedesk/oidc/${trust}/token`, {
+  const result = await requestJson(fetch, `${host}/v3/auth/oidc/${trust}/token`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
       subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
       subject_token: jwt.value,
     }),
-  }, 'HelpDesk OIDC token exchange');
-  if (!singleLine(result?.access_token) || !result.access_token.startsWith('dahp_') ||
+  }, 'DuploCloud OIDC token exchange');
+  // Tokens are opaque: standalone HelpDesk and integrated duplo-core use
+  // different bearer-token formats behind the same exchange contract.
+  if (!singleLine(result?.access_token) ||
       result.token_type !== 'Bearer' || !Number.isSafeInteger(result.expires_in) || result.expires_in <= 0) {
-    throw new Error('HelpDesk returned an invalid token exchange response.');
+    throw new Error('DuploCloud returned an invalid token exchange response.');
   }
   mask(result.access_token, log);
   appendFileSync(env.GITHUB_ENV, `DUPLO_TOKEN=${result.access_token}\n`, 'utf8');
   appendFileSync(env.GITHUB_OUTPUT, `expires_in=${result.expires_in}\n`, 'utf8');
-  log(`Authenticated to HelpDesk; token expires in ${result.expires_in} seconds.`);
+  log(`Authenticated to DuploCloud; token expires in ${result.expires_in} seconds.`);
 }
 
 module.exports = { run };

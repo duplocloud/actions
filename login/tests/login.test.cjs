@@ -37,7 +37,7 @@ test('requests the default audience, exchanges the JWT, masks and exports the ra
   await s.run();
   assert.equal(s.requests[0].url, 'https://github.example/token?existing=1&audience=https%3A%2F%2Fhelpdesk.example.com');
   assert.equal(s.requests[0].headers.Authorization, 'Bearer request-secret');
-  assert.equal(s.requests[1].url, 'https://helpdesk.example.com/v1/aiservicedesk/oidc/github-deploy/token');
+  assert.equal(s.requests[1].url, 'https://helpdesk.example.com/v3/auth/oidc/github-deploy/token');
   assert.deepEqual(JSON.parse(s.requests[1].body), {
     grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
     subject_token_type: 'urn:ietf:params:oauth:token-type:jwt', subject_token: 'signed.jwt.secret',
@@ -59,6 +59,18 @@ test('honors an exact custom audience and requests fresh credentials on every in
   assert.equal(s.read('GITHUB_ENV'), 'DUPLO_TOKEN=dahp_secret_2\nDUPLO_TOKEN=dahp_secret_4\n');
 });
 
+test('exports an opaque duplo-core bearer token without requiring a HelpDesk prefix', async t => {
+  const s = await scenario(t, {}, [
+    { value: 'signed.jwt.secret' },
+    { access_token: 'opaque-core-token.ABC_123-xyz', token_type: 'Bearer',
+      issued_token_type: 'urn:ietf:params:oauth:token-type:access_token', expires_in: 600 },
+  ]);
+  await s.run();
+  assert.equal(s.read('GITHUB_ENV'), 'DUPLO_TOKEN=opaque-core-token.ABC_123-xyz\n');
+  assert.equal(s.read('GITHUB_OUTPUT'), 'expires_in=600\n');
+  assert.ok(s.logs.includes('::add-mask::opaque-core-token.ABC_123-xyz'));
+});
+
 for (const [name, overrides] of [
   ['host', { DUPLO_HOST: '' }], ['trust name', { INPUT_TRUST_NAME: '' }],
   ['permission', { ACTIONS_ID_TOKEN_REQUEST_TOKEN: '' }],
@@ -77,6 +89,8 @@ for (const [name, replies] of [
   ['missing JWT', [{}]],
   ['exchange rejection', [{ value: 'signed.jwt.secret' }, { status: 400, body: { error: 'signed.jwt.secret' } }]],
   ['missing token', [{ value: 'signed.jwt.secret' }, { expires_in: 900, token_type: 'Bearer' }]],
+  ['empty token', [{ value: 'signed.jwt.secret' }, { access_token: '', expires_in: 900, token_type: 'Bearer' }]],
+  ['wrong token type', [{ value: 'signed.jwt.secret' }, { access_token: 'opaque-secret', expires_in: 900, token_type: 'Basic' }]],
   ['invalid lifetime', [{ value: 'signed.jwt.secret' }, { access_token: 'dahp_secret', expires_in: -1, token_type: 'Bearer' }]],
   ['environment injection', [{ value: 'signed.jwt.secret' }, { access_token: 'dahp_secret\nINJECTED=yes', expires_in: 900, token_type: 'Bearer' }]],
   ['transport failure', [new Error('request-secret')]],

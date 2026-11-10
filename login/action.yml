@@ -1,12 +1,12 @@
 name: DuploCloud Login
-description: Exchange a GitHub OIDC JWT for a short-lived HelpDesk API token and export DUPLO_TOKEN for subsequent steps.
+description: Exchange a GitHub OIDC JWT for a short-lived DuploCloud bearer token and export DUPLO_TOKEN for subsequent steps.
 author: duplocloud
 branding:
   icon: key
   color: orange
 inputs:
   trust_name:
-    description: Name of the OIDC trust configured in AI HelpDesk.
+    description: Name of the OIDC trust configured in standalone HelpDesk or integrated duplo-core.
     required: true
   audience:
     description: Exact audience configured in the OIDC trust. Defaults to DUPLO_HOST without trailing slashes.

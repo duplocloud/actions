@@ -1,23 +1,26 @@
 # DuploCloud Login
 
-Authenticate a GitHub Actions job to AI HelpDesk using OIDC, without storing
+Authenticate a GitHub Actions job to standalone AI HelpDesk or integrated
+DuploCloud using OIDC, without storing
 a long-lived `DUPLO_TOKEN` secret. Run this action **before** the DuploCloud
 setup action and any steps that need HelpDesk access.
 
 The action requests a signed JWT from GitHub with the selected audience and
-exchanges it at `POST /v1/aiservicedesk/oidc/{trust_name}/token`. It masks the
+exchanges it at `POST /v3/auth/oidc/{trust_name}/token`. It masks the
 JWT and returned API token, then writes the raw API token to `DUPLO_TOKEN`
 through `GITHUB_ENV`. All subsequent steps in the same job receive it. No
 `Bearer ` prefix is included in the variable; clients add that themselves.
 
 ## Prerequisites
 
-- An enabled GitHub OIDC trust in HelpDesk, bound to the intended user and
+- An enabled GitHub OIDC trust in the deployment's auth service, bound to the intended user and
   repository/workflow conditions. Its name is the `trust_name` input.
-- `DUPLO_HOST` set at job or workflow scope to the HelpDesk base URL, or an
-  integrated portal URL routing the HelpDesk API. HTTPS is required.
+- `DUPLO_HOST` set at job or workflow scope to the standalone HelpDesk or
+  integrated portal base URL. HTTPS is required. Standalone installations
+  must include the shared `/v3/auth/oidc` route; older HelpDesk versions
+  exposing only `/v1/aiservicedesk/oidc` need a backend upgrade.
 - Job permission `id-token: write`. This allows requesting an OIDC JWT;
-  the HelpDesk trust determines what that identity can access.
+  the configured trust determines what that identity can access.
 - The `audience` must exactly match the trust, including any trailing slash.
   The default is `DUPLO_HOST` with trailing slashes removed. Override it when
   the trust uses a custom audience.
@@ -71,9 +74,17 @@ jobs:
         uses: duplocloud/actions/aws-credentials@main
 ```
 
-The setup action detects the `dahp_` API token and selects HelpDesk mode.
-These tokens authenticate to HelpDesk APIs, including HelpDesk APIs behind
-an integrated portal. They do not grant access to legacy portal-only APIs.
+Both deployment modes use the same exchange URL and JSON contract:
+
+| Deployment | Token issuer | Setup auto-detection |
+|---|---|---|
+| Standalone | HelpDesk auth service | `dahp_` token selects HelpDesk mode |
+| Integrated | duplo-core OAuthService | Core bearer token selects portal mode |
+
+The login action treats `access_token` as opaque and exports it unchanged.
+It requires no deployment-mode input. The issuer and configured trust control
+the token's permissions. Integrated ingress must route `/v3/auth/oidc` to
+duplo-core auth; standalone ingress must route it to HelpDesk auth.
 
 ## Long-running pipelines
 

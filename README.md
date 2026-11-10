@@ -120,7 +120,7 @@ When no credentials are given, duploctl will run the JIT command for GCP and con
 This repo is a mono repo for a number of useful actions. The main action is the `setup` action. Once all the tools are installed by running the setup action, the other actions can be used.
 
 ### [duplocloud/actions/login](./login)
-Authenticates to AI HelpDesk through GitHub OIDC and exports a short-lived
+Authenticates to standalone AI HelpDesk or integrated DuploCloud through GitHub OIDC and exports a short-lived
 `DUPLO_TOKEN` for later steps. Run it before the setup action to replace a
 stored token secret. See its README for trust configuration and re-login
 in long-running pipelines.
