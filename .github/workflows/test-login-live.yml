@@ -1,0 +1,83 @@
+name: Test OIDC login against HelpDesk
+
+on:
+  workflow_dispatch:
+    inputs:
+      trust_name:
+        description: OIDC trust name configured in HelpDesk
+        required: true
+        default: github
+        type: string
+      audience:
+        description: Exact trust audience (empty uses DUPLO_HOST)
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  login-and-call-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      DUPLO_HOST: https://helpdesk-dev01.test21-apps.duplocloud.net
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Confirm the API requires authentication
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 30 \
+            --header 'Accept: application/json' --output /dev/null \
+            --write-out '%{http_code}' "$DUPLO_HOST/v3/user/settings")
+          case "$status" in
+            401|403) echo "Anonymous request rejected (HTTP $status)." ;;
+            *) echo "::error::Expected anonymous HTTP 401/403; received HTTP $status."; exit 1 ;;
+          esac
+
+      - name: Log in using the action from this checkout
+        id: login
+        uses: ./login
+        with:
+          trust_name: ${{ inputs.trust_name }}
+          audience: ${{ inputs.audience }}
+
+      - name: Call an application API using the exported token
+        shell: bash
+        env:
+          TOKEN_LIFETIME: ${{ steps.login.outputs.expires_in }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DUPLO_TOKEN:-}" ]; then
+            echo '::error::The login action did not export DUPLO_TOKEN.'
+            exit 1
+          fi
+          response=$(mktemp)
+          trap 'rm -f "$response"' EXIT
+          status=$(curl --silent --show-error --max-time 30 \
+            --header 'Accept: application/json' \
+            --header "Authorization: Bearer $DUPLO_TOKEN" \
+            --output "$response" --write-out '%{http_code}' \
+            "$DUPLO_HOST/v3/user/settings")
+          if [ "$status" != 200 ]; then
+            echo "::error::Authenticated API request returned HTTP $status; expected 200."
+            exit 1
+          fi
+          jq -e 'type == "object"' "$response" >/dev/null || {
+            echo '::error::Expected an application JSON object.'
+            exit 1
+          }
+          {
+            echo '### OIDC login integration test passed'
+            echo '- Anonymous API request: rejected'
+            echo '- GitHub OIDC exchange: succeeded'
+            echo '- DUPLO_TOKEN export to a separate step: succeeded'
+            echo '- Authenticated GET /v3/user/settings: HTTP 200 with a JSON object'
+            echo "- API token lifetime: $TOKEN_LIFETIME seconds"
+          } >> "$GITHUB_STEP_SUMMARY"
