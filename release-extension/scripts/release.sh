@@ -44,6 +44,22 @@ mapfile -t dirs < <(extension_dirs)
 [ "${#dirs[@]}" -gt 0 ] || { echo "::error::no extension found under extensions/*/, extension/*/ or extension/."; exit 1; }
 check_text_inputs "${#dirs[@]}" || exit 1
 
+# --- The build's host. Devkit's build takes the SDK from DUPLO_HOST with DUPLO_TOKEN, and with neither set it falls
+# back to a local target that does not exist on a runner. Named here so the failure says which secret is missing
+# rather than which port refused the connection. A run that sets sdk-versions, or a build-command that is not
+# devkit's, is left to its own checks.
+case "$build_command" in
+  *build-all.sh*|*build-extension.sh*)
+    if [ -z "$sdk_versions" ]; then
+      for v in DUPLO_HOST DUPLO_TOKEN; do
+        [ -n "${!v:-}" ] && continue
+        echo "::error::$v is empty. Devkit's build takes the SDK from that host, so set both DUPLO_HOST and DUPLO_TOKEN" \
+          "in the job env."
+        exit 1
+      done
+    fi ;;
+esac
+
 # --- License and build. The license applies only in DuploCloud's organizations, where it is required above. -------
 if duplo_org && [ -n "${INPUT_ARMDOT_LICENSE:-}" ]; then
   armdot_key="$RUNNER_TEMP/armdot.key"
@@ -96,6 +112,13 @@ for dir in "${dirs[@]}"; do
     if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
       if ! gh release download "$tag" -p extension.zip -p extension.zip.sig -D "$workdir" 2>/dev/null; then
         echo "::error::$tag — cannot download its release assets."; rm -rf "$workdir"; failed=$((failed + 1)); continue
+      fi
+      # A release cut before the repository signed. Refused here, before the version or artifact is created, so a
+      # DuploCloud build is never registered unsigned.
+      if duplo_org && [ ! -s "$worksig" ]; then
+        echo "::error::$tag — its release has no extension.zip.sig, and a DuploCloud build is never registered unsigned." \
+          "A release cannot gain a signature after it is cut, so bump manifest.version to release a signed build."
+        rm -rf "$workdir"; failed=$((failed + 1)); continue
       fi
       resumed=$((resumed + 1))
     else
