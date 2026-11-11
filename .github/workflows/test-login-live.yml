@@ -1,9 +1,6 @@
 name: Test OIDC login against HelpDesk
 
 on:
-  pull_request:
-    paths:
-      - '.github/workflows/test-login-live.yml'
   workflow_dispatch:
     inputs:
       trust_name:
@@ -22,7 +19,6 @@ permissions:
 
 jobs:
   login-and-call-api:
-    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

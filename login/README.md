@@ -114,3 +114,23 @@ during execution. This action does not start a background refresh process.
 Run `node --test login/tests/login.test.cjs`. Tests simulate only HTTP
 transport and verify requests, error handling, masking, environment exports,
 and repeated login. CI runs the tests on Linux, Windows, and macOS with Node 24.
+
+## Manual integration test
+
+The `Test OIDC login against HelpDesk` workflow is manually triggered and targets
+`https://helpdesk-dev01.test21-apps.duplocloud.net`. It runs the actual `login`
+action from the selected checkout, so a feature branch can be tested before release.
+
+```bash
+gh workflow run test-login-live.yml \
+  --repo duplocloud/actions \
+  --ref feature/DUPLO-45122-oidc-login \
+  -f trust_name=github
+# Add -f audience=<exact-trust-audience> if it differs from the HelpDesk URL.
+```
+
+The trust must allow `duplocloud/actions` and the selected branch/ref. The workflow
+checks that an anonymous `GET /v3/user/settings` is rejected, logs in using GitHub
+OIDC, then calls that API from a separate step using the exported `DUPLO_TOKEN`.
+It requires HTTP 200 and a JSON object. Tokens and response contents are not printed.
+The workflow summary records which checks passed and the returned token lifetime.
