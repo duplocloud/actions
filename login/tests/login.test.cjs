@@ -45,7 +45,7 @@ test('requests the default audience, exchanges the JWT, masks and exports the ra
   assert.equal(s.requests[1].headers.Authorization, undefined);
   assert.equal(s.requests[1].redirect, 'error');
   assert.equal(s.read('GITHUB_ENV'), 'DUPLO_TOKEN=dahp_secret_2\n');
-  assert.equal(s.read('GITHUB_OUTPUT'), 'expires_in=900\n');
+  assert.equal(s.read('GITHUB_OUTPUT'), 'duplo_token_expires_in=900\n');
   assert.ok(s.logs.includes('::add-mask::signed.jwt.secret'));
   assert.ok(s.logs.includes('::add-mask::dahp_secret_2'));
   assert.ok(s.logs.filter(x => !x.startsWith('::add-mask::')).every(x => !/secret/.test(x)));
@@ -67,7 +67,7 @@ test('exports an opaque duplo-core bearer token without requiring a HelpDesk pre
   ]);
   await s.run();
   assert.equal(s.read('GITHUB_ENV'), 'DUPLO_TOKEN=opaque-core-token.ABC_123-xyz\n');
-  assert.equal(s.read('GITHUB_OUTPUT'), 'expires_in=600\n');
+  assert.equal(s.read('GITHUB_OUTPUT'), 'duplo_token_expires_in=600\n');
   assert.ok(s.logs.includes('::add-mask::opaque-core-token.ABC_123-xyz'));
 });
 

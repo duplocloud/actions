@@ -51,11 +51,15 @@ jobs:
       - name: Call an application API using the exported token
         shell: bash
         env:
-          TOKEN_LIFETIME: ${{ steps.login.outputs.expires_in }}
+          TOKEN_LIFETIME: ${{ steps.login.outputs.duplo_token_expires_in }}
         run: |
           set -euo pipefail
           if [ -z "${DUPLO_TOKEN:-}" ]; then
             echo '::error::The login action did not export DUPLO_TOKEN.'
+            exit 1
+          fi
+          if ! [[ "$TOKEN_LIFETIME" =~ ^[1-9][0-9]*$ ]]; then
+            echo '::error::The login action did not expose a valid duplo_token_expires_in output.'
             exit 1
           fi
           response=$(mktemp)

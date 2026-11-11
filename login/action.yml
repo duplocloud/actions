@@ -12,7 +12,7 @@ inputs:
     description: Exact audience configured in the OIDC trust. Defaults to DUPLO_HOST without trailing slashes.
     required: false
 outputs:
-  expires_in:
+  duplo_token_expires_in:
     description: Lifetime of the generated API token in seconds, starting at issuance.
 runs:
   using: node24

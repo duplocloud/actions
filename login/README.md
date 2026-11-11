@@ -34,10 +34,37 @@ through `GITHUB_ENV`. All subsequent steps in the same job receive it. No
 
 | Output | Description |
 |---|---|
-| `expires_in` | API token lifetime in seconds from issuance |
+| `duplo_token_expires_in` | API token lifetime in seconds from issuance |
 
 The credential is exported as `DUPLO_TOKEN` for the current job, rather than
 as an action or job output. Each job that needs access should log in itself.
+
+## Referencing and releasing
+
+After this change is merged, users can immediately reference
+`duplocloud/actions/login@main`. A versioned reference must point to a release
+that includes the `login` directory. The existing `v1.0.0` release predates this
+new action.
+
+The repository releases all its actions together. After merging, maintainers
+can use the existing **Publish Version** workflow on `main`, choosing `minor`
+and setting `push` to `true` (the default is a dry run). A minor release is
+appropriate for adding this action; if the current release remains `v1.0.0`,
+that produces `v1.1.0`. The workflow creates the release tag and updates the
+floating `v1` tag. No separate login-action package or build step is needed.
+
+After publishing a release containing login, users can choose:
+
+```yaml
+# Follows released, compatible 1.x updates:
+- uses: duplocloud/actions/login@v1
+  with:
+    trust_name: github-deploy
+```
+
+For a fixed release, replace `@v1` with its exact published tag, or pin the full
+commit SHA for an immutable reference. `@main` follows development commits.
+A separate Marketplace listing is not required to use the subdirectory action.
 
 ## Usage and migration
 

@@ -64,7 +64,7 @@ async function run({ env = process.env, fetch = globalThis.fetch, log = console.
   }
   mask(result.access_token, log);
   appendFileSync(env.GITHUB_ENV, `DUPLO_TOKEN=${result.access_token}\n`, 'utf8');
-  appendFileSync(env.GITHUB_OUTPUT, `expires_in=${result.expires_in}\n`, 'utf8');
+  appendFileSync(env.GITHUB_OUTPUT, `duplo_token_expires_in=${result.expires_in}\n`, 'utf8');
   log(`Authenticated to DuploCloud; token expires in ${result.expires_in} seconds.`);
 }
 
