@@ -154,7 +154,7 @@ export INPUT_SIGNING_KEY=k INPUT_SIGNING_CERT=c INPUT_ARMDOT_LICENSE="$(printf l
 export INPUT_BUILD_COMMAND="env > '$WORK/buildenv'; '$WORK/fakebuild.sh'"
 rc="$(run_release)"
 want="ArmDot.Obfuscation.props ArmDot.Obfuscation.targets ArmDotObfuscationAssemblyInfo.cs Directory.Build.targets.template"
-if [ "$rc" -eq 0 ] && [ "$(ls "$RUNNER_TEMP/armdot" | tr '\n' ' ')" = "$want " ] \
+if [ "$rc" -eq 0 ] && [ "$(LC_ALL=C ls "$RUNNER_TEMP/armdot" | tr '\n' ' ')" = "$want " ] \
   && grep -q 'fetched with cfg-token-abc' "$RUNNER_TEMP/armdot/ArmDot.Obfuscation.targets" \
   && grep -q "^DUPLO_ARMDOT_DIR=$RUNNER_TEMP/armdot\$" "$WORK/buildenv"; then ok
 else bad "rc=$rc $(ls "$RUNNER_TEMP/armdot" 2>&1) $(grep ARMDOT "$WORK/buildenv" 2>/dev/null)"; fi
