@@ -15,6 +15,7 @@ and this project adheres to
 ### Added
 
 - `release-extension`: with devkit's build command, an empty `DUPLO_HOST` or `DUPLO_TOKEN` fails the job before the build, naming the secret. The build otherwise fell back to devkit's local target and failed on a connection refused.
+- `release-extension`: new `armdot-config-token` input, required in DuploCloud's organizations. The ArmDot build files moved out of the public devkit into `armdot/` in the private `duplocloud-internal/.github`; a licensed build fetches them with this token before the build and passes their directory to devkit's build as `DUPLO_ARMDOT_DIR`. The token is stripped from the build's environment with the other credentials. Nothing changes for a repository outside DuploCloud's organizations.
 
 ### Changed
 

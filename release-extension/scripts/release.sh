@@ -28,6 +28,12 @@ sha="${GITHUB_SHA:-$(git rev-parse HEAD)}"
 
 duplo_org() { case "${GITHUB_REPOSITORY_OWNER:-}" in duplocloud|duplocloud-internal) return 0 ;; *) return 1 ;; esac; }
 
+# The ArmDot build files live in the private shared repository, not in the public devkit, so a licensed build fetches
+# them here first and devkit's build reads them from DUPLO_ARMDOT_DIR. A workflow's own token cannot read that
+# repository, hence armdot-config-token.
+armdot_config_repo="duplocloud-internal/.github"
+armdot_config_files=(ArmDot.Obfuscation.props ArmDot.Obfuscation.targets ArmDotObfuscationAssemblyInfo.cs Directory.Build.targets.template)
+
 # --- Guards, before the build (D3, D13). A failure here means nothing is built, signed or released. ---------------
 [ -n "$CONSOLE_API_KEY" ] || { echo "::error::console-api-key is required."; exit 1; }
 signing=0
@@ -35,6 +41,7 @@ if duplo_org; then
   [ -n "$EXTENSION_SIGNING_KEY" ]  || { echo "::error::signing-key is required in $GITHUB_REPOSITORY_OWNER. DuploCloud releases are always signed."; exit 1; }
   [ -n "$EXTENSION_SIGNING_CERT" ] || { echo "::error::signing-cert is required in $GITHUB_REPOSITORY_OWNER. DuploCloud releases are always signed."; exit 1; }
   [ -n "${INPUT_ARMDOT_LICENSE:-}" ] || { echo "::error::armdot-license is required in $GITHUB_REPOSITORY_OWNER. DuploCloud builds are always obfuscated."; exit 1; }
+  [ -n "${INPUT_ARMDOT_CONFIG_TOKEN:-}" ] || { echo "::error::armdot-config-token is required in $GITHUB_REPOSITORY_OWNER. The ArmDot build files are read from $armdot_config_repo."; exit 1; }
   signing=1
 elif [ -n "$EXTENSION_SIGNING_KEY" ] && [ -n "$EXTENSION_SIGNING_CERT" ]; then
   signing=1
@@ -67,14 +74,21 @@ if duplo_org && [ -n "${INPUT_ARMDOT_LICENSE:-}" ]; then
     || { echo "::error::armdot-license is not valid base64 of an ArmDot license file."; exit 1; }
   chmod 600 "$armdot_key"
   export ARMDOT_LICENSE_FILE_PATH="$armdot_key"
+  armdot_dir="$RUNNER_TEMP/armdot"
+  mkdir -p "$armdot_dir"
+  for f in "${armdot_config_files[@]}"; do
+    GH_TOKEN="$INPUT_ARMDOT_CONFIG_TOKEN" gh api "repos/$armdot_config_repo/contents/armdot/$f" -H "Accept: application/vnd.github.raw" \
+      > "$armdot_dir/$f" || { echo "::error::could not fetch armdot/$f from $armdot_config_repo with armdot-config-token."; exit 1; }
+  done
+  export DUPLO_ARMDOT_DIR="$armdot_dir"
 fi
 DUPLO_SDK_VERSIONS="$(printf '%s' "$sdk_versions" | paste -sd, -)"; export DUPLO_SDK_VERSIONS
 echo "==> Building with $build_command"
 # Strip the release credentials from the build's environment, so a build-command that runs an install script on the
-# runner cannot read the signing key, the console key or the release token (D13). The decoded license path stays, as
-# the build needs it to obfuscate.
+# runner cannot read the signing key, the console key or the release and config tokens (D13). The decoded license path
+# and the fetched ArmDot files stay, as the build needs them to obfuscate.
 env -u EXTENSION_SIGNING_KEY -u CONSOLE_API_KEY -u GH_TOKEN -u INPUT_SIGNING_KEY -u INPUT_CONSOLE_API_KEY \
-  -u INPUT_ARMDOT_LICENSE bash -eo pipefail -c "$build_command"
+  -u INPUT_ARMDOT_LICENSE -u INPUT_ARMDOT_CONFIG_TOKEN bash -eo pipefail -c "$build_command"
 
 # --- Validate every bundle and resolve every agent, before anything is signed or released. -----------------------
 stamp_required=0; duplo_org && stamp_required=1

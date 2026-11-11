@@ -39,6 +39,9 @@ inputs:
   armdot-license:
     description: Secret. Base64 of the ArmDot license file. Required in DuploCloud's organizations, ignored elsewhere.
     required: false
+  armdot-config-token:
+    description: Secret. A GitHub token that can read duplocloud-internal/.github, where the ArmDot build files live; the release bot token. Required in DuploCloud's organizations, ignored elsewhere.
+    required: false
   build-command:
     description: The repository's build, run before anything is signed or released.
     required: false
@@ -72,6 +75,7 @@ runs:
         INPUT_CONSOLE_URL: ${{ inputs.console-url }}
         INPUT_CONSOLE_TEAM: ${{ inputs.console-team }}
         INPUT_ARMDOT_LICENSE: ${{ inputs.armdot-license }}
+        INPUT_ARMDOT_CONFIG_TOKEN: ${{ inputs.armdot-config-token }}
         INPUT_BUILD_COMMAND: ${{ inputs.build-command }}
         INPUT_BUNDLE_BUCKET: ${{ inputs.bundle-bucket }}
         GH_TOKEN: ${{ github.token }}

@@ -21,6 +21,7 @@ a console key.
 | `signing-key` | no | | Secret. The publisher's private key PEM. Required in DuploCloud's organizations. |
 | `signing-cert` | no | | The publisher's certificate. Required in DuploCloud's organizations. |
 | `armdot-license` | no | | Secret. Base64 of the ArmDot license file. Required in DuploCloud's organizations, ignored elsewhere. |
+| `armdot-config-token` | no | | Secret. A GitHub token that can read `duplocloud-internal/.github`, where the ArmDot build files live; the release bot token. Required in DuploCloud's organizations, ignored elsewhere. |
 | `bundle-bucket` | no | `duplo-helpdesk-channels` | The S3 bucket the AWS backend uploads bundles to. |
 
 ## What the caller provides
@@ -75,6 +76,7 @@ jobs:
           signing-key: ${{ secrets.CONSOLE_SIGNING_KEY }}
           signing-cert: ${{ vars.CONSOLE_SIGNING_CERT }}
           armdot-license: ${{ secrets.ARMDOT_LICENSE_KEY }}
+          armdot-config-token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
           publish: ${{ inputs.publish || false }}
 ```
 
@@ -114,15 +116,21 @@ A platform owner sets each of these up once in the console, and they then serve 
   refused at signing.
 - The extension's record: an agent under the same team whose manifest id equals the `id` in the extension's
   `manifest.json`. The action finds the record by that id and fails when none exists.
+- `armdot-config-token`, in DuploCloud's organizations: the ArmDot build files (the props, targets, assembly attributes
+  and the targets template devkit drops beside a csproj) live under `armdot/` in the private `duplocloud-internal/.github`,
+  not in the public devkit. The action fetches them with this token into `$RUNNER_TEMP/armdot` before the build and
+  hands devkit's build the path in `DUPLO_ARMDOT_DIR`. The organization secret `RELEASE_BOT_GITHUB_TOKEN` reads that
+  repository. Outside DuploCloud's organizations nothing is fetched.
 
 The console's platform-owner guide has the service-account setup in `docs/platform_owner/agent-versions.md` and the
 signing-key screens in `docs/platform_owner/agent-publishers.md`, both in the console repository.
 
 ## What fails, and why
 
-- In `duplocloud` and `duplocloud-internal`, a missing `signing-key`, `signing-cert` or `armdot-license` fails the job
-  before the build. DuploCloud releases are always signed and obfuscated. Elsewhere signing runs only when both a key
-  and a certificate are supplied, and `armdot-license` is ignored.
+- In `duplocloud` and `duplocloud-internal`, a missing `signing-key`, `signing-cert`, `armdot-license` or
+  `armdot-config-token` fails the job before the build, and so does a fetch of the ArmDot build files that the token
+  cannot make. DuploCloud releases are always signed and obfuscated. Elsewhere signing runs only when both a key and a
+  certificate are supplied, and the two ArmDot inputs are ignored.
 - With devkit's build command, an empty `DUPLO_HOST` or `DUPLO_TOKEN` fails before the build,
   naming the secret, since that build takes the SDK from the host and otherwise falls back to a local target.
 - A `name`, `description` or `changelog` set in a repository with more than one extension fails before the build, since
