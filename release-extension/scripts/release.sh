@@ -23,6 +23,13 @@ bundle_bucket="${INPUT_BUNDLE_BUCKET:-duplo-helpdesk-channels}"
 build_command="${INPUT_BUILD_COMMAND:-./scripts/build-all.sh}"
 publish="${INPUT_PUBLISH:-false}"
 sdk_versions="${INPUT_SDK_VERSIONS:-}"
+# A channel names a non-prod release. Its tags carry the channel between the slug and the version, so a dev build of a
+# version never sits on the tag the main release of that version will take, and a resumed run only ever reads back a
+# release from its own channel. Lowercase letters and digits only, since the tag has no other separator to lean on.
+channel="${INPUT_CHANNEL:-}"
+if [ -n "$channel" ] && ! [[ "$channel" =~ ^[a-z0-9]+$ ]]; then
+  echo "::error::channel must be lowercase letters and digits, got '$channel'."; exit 1
+fi
 sign_cmd="${EXTENSION_SIGN:-python3 "$HERE/extension-sign.py"}"
 sha="${GITHUB_SHA:-$(git rev-parse HEAD)}"
 
@@ -110,7 +117,7 @@ for dir in "${dirs[@]}"; do
   while IFS= read -r zip; do
     [ -n "$zip" ] || continue
     sdk="$(unzip -p "$zip" manifest.json | jq -r '.sdkVersion')"
-    base="${slug}-v${version}"; tag="${base}-sdk-${sdk}"
+    base="${slug}${channel:+-$channel}-v${version}"; tag="${base}-sdk-${sdk}"
 
     changed_since=""
     while IFS= read -r gt; do
@@ -143,9 +150,10 @@ for dir in "${dirs[@]}"; do
         if ! $sign_cmd sign "$workzip"; then echo "::error::$dir — signing $tag failed."; rm -rf "$workdir"; failed=$((failed + 1)); continue; fi
         local_assets+=("$worksig")
       fi
-      if ! gh release create "$tag" "${local_assets[@]}" --target "$sha" \
-          --title "$slug $version (SDK $sdk)" \
-          --notes "Automated release of $slug v$version, built against host SDK $sdk."; then
+      prerelease=(); [ -n "$channel" ] && prerelease=(--prerelease)
+      if ! gh release create "$tag" "${local_assets[@]}" --target "$sha" "${prerelease[@]}" \
+          --title "$slug $version (SDK $sdk${channel:+, $channel})" \
+          --notes "Automated ${channel:+$channel }release of $slug v$version, built against host SDK $sdk."; then
         echo "::error::$tag — gh release create failed."; rm -rf "$workdir"; failed=$((failed + 1)); continue
       fi
       released=$((released + 1))
