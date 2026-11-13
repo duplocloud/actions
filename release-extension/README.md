@@ -23,6 +23,7 @@ a console key.
 | `armdot-license` | no | | Secret. Base64 of the ArmDot license file. Required in DuploCloud's organizations, ignored elsewhere. |
 | `armdot-config-token` | no | | Secret. A GitHub token that can read `duplocloud-internal/.github`, where the ArmDot build files live; the release bot token. Required in DuploCloud's organizations, ignored elsewhere. |
 | `bundle-bucket` | no | `duplo-helpdesk-channels` | The S3 bucket the AWS backend uploads bundles to. |
+| `channel` | no | | Release channel for a non-prod build, such as `dev` or `rc`. The release is tagged `<slug>-<channel>-v<version>-sdk-<sdk>` and marked a prerelease, so it never takes the tag a main release of the same version uses. |
 
 ## What the caller provides
 
