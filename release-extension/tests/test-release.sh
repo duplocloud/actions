@@ -265,4 +265,31 @@ if [ "$rc" -eq 0 ] && [ "$(grep -- '-X POST' "$WORK/log" | grep -c '/artifacts/$
   && ! grep -q 'gh release create' "$WORK/log" && grep -q 'resumed 1' "$WORK/out"; then ok
 else bad "rc=$rc; out: $(cat "$WORK/out"); log: $(cat "$WORK/log")"; fi
 
+# --- Channels: a non-prod release keeps its own tag family ---------------------------------------
+t "channel dev: the release is tagged <slug>-dev-v<version>-sdk-<sdk>, as a prerelease"
+fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=acme GITHUB_REPOSITORY=acme/ext INPUT_CONSOLE_TEAM=acme INPUT_CHANNEL=dev
+rc="$(run_release)"
+[ "$rc" -eq 0 ] && grep -q 'gh release create hello-dev-v1.0.0-sdk-1.0.0 .*--prerelease' "$WORK/log" \
+  && ok || bad "rc=$rc $(grep 'release create' "$WORK/log") $(cat "$WORK/out")"
+
+t "channel dev: a prod release at the plain tag does not count as this version already released"
+fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=acme GITHUB_REPOSITORY=acme/ext INPUT_CONSOLE_TEAM=acme INPUT_CHANNEL=dev
+git tag hello-v1.0.0-sdk-1.0.0
+echo x > extensions/hello/extra.txt; git add -A; git commit -qm change; export GITHUB_SHA="$(git rev-parse HEAD)"
+rc="$(run_release)"
+[ "$rc" -eq 0 ] && grep -q 'gh release create hello-dev-v1.0.0-sdk-1.0.0' "$WORK/log" && ok || bad "rc=$rc $(cat "$WORK/out")"
+
+t "no channel: a dev release at the channel tag does not count as this version already released"
+fresh_repo; base_env; unset INPUT_CHANNEL; export GITHUB_REPOSITORY_OWNER=acme GITHUB_REPOSITORY=acme/ext INPUT_CONSOLE_TEAM=acme
+git tag hello-dev-v1.0.0-sdk-1.0.0
+echo x > extensions/hello/extra.txt; git add -A; git commit -qm change; export GITHUB_SHA="$(git rev-parse HEAD)"
+rc="$(run_release)"
+[ "$rc" -eq 0 ] && grep -q 'gh release create hello-v1.0.0-sdk-1.0.0 ' "$WORK/log" && ! grep -q -- '--prerelease' "$WORK/log" \
+  && ok || bad "rc=$rc $(cat "$WORK/out")"
+
+t "a channel that is not lowercase letters and digits fails before the build"
+fresh_repo; base_env; export GITHUB_REPOSITORY_OWNER=acme GITHUB_REPOSITORY=acme/ext INPUT_CONSOLE_TEAM=acme INPUT_CHANNEL='Dev/1'
+rc="$(run_release)"
+[ "$rc" -ne 0 ] && [ ! -f "$WORK/built.marker" ] && grep -q 'channel' "$WORK/out" && ok || bad "rc=$rc $(cat "$WORK/out")"
+
 echo; echo "passed $PASS, failed $FAIL"; [ "$FAIL" -eq 0 ]

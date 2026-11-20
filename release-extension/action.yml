@@ -46,6 +46,9 @@ inputs:
     description: The repository's build, run before anything is signed or released.
     required: false
     default: ./scripts/build-all.sh
+  channel:
+    description: Release channel for a non-prod build, such as dev or rc. Lowercase letters and digits. The GitHub release is tagged <slug>-<channel>-v<version>-sdk-<sdk> and marked a prerelease, so it never occupies the tag a main release of the same version takes. Empty releases as before.
+    required: false
   bundle-bucket:
     description: The S3 bucket the AWS backend uploads bundles to.
     required: false
@@ -78,4 +81,5 @@ runs:
         INPUT_ARMDOT_CONFIG_TOKEN: ${{ inputs.armdot-config-token }}
         INPUT_BUILD_COMMAND: ${{ inputs.build-command }}
         INPUT_BUNDLE_BUCKET: ${{ inputs.bundle-bucket }}
+        INPUT_CHANNEL: ${{ inputs.channel }}
         GH_TOKEN: ${{ github.token }}
