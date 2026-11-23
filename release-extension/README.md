@@ -140,9 +140,12 @@ signing-key screens in `docs/platform_owner/agent-publishers.md`, both in the co
   or upgrade the devkit.
 - When `sdk-versions` lists versions the build produced no bundle for, the job fails naming the devkit upgrade, before
   anything is signed.
-- In a DuploCloud organization, a release at an existing tag that has no `extension.zip.sig` fails before anything is
-  registered, since it was cut before the repository signed and cannot gain a signature. Bump `manifest.version` to
+- In a DuploCloud organization, a release at an existing tag that has no `.sig` beside its bundle fails before anything
+  is registered, since it was cut before the repository signed and cannot gain a signature. Bump `manifest.version` to
   release a signed build. Elsewhere that release registers unsigned.
+- The build's bundle is `dist/agent.zip` (devkit since the rename to agents) or `dist/extension.zip` (before it), under
+  `dist/sdk-<v>/` with `sdk-versions`. Either is accepted, and the release assets carry that name. The uploaded object
+  and the console record keep the `extension.zip` key, which the installer reads.
 - When no agent in the console has the extension's manifest id, the job fails and asks for the agent to be created
   first. On the staff routes a 403 means the console key's role is missing `view_agents`.
 

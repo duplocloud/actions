@@ -129,20 +129,25 @@ for dir in "${dirs[@]}"; do
       failed=$((failed + 1)); continue
     fi
 
-    workdir="$(mktemp -d)"; workzip="$workdir/extension.zip"; worksig="$workdir/extension.zip.sig"
+    # The release assets carry the bundle's own file name (agent.zip, or extension.zip from an older devkit) and its
+    # .sig beside it. An existing release is read back under either name, since it may predate the rename.
+    workdir="$(mktemp -d)"
     if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
-      if ! gh release download "$tag" -p extension.zip -p extension.zip.sig -D "$workdir" 2>/dev/null; then
+      if ! gh release download "$tag" -p agent.zip -p agent.zip.sig -p extension.zip -p extension.zip.sig -D "$workdir" 2>/dev/null \
+         || ! workzip="$(bundle_in "$workdir")"; then
         echo "::error::$tag — cannot download its release assets."; rm -rf "$workdir"; failed=$((failed + 1)); continue
       fi
+      worksig="$workzip.sig"
       # A release cut before the repository signed. Refused here, before the version or artifact is created, so a
       # DuploCloud build is never registered unsigned.
       if duplo_org && [ ! -s "$worksig" ]; then
-        echo "::error::$tag — its release has no extension.zip.sig, and a DuploCloud build is never registered unsigned." \
+        echo "::error::$tag — its release has no $(basename "$workzip").sig, and a DuploCloud build is never registered unsigned." \
           "A release cannot gain a signature after it is cut, so bump manifest.version to release a signed build."
         rm -rf "$workdir"; failed=$((failed + 1)); continue
       fi
       resumed=$((resumed + 1))
     else
+      workzip="$workdir/$(basename "$zip")"; worksig="$workzip.sig"
       cp "$zip" "$workzip"
       local_assets=("$workzip")
       if [ "$signing" = 1 ]; then
@@ -165,6 +170,8 @@ for dir in "${dirs[@]}"; do
 
     backend="$(upload_backend)"; grant=""
     if [ "$backend" = aws ]; then
+      # The object key stays extension.zip whatever the bundle file is called: the installer and the console's
+      # artifact records read this key.
       key="bundles/$id/$version/sdk-$sdk/extension.zip"; s3_path="s3://$bundle_bucket/$key"
     else
       if ! grant="$(upload_url "$uuid" "$vuuid" "$sdk")"; then rm -rf "$workdir"; failed=$((failed + 1)); continue; fi
