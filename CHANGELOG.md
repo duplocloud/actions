@@ -14,6 +14,7 @@ and this project adheres to
 
 ### Fixed
 
+- `setup`: on GCP/Azure, skip the admin-only `duploctl infrastructure find default` lookup when `jit` and `cloud-cli` are both false, allowing tenant-scoped non-admin tokens to use setup without cloud authentication. A failed lookup now fails with the portal's error instead of writing it into `$GITHUB_ENV`, which failed the job with `Invalid format 'User <name> is not an admin'`.
 - `release-extension`: in a DuploCloud organization, a release at an existing tag with no `extension.zip.sig` now fails before anything is registered. It was registered with the console as an unsigned build, and the job then failed at the signature upload.
 
 ### Added

@@ -153,6 +153,8 @@ runs:
       DUPLO_ACCOUNT_ID: ${{ inputs.account-id }}
       DUPLO_DEFAULT_REGION: ${{ inputs.region }}
       ISADMIN: ${{ inputs.admin }}
+      JIT: ${{ inputs.jit }}
+      CLOUD_CLI: ${{ inputs.cloud-cli }}
     run: $GITHUB_ACTION_PATH/setup/portal-info.sh
 
   ###

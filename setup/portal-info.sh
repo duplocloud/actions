@@ -41,11 +41,17 @@ else
   else
     REGION_KEY="'$DUPLO_DEFAULT_REGION'"
   fi
-  # if either the account or region is not set then
-  if [ -z "$DUPLO_ACCOUNT_ID" ] || [ -z "$DUPLO_DEFAULT_REGION" ]; then
-    duploctl infrastructure find default \
+  # Discover missing values only when cloud authentication or CLI setup needs them.
+  if { [ -z "$DUPLO_ACCOUNT_ID" ] || [ -z "$DUPLO_DEFAULT_REGION" ]; } &&
+    { [ "${JIT:-true}" == "true" ] || [ "${CLOUD_CLI:-true}" == "true" ]; }; then
+    if INFRASTRUCTURE_ENV="$(duploctl infrastructure find default \
       --query "{DUPLO_ACCOUNT_ID: $ACCOUNT_KEY, DUPLO_DEFAULT_REGION: $REGION_KEY}" \
-      --output env >> "$GITHUB_ENV"
+      --output env 2>&1)"; then
+      printf '%s\n' "$INFRASTRUCTURE_ENV" >> "$GITHUB_ENV"
+    else
+      echo "::error::Failed to discover infrastructure account and region: $INFRASTRUCTURE_ENV" >&2
+      exit 1
+    fi
   else
     {
       echo "DUPLO_ACCOUNT_ID=$DUPLO_ACCOUNT_ID"
