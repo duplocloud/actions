@@ -18,15 +18,29 @@ extension_dirs() {
   done
 }
 
+# The file the devkit's build writes: agent.zip since the rename to agents (devkit#91), extension.zip before it. Both
+# are accepted, the newer name first, so a repository on either devkit releases. The uploaded object and the console's
+# record keep the extension.zip key whatever the local file is called, since the installer reads that key.
+_bundle_names=(agent.zip extension.zip)
+
+# bundle_in <dir>: print the bundle zip in <dir>, agent.zip over extension.zip. Exit 1 when neither is there.
+bundle_in() {
+  local d="$1" n
+  for n in "${_bundle_names[@]}"; do
+    if [ -f "$d/$n" ]; then printf '%s\n' "$d/$n"; return 0; fi
+  done
+  return 1
+}
+
 # bundles_for <dir> <sdk-versions>: print the bundle zip paths the build must have produced. One
-# <dir>/dist/sdk-<v>/extension.zip per non-empty version line, else <dir>/dist/extension.zip. Exit 1 naming each
-# missing path when a listed version's zip is absent, since that means the build ignored DUPLO_SDK_VERSIONS.
+# <dir>/dist/sdk-<v>/agent.zip (or extension.zip) per non-empty version line, else <dir>/dist/agent.zip (or
+# extension.zip). Exit 1 naming each missing directory when a listed version's zip is absent, since that means the
+# build ignored DUPLO_SDK_VERSIONS.
 bundles_for() {
   local dir="$1" versions="$2" v path missing=0
   if [ -z "$versions" ]; then
-    path="$dir/dist/extension.zip"
-    if [ ! -f "$path" ]; then
-      echo "::error::$dir — no dist/extension.zip (the build produced nothing)." >&2
+    if ! path="$(bundle_in "$dir/dist")"; then
+      echo "::error::$dir — no dist/agent.zip or dist/extension.zip (the build produced nothing)." >&2
       return 1
     fi
     printf '%s\n' "$path"
@@ -35,10 +49,10 @@ bundles_for() {
   local paths=()
   while IFS= read -r v; do
     [ -n "$v" ] || continue
-    path="$dir/dist/sdk-$v/extension.zip"
-    paths+=("$path")
-    if [ ! -f "$path" ]; then
-      echo "::error::$dir — the build did not produce $path." >&2
+    if path="$(bundle_in "$dir/dist/sdk-$v")"; then
+      paths+=("$path")
+    else
+      echo "::error::$dir — the build did not produce dist/sdk-$v/agent.zip (or extension.zip)." >&2
       missing=1
     fi
   done <<<"$versions"

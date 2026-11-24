@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- `release-extension`: the bundle may be named `agent.zip` (the devkit's name since its rename to agents) or `extension.zip`; the release assets carry the bundle's name, while the uploaded object keeps the `extension.zip` key the installer reads.
+
 ### Fixed
 
 - `release-extension`: in a DuploCloud organization, a release at an existing tag with no `extension.zip.sig` now fails before anything is registered. It was registered with the console as an unsigned build, and the job then failed at the signature upload.

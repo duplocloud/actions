@@ -31,6 +31,17 @@ d="$TMP/e1"; mkdir -p "$d/dist/sdk-1.0.6" "$d/dist/sdk-1.0.7"
 out="$(bundles_for "$d" "$(printf '1.0.6\n1.0.7')" 2>&1)"
 if [ "$out" = "$(printf '%s/dist/sdk-1.0.6/extension.zip\n%s/dist/sdk-1.0.7/extension.zip' "$d" "$d")" ]; then ok; else bad "$out"; fi
 
+t "bundles_for takes agent.zip over extension.zip, and accepts a mix across versions"
+d="$TMP/e1b"; mkdir -p "$d/dist/sdk-1.0.6" "$d/dist/sdk-1.0.7"
+: > "$d/dist/sdk-1.0.6/agent.zip"; : > "$d/dist/sdk-1.0.6/extension.zip"; : > "$d/dist/sdk-1.0.7/extension.zip"
+out="$(bundles_for "$d" "$(printf '1.0.6\n1.0.7')")"
+if [ "$out" = "$(printf '%s/dist/sdk-1.0.6/agent.zip\n%s/dist/sdk-1.0.7/extension.zip' "$d" "$d")" ]; then ok; else bad "$out"; fi
+
+t "bundles_for lists a single agent.zip for an empty version list"
+d="$TMP/e3b"; mkdir -p "$d/dist"; : > "$d/dist/agent.zip"
+out="$(bundles_for "$d" "")"
+if [ "$out" = "$d/dist/agent.zip" ]; then ok; else bad "$out"; fi
+
 t "bundles_for fails and names the devkit upgrade when a listed version's zip is absent"
 d="$TMP/e2"; mkdir -p "$d/dist"; : > "$d/dist/extension.zip"
 out="$(bundles_for "$d" "$(printf '1.0.6\n1.0.7')" 2>&1)"; rc=$?
